@@ -223,19 +223,26 @@ def amorcer_recit(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
     sensei = next((c for c in distribution if c.role_campagne == "sensei"), None)
     lieu = session.get(Location, pj.location_id) if pj.location_id else None
 
+    # L'ÉPREUVE DES CLOCHETTES (Nindō 2.0, chantier E) : la scène fondatrice
+    # du genre, jouée plutôt qu'expliquée. Elle apprend la boucle du tour, le
+    # combat, la règle du fossé — on ne bat pas son instructeur seul — et le
+    # levier du nombre : l'équipe. Voir engine/clochettes.py.
     quete = Quest(
         campaign_id=camp.id,
-        titre="Premier rapport d'équipe",
+        titre="L'épreuve des clochettes",
         rang="D",
         # Un ordre de l'instructeur, pas une offre : c'est l'arc d'ouverture.
-        # Il monte au tour 9 et se dénoue au tour 13 (voir engine/fils.py).
         statut="acceptée",
         debut_tour=1,
         donneur_id=sensei.id if sensei else None,
-        description="Votre instructeur veut évaluer l'équipe avant de lui confier "
-                    "quoi que ce soit de sérieux.",
+        description=f"{sensei.nom if sensei else 'Votre instructeur'} porte deux "
+                    "clochettes à la ceinture. Prenez-en une avant midi. Qui n'en a "
+                    "pas retourne à l'Académie — et il n'y en a pas pour tout le monde.",
         enjeu="Une équipe jugée inapte est dissoute, et ses membres reversés ailleurs.",
         echeance_tour=16,
+        archetype="clochettes",
+        complication="Il n'y a pas assez de clochettes : l'épreuve teste si "
+                     "l'équipe se bat ensemble ou chacun pour soi.",
     )
     session.add(quete)
 

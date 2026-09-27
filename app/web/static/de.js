@@ -80,6 +80,51 @@
     })();
   }
 
+  /* LES SONS DE LA TABLE. Un tambour quand un affrontement s'ouvre, un
+     carillon quand une mission réussit ou qu'on est promu. Fabriqués sur
+     place comme le dé : rien à télécharger, rien qui casse s'il manque. */
+  function tambour() {
+    var ctx = audio();
+    if (!ctx || sobre) return;
+    var t = ctx.currentTime;
+    [0, 0.22, 0.44].forEach(function (d, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110 - i * 12, t + d);
+      o.frequency.exponentialRampToValueAtTime(48, t + d + 0.28);
+      g.gain.setValueAtTime(0.5, t + d);
+      g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.32);
+      o.connect(g).connect(ctx.destination);
+      o.start(t + d); o.stop(t + d + 0.34);
+    });
+  }
+  function carillon() {
+    var ctx = audio();
+    if (!ctx || sobre) return;
+    var t = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.14);
+      g.gain.exponentialRampToValueAtTime(0.22, t + i * 0.14 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.14 + 0.9);
+      o.connect(g).connect(ctx.destination);
+      o.start(t + i * 0.14); o.stop(t + i * 0.14 + 0.95);
+    });
+  }
+  /* Le tour fini arrive avec ses conséquences : on y lit ce qui mérite un son. */
+  document.addEventListener('chroniques:tour', function () {
+    var tours = document.querySelectorAll('#recit .tour');
+    var dernier = tours[tours.length - 1];
+    if (!dernier || dernier.dataset.sonne) return;
+    dernier.dataset.sonne = '1';
+    var textes = Array.prototype.map.call(dernier.querySelectorAll('.consequence'),
+      function (c) { return c.textContent; }).join(' | ');
+    if (/Affrontement engagé|Embuscade/.test(textes)) tambour();
+    if (/Mission réussie|promu/.test(textes)) carillon();
+  });
+
   /* Le flux signale l'arrivée du jet ; on n'anime que dans un tour en cours. */
   document.addEventListener('chroniques:jet', function (e) {
     var racine = e.detail && e.detail.racine;

@@ -123,6 +123,27 @@ nombre (l'équipe). La scène fondatrice du genre, jouée plutôt qu'expliquée.
 | D | Nindō et liens, conditions, examen chûnin | 1.5 |
 | E | Interface de table, sons, épreuve des clochettes | 2.0 |
 
+## État au 27 septembre 2026 — les cinq chantiers sont livrés
+
+- **A (1.2.0)** : `turn.arbitrer` / `turn.resoudre`, routes `lancer` et
+  `reformuler`, `_arbitrage.html`, `de.js`. Chances calculées par `Ruleset.chances`.
+- **B (1.3.0)** : `combat.round_de_table` (initiative, ordre, ripostes une
+  fois), `engine/techniques.py` (effets), `OBJETS_COMBAT`, cartes
+  (`_cartes.html`), plateau (`_rencontre.html`).
+- **C (1.4.0)** : `missions.acte` / `noter` / `debriefer`, `Quest.complication`,
+  ryô et réputation, `_temps_mort.html`, `_boutique.html`, route `acheter`.
+- **D (1.5.0)** : `Character.nindo`, `Relation.lien`, `turn._recompenser_le_jeu`,
+  `combat.epuise`, `missions.examen_ouvert` / `promouvoir`, archétype
+  `examen_chunin` sur demande.
+- **E (2.0.0)** : `engine/clochettes.py` (première mission, ouverte par le
+  moteur à l'acte 2 avec ses objectifs), en-tête de scène avec mission et
+  acte, sons de table (tambour, carillon) dans `de.js`.
+
+Ce qui reste ouvert pour la suite : la distance en combat (au contact / à
+distance), une boutique de parchemins de techniques, des arcs scriptés
+au-delà de l'examen (guerre, déserteur, Akatsuki selon l'époque), et une
+scène de fin de session (« qu'as-tu appris ? ») qui vaut de l'expérience.
+
 Chaque chantier sort en version intermédiaire, testée en partie réelle à deux
 avant le suivant. La 2.0 marque la fin.
 

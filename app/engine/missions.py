@@ -227,7 +227,11 @@ def acte(quete: Quest, tour: int) -> dict | None:
     la liste des noms d'actes (l'examen a les siens)."""
     if quete.statut not in ("acceptée", "en cours") or quete.debut_tour is None:
         return None
-    actes = ACTES_EXAMEN if quete.archetype == EXAMEN else ACTES
+    if quete.archetype == "clochettes":
+        from app.engine.clochettes import ACTES as ACTES_CLOCHETTES
+        actes = ACTES_CLOCHETTES
+    else:
+        actes = ACTES_EXAMEN if quete.archetype == EXAMEN else ACTES
     age = tour - quete.debut_tour
     courant = actes[0]
     for a in actes:

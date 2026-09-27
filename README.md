@@ -9,6 +9,12 @@ Jeu de rôle narratif Naruto avec un maître du jeu IA, en local sur ton PC.
 Tu crées un personnage. L'IA crée ton équipe, ton instructeur et ton rival.
 Puis elle devient ton maître du jeu — et tu découvres ton histoire en la jouant.
 
+Depuis la 2.0, ça se joue **comme à une table** : le MJ annonce le jet et ses
+chances, tu lances le dé toi-même, le combat se joue en rounds sur un plateau
+avec des techniques aux effets réels, les missions ont trois actes et un
+débrief noté, et la première mission — l'épreuve des clochettes — apprend
+tout ça sans manuel. La conception est dans [docs/NINDO-2.md](docs/NINDO-2.md).
+
 ## Jouer (pour tout le monde)
 
 1. Télécharge **`Nindo-windows.zip`** dans la dernière version publiée
@@ -88,8 +94,8 @@ et quels modèles manquent.
 
 ```bash
 pip install pytest
-python -m pytest tests/ -q        # 255 tests : règles, destinée, lore, combat…
-python -m scripts.parcours        # parcours joueur complet, ~180 vérifications
+python -m pytest tests/ -q        # 420+ tests : règles, destinée, lore, combat, missions…
+python -m scripts.parcours        # parcours joueur complet, ~200 vérifications
 ```
 
 Le parcours écrit dans `data/parcours.db`, jamais dans ta partie : lance-le

@@ -3,6 +3,19 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 2.0.0 — Nindō, le jeu de rôle
+
+La 2.0 clôt la refonte du cœur (voir `docs/NINDO-2.md`) : Nindō se joue maintenant comme à une vraie table. Ce que les cinq chantiers ont apporté depuis la 1.1 :
+
+- **L'épreuve des clochettes**, nouvelle première mission : ton instructeur porte deux clochettes, prenez-en une avant midi. À l'acte 2 il attaque — hors de portée, et le plateau le dit. Ce qu'il regarde, c'est si vous faites équipe. Elle apprend la boucle du tour, le combat, la règle du fossé et les leviers, sans manuel.
+- **L'en-tête de scène** dit la mission engagée, son acte et le temps qui reste ; **des sons de table** : un tambour quand un affrontement s'ouvre, un carillon quand une mission réussit ou qu'on est promu.
+- **Depuis la 1.2** : le MJ annonce le jet (chances, bonus, prix de l'échec), tu lances toi-même, tu peux forcer ou engager une technique.
+- **Depuis la 1.3** : le combat en rounds — initiative, plateau, cartes d'action, effets réels des techniques, objets.
+- **Depuis la 1.4** : missions en trois actes, débrief noté, ryô, boutique, temps mort.
+- **Depuis la 1.5** : nindō et liens qui rapportent, épuisement, examen chûnin et promotion.
+
+Bonne partie — et dis-nous ce qui manque encore.
+
 ## 1.5.0 — Nindō, liens, examen chûnin
 
 Quatrième chantier de Nindō 2.0 : la fiche pèse, et le jeu de rôle rapporte.

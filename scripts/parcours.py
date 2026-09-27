@@ -36,7 +36,7 @@ from app.rules.loader import charger as charger_ruleset
 from app.main import app
 from app.models import (Campaign, Character, Crystallization, Destiny,
                         DestinyTrait, Encounter, Event, Knowledge, MemoryFact,
-                        Relation, Secret, Summary, Turn, maintenant)
+                        Quest, Relation, Secret, Summary, Turn, maintenant)
 
 V, R, G, Z = "\033[32m", "\033[31m", "\033[90m", "\033[0m"
 _echecs: list[str] = []
@@ -269,12 +269,54 @@ def main() -> int:
         ok(len(faits) >= 2, f"{len(faits)} faits écrits en mémoire longue")
         camp = s.get(Campaign, cid)
         ok(camp.tour == 1 + len(actions), "l'horloge de campagne a avancé")
+
+    # ------------------------------------ 5 bis. l'épreuve des clochettes
+    # La première mission apprend le jeu (Nindō 2.0, chantier E) : à l'acte 2,
+    # l'instructeur attaque, hors de portée, et l'équipe doit faire équipe.
+    print("\n5 bis. L'épreuve des clochettes")
+    with Session(engine) as s:
+        q = s.exec(select(Quest).where(Quest.campaign_id == cid,
+                                       Quest.archetype == "clochettes")).first()
+        ok(q is not None and q.statut == "acceptée", "la première mission est l'épreuve des clochettes")
+    r = c.post(f"/campagnes/{cid}/jouer", data={
+        "action": "Je fonce sur les clochettes.", "character_id": pj_id})
+    ok(r.status_code == 200, "l'instructeur attaque à l'acte 2", r.text[:200])
+    with Session(engine) as s:
+        renc = combat.active(s, s.get(Campaign, cid))
+        ok(renc is not None and renc.declencheur == "clochettes",
+           "la rencontre de l'épreuve est ouverte contre l'instructeur")
+        ok(renc is not None and renc.objectifs and "clochette" in renc.objectifs[0],
+           "avec les objectifs de l'épreuve, pas ceux du fossé")
+        ok(renc is not None and int(renc.fosse.get("tier_adverse_brut", 0)) > s.get(Character, pj_id).tier,
+           "l'instructeur est au-dessus de l'équipe : c'est la leçon")
+    for i in range(6):
+        with Session(engine) as s:
+            if combat.active(s, s.get(Campaign, cid)) is None:
+                break
+        r = c.post(f"/campagnes/{cid}/jouer", data={
+            "action": "", "character_id": pj_id, "action_code": "manoeuvre",
+            "levier": "terrain_prepare" if i % 2 == 0 else "renseignement"})
+        ok(r.status_code == 200, f"round {i + 1} de l'épreuve, par une carte", r.text[:200])
+    with Session(engine) as s:
+        camp = s.get(Campaign, cid)
+        renc = combat.active(s, camp)
+        if renc is not None:
+            rs_c, pack_c = charger_ruleset("naruto"), charger_pack()
+            combat._clore(s, camp, rs_c, renc, "dispersee", s.get(Character, pj_id), pack_c)
+            s.commit()
+        q = s.exec(select(Quest).where(Quest.campaign_id == cid,
+                                       Quest.archetype == "clochettes")).first()
+        ok(q.statut in ("réussie", "échouée"), f"l'épreuve se conclut avec sa rencontre ({q.statut})")
+        ok(bool(q.note), f"et reçoit sa note au débrief ({q.note})")
+        sensei = s.get(Character, q.donneur_id)
+        ok(sensei.location_id == s.get(Character, pj_id).location_id,
+           "l'instructeur est toujours là après l'épreuve")
         tour_avant_flux = camp.tour
 
-    # --------------------------------------------- 5 bis. narration en flux
+    # --------------------------------------------- 5 ter. narration en flux
     # C'est le chemin par défaut de l'interface : il doit être couvert au
     # moins aussi bien que le chemin bloquant.
-    print("\n5 bis. Narration en flux")
+    print("\n5 ter. Narration en flux")
     r = c.post(f"/campagnes/{cid}/jouer/flux", data={
         "action": "Je m'assieds sur le toit et je regarde le village s'éteindre.",
         "character_id": pj_id})

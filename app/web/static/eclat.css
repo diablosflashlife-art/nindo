@@ -748,3 +748,7 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 .examen-ouvert{margin:10px 0 0;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.45;
   border:1px solid rgba(201,162,39,.55);background:var(--or-voile);color:var(--texte)}
 .examen-ouvert b{color:var(--or)}
+
+/* L'en-tête de scène dit la mission et son acte — chantier E */
+.scene-mission{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--texte-3);text-transform:uppercase}
+.scene-mission b{color:var(--or);font-weight:500}

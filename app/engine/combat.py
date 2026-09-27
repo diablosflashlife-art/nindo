@@ -479,7 +479,10 @@ def ouvrir(session: Session, camp: Campaign, pack, rs: Ruleset, pj: Character,
     # une embuscade subie ne donne évidemment aucun avantage à celui qui la
     # subit. Elle coûte un malus au premier échange (voir `echanger`). Pour
     # frapper le premier, le joueur passe par une manœuvre `embuscade`.
-    soutiens = _allies_presents(session, camp, pj)
+    # Jamais des deux côtés : l'instructeur qu'on affronte à l'épreuve des
+    # clochettes ne se bat pas à ses propres côtés.
+    soutiens = [c for c in _allies_presents(session, camp, pj)
+                if c.id not in {e.id for e in ennemis}]
     for c in soutiens:
         pv_max(session, rs, c)
     # LE FOSSÉ SE MESURE SUR LE PERSONNAGE QUI JOUE, pas sur son camp. Prendre
@@ -739,6 +742,11 @@ def _accorder_objectifs(renc: Encounter, lignes: list[str],
     """
     ecrasant = (not renc.fosse.get("jet", True)
                 and renc.fosse.get("superieur") == "b")
+    if renc.declencheur == "clochettes":
+        # L'épreuve des clochettes garde ses objectifs (engine/clochettes.py)
+        # même quand l'écart se referme : on ne « vainc » pas son instructeur,
+        # on lui prend une clochette — et refermer l'écart, c'est le chemin.
+        return ecrasant
     if ecrasant:
         renc.objectifs = list(renc.fosse.get("objectifs") or [])
     elif renc.objectifs or renc.objectif:
@@ -1470,8 +1478,11 @@ def round_de_table(session: Session, camp: Campaign, pack, rs: Ruleset,
         lignes.append(", ".join(c.nom for c in soutiens)
                       + " tiennent la ligne sans pouvoir l'entamer.")
 
-    # --- progrès vers l'objectif imposé : frapper n'y sert à rien
-    if ecrasant and any(a.reussi and a.posture_nom != "offensive" for a in acteurs):
+    # --- progrès vers l'objectif imposé : frapper n'y sert à rien. À
+    #     l'épreuve des clochettes, tout ce qui réussit fait avancer l'équipe.
+    epreuve = renc.declencheur == "clochettes"
+    if (ecrasant or epreuve) and renc.objectif and any(
+            a.reussi and (epreuve or a.posture_nom != "offensive") for a in acteurs):
         renc.progres += 1
         requis = int(rs.combat.get("objectif_progres_requis", 3))
         lignes.append(f"Progrès vers « {renc.objectif} » : {renc.progres}/{requis}.")
@@ -1487,7 +1498,9 @@ def round_de_table(session: Session, camp: Campaign, pack, rs: Ruleset,
     # ------------------------------------------------------------- le moral
     pertes = len(tombes(session, renc)) + len(fuis(session, renc))
     cfg_moral = rs.combat.get("moral", {}) or {}
-    for pnj in adverses(session, renc):
+    # L'instructeur de l'épreuve des clochettes ne rompt jamais : c'est lui
+    # qui décide quand midi sonne.
+    for pnj in ([] if epreuve else adverses(session, renc)):
         pct = int(pnj.ressources.get("pv", 1)) * 100 / pv_max(session, rs, pnj)
         moral = _lire_note(pnj, "moral")
         chance = rs.chance_rupture(pct, meneur.tier - pnj.tier, moral)
@@ -1656,7 +1669,15 @@ def _clore(session: Session, camp: Campaign, rs: Ruleset, renc: Encounter,
     # sur le lieu : ceux qui tiennent encore debout s'en vont.
     if statut in ("rompue", "dispersee", "perdue"):
         for c in adverses(session, renc):
+            # Un membre de l'entourage (l'instructeur de l'épreuve des
+            # clochettes, un rival) ne « disparaît » pas : il reste au village.
+            if c.role_campagne in ("sensei", "coequipier", "rival"):
+                continue
             retirer(session, c)
+
+    # L'épreuve des clochettes se conclut avec sa rencontre.
+    from app.engine import clochettes
+    effets += clochettes.solder(session, camp, rs, renc, statut, pj)
 
     session.add(MemoryFact(
         campaign_id=camp.id, tour=camp.tour, importance=4, nature="fait",

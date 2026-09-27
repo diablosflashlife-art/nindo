@@ -90,7 +90,18 @@
 
     <div class="panneau scene">
       <span class="scene-coins" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-      <p class="legende">{{ icone('journal', 13) }} Scène en cours · {{ camp.nom }}</p>
+      {# L'en-tête dit où en est la partie : la mission engagée, son acte,
+         le temps qui reste. Le joueur n'a plus à ouvrir un onglet pour le
+         savoir. #}
+      <p class="legende">{{ icone('journal', 13) }} Scène en cours · {{ camp.nom }}
+        {% if mission_en_cours and actes.get(mission_en_cours.id) %}
+        {% set a = actes[mission_en_cours.id] %}
+        <span class="scene-mission" title="{{ mission_en_cours.titre }}">
+          · {{ mission_en_cours.titre|truncate(34, true, '…') }} — <b>{{ a.nom }}</b>
+          {%- if mission_en_cours.echeance_tour is not none %}
+          {% set reste = mission_en_cours.echeance_tour - camp.tour %}
+          · {{ reste if reste > 0 else 0 }} tour{{ 's' if reste > 1 }}{% endif %}</span>
+        {% endif %}</p>
       <div class="recit" id="recit">
         {% set historique = true %}
         {% for tour in tours[-1:] %}{% include "_tour.html" with context %}{% endfor %}
@@ -262,6 +273,7 @@
         <button type="button" class="discret guide-fermer" aria-label="Fermer le guide">✕</button>
       </div>
       <ol class="guide-liste">
+        <li><strong>L'épreuve des clochettes</strong> est ta première mission : ton instructeur attaquera bientôt. Seul, tu ne peux pas le vaincre — le plateau te le dira. Prépare le terrain, ruse, fais équipe : c'est ça qu'il regarde.</li>
         <li><strong>Écris ce que fait ton ninja</strong>, librement — ou clique une piste proposée.</li>
         <li><strong>Le maître du jeu annonce le jet</strong> : la caractéristique, la difficulté, tes chances et ce que coûte un échec. Tu peux engager une technique, <em>forcer</em> (+3 au dé, mais un échec devient critique) ou reformuler. Puis <em>Lancer le dé</em>.</li>
         <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué. Pressé ? Coche <em>lancer tout seul</em>.</li>

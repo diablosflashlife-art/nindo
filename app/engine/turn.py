@@ -272,6 +272,10 @@ def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
     renc = combat.active(session, camp)
     if renc is None:
         renc = combat.tirer_embuscade(session, camp, pack, rs, pj)
+    if renc is None:
+        # L'épreuve des clochettes : à l'acte 2, l'instructeur attaque.
+        from app.engine import clochettes
+        renc = clochettes.declencher(session, camp, pack, rs, pj)
 
     contexte = construire(session, camp, pj, action, rs, pack, role="arbitre")
 
