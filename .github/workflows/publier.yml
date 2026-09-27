@@ -15,6 +15,11 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    # La console Windows de GitHub est en cp1252 : sans ceci, le « ō » de Nindō
+    # fait planter le premier print venu.
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
       - uses: actions/checkout@v4
 
