@@ -25,6 +25,22 @@
   var lecture = 0;            // numéro de la lecture en cours : en changer l'arrête
   var audio = null;           // l'élément audio qui parle
 
+  /* LE VOLUME. Réglé par le joueur, gardé par le navigateur, appliqué aux
+     deux voix. */
+  var CLE_VOLUME = 'nindo.voix_volume';
+  var volume = 1;
+  try { volume = Math.max(0, Math.min(1, parseFloat(localStorage.getItem(CLE_VOLUME) || '1'))); }
+  catch (e) { volume = 1; }
+  var curseur = document.getElementById('voix-volume');
+  if (curseur) {
+    curseur.value = String(volume);
+    curseur.addEventListener('input', function () {
+      volume = parseFloat(curseur.value);
+      if (audio) audio.volume = volume;
+      try { localStorage.setItem(CLE_VOLUME, String(volume)); } catch (e) { /* tant pis */ }
+    });
+  }
+
   fetch('/voix/etat').then(function (r) { return r.json(); })
     .then(function (e) { piper = !!e.piper; montrer(); })
     .catch(montrer);
@@ -57,6 +73,10 @@
     }).then(function (r) { return r.status === 200 ? r.blob() : null; });
   }
 
+  /* UNE SEULE VOIX PAR LECTURE. Une phrase que Piper n'a pas pu dire est
+     sautée, jamais confiée à la voix du navigateur : mesuré en partie, la
+     voix réaliste commençait, puis la voix robotique prenait le relais au
+     milieu du récit. */
   function direPiper(segments) {
     var ma = lecture;
     var utiles = segments.filter(function (s) { return s.texte; });
@@ -67,14 +87,16 @@
       prochain = i + 1 < utiles.length ? fabriquer(utiles[i + 1]) : null;
       courant.then(function (blob) {
         if (ma !== lecture) return;
-        if (!blob) { direNavigateur(utiles.slice(i)); return; }
+        if (!blob) { suivant(i + 1); return; }
         audio = new Audio(URL.createObjectURL(blob));
+        audio.volume = volume;
         audio.onended = function () {
           var pause = utiles[i].pause && utiles[i].pause > 1.05 ? (utiles[i].pause - 1) * 600 : 120;
           setTimeout(function () { suivant(i + 1); }, pause);
         };
+        audio.onerror = function () { suivant(i + 1); };
         audio.play().catch(function () { /* lecture refusée par le navigateur */ });
-      }).catch(function () { direNavigateur(utiles.slice(i)); });
+      }).catch(function () { if (ma === lecture) suivant(i + 1); });
     })(0);
   }
 
@@ -88,7 +110,7 @@
       if (voix) { u.voice = voix; u.lang = voix.lang; } else { u.lang = 'fr-FR'; }
       u.pitch = Math.max(0.1, Math.min(2, s.pitch || 1));
       u.rate = Math.max(0.5, Math.min(2, s.vitesse || 1));
-      u.volume = Math.max(0, Math.min(1, s.volume === undefined ? 1 : s.volume));
+      u.volume = Math.max(0, Math.min(1, (s.volume === undefined ? 1 : s.volume) * volume));
       synth.speak(u);
     });
   }
@@ -109,6 +131,7 @@
 
   function accorder() {
     bouton.classList.toggle('actif', actif);
+    if (curseur) curseur.hidden = !actif;
     bouton.setAttribute('aria-pressed', actif ? 'true' : 'false');
     bouton.title = (actif ? 'Couper la lecture à voix haute' : 'Lire les scènes à voix haute')
       + (piper ? ' (voix réaliste)' : ' (voix du navigateur — installe la voix réaliste depuis le lanceur)');

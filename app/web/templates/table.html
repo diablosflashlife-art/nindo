@@ -25,6 +25,9 @@
     </svg>
     <span>voix</span>
   </button>
+  {# Le volume de la voix, visible seulement quand elle lit. #}
+  <input type="range" id="voix-volume" class="voix-volume" min="0" max="1" step="0.05"
+         value="1" hidden aria-label="Volume de la voix" title="Volume de la voix">
   {# La longueur des récits se règle en pleine partie : la table sait mieux que
      personne si elle a le temps de lire. #}
   <form method="post" action="/campagnes/{{ camp.id }}/allure" class="allure-choix"

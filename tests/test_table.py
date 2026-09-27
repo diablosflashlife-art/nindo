@@ -139,3 +139,19 @@ def test_la_voix_installee_parle_et_se_souvient(tmp_path, monkeypatch):
     assert wav and wav[:4] == b"RIFF"
     assert len(list(tmp_path.glob("*.wav"))) == 1
     assert voix_piper.dire("Le vent se lève sur le village caché.", vitesse=1.2) == wav
+
+
+@pytest.mark.skipif(not voix_piper.disponible(), reason="voix Piper non installée")
+def test_deux_phrases_en_meme_temps_sont_toutes_les_deux_dites(tmp_path, monkeypatch):
+    """Mesuré en partie : la phrase suivante est préparée pendant que la
+    courante parle, et deux synthèses simultanées faisaient échouer l'une des
+    deux — le navigateur retombait alors sur sa voix robotique."""
+    import threading
+    monkeypatch.setattr(voix_piper, "CACHE", tmp_path)
+    resultats = {}
+    def dire(i):
+        resultats[i] = voix_piper.dire(f"Phrase numéro {i}, dite en même temps que l'autre.")
+    fils = [threading.Thread(target=dire, args=(i,)) for i in range(4)]
+    for f in fils: f.start()
+    for f in fils: f.join()
+    assert all(r and r[:4] == b"RIFF" for r in resultats.values())

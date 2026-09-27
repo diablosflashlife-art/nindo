@@ -752,3 +752,7 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 /* L'en-tête de scène dit la mission et son acte — chantier E */
 .scene-mission{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--texte-3);text-transform:uppercase}
 .scene-mission b{color:var(--or);font-weight:500}
+
+/* Le volume de la voix, à côté du bouton */
+.voix-volume{width:84px;height:4px;accent-color:var(--or);cursor:pointer;margin:0 4px}
+.voix-volume[hidden]{display:none}

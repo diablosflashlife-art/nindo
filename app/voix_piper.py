@@ -30,6 +30,7 @@ CACHE = DOSSIER / "cache"
 
 _charge = None
 _verrou = threading.Lock()
+_verrou_synthese = threading.Lock()
 _installation = {"etat": "", "erreur": ""}      # "" | en_cours | fini | echec
 
 
@@ -75,9 +76,14 @@ def dire(texte: str, vitesse: float = 1.0, volume: float = 1.0) -> bytes | None:
     try:
         from piper import SynthesisConfig
         tampon = io.BytesIO()
-        with wave.open(tampon, "wb") as w:
-            _voix().synthesize_wav(texte, w, syn_config=SynthesisConfig(
-                length_scale=1.0 / vitesse, volume=volume))
+        # UNE PHRASE À LA FOIS. Le navigateur prépare la phrase suivante pendant
+        # que la courante parle : deux synthèses simultanées sur la même voix
+        # échouaient par moments, et le navigateur retombait sur sa voix
+        # robotique au milieu du récit. Le verrou les met à la file.
+        with _verrou_synthese:
+            with wave.open(tampon, "wb") as w:
+                _voix().synthesize_wav(texte, w, syn_config=SynthesisConfig(
+                    length_scale=1.0 / vitesse, volume=volume))
         donnees = tampon.getvalue()
     except Exception as exc:  # noqa: BLE001 — la voix n'est jamais une raison d'échouer
         _installation["synthese"] = f"{exc.__class__.__name__}: {exc}"[:200]

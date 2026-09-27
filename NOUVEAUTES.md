@@ -3,6 +3,11 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 2.0.3 — Une seule voix, et son volume
+
+- **La voix réaliste ne cède plus la place à la voix robotique** au milieu d'un récit : deux phrases synthétisées en même temps faisaient échouer l'une des deux, et le navigateur prenait le relais avec sa propre voix. Les phrases sont maintenant dites l'une après l'autre, et une phrase qui échoue est sautée, jamais remplacée.
+- **Le volume de la voix** se règle avec un curseur à côté du bouton *voix*, et le réglage est retenu.
+
 ## 2.0.2 — La page suit le récit
 
 - **Le défilement suit la scène** pendant qu'elle s'écrit, au lieu de sauter au bas de la colonne (la carte) à chaque mot. Un lecteur qui remonte n'est plus ramené de force.
