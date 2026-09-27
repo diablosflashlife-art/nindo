@@ -127,6 +127,27 @@ class MajImpossible(Exception):
     """Message à montrer au joueur tel quel."""
 
 
+def lancer_en_fond(commande: list[str]) -> None:
+    """Lance un programme qui doit SURVIVRE à Nindō, sans fenêtre.
+
+    MESURÉ, PAS SUPPOSÉ. DETACHED_PROCESS — le réflexe pour « détacher » — empêche
+    PowerShell de démarrer : les versions 1.0.0 et 1.0.1 téléchargeaient la
+    mise à jour puis ne l'installaient jamais. Seule cette combinaison lance
+    réellement le script : pas de fenêtre, un groupe de processus à part, et
+    les trois flux standard fermés. On tente en plus de sortir de l'éventuel
+    « job » Windows du parent, qui tuerait l'enfant à sa fermeture.
+    """
+    base = (getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
+    flux = {"stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL}
+    try:
+        subprocess.Popen(commande, creationflags=base
+                         | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0), **flux)
+    except OSError:
+        subprocess.Popen(commande, creationflags=base, **flux)
+
+
 def _url_sure(url: str) -> bool:
     return bool(DEPOT) and url.startswith(f"https://github.com/{DEPOT}/releases/download/")
 
@@ -174,16 +195,15 @@ def installer() -> str:
     script = dossier / "appliquer.ps1"
     script.write_text(
         "$ErrorActionPreference = 'SilentlyContinue'\n"
+        f"Start-Transcript -Path \"{dossier / 'journal.txt'}\" | Out-Null\n"
         f"Wait-Process -Id {os.getpid()} -Timeout 60\n"
         "Start-Sleep -Milliseconds 800\n"
-        f"robocopy \"{source}\" \"{installation}\" /E /IS /IT /R:5 /W:1 /NFL /NDL /NJH /NJS | Out-Null\n"
-        f"Start-Process \"{installation / 'Nindo.exe'}\"\n",
+        f"robocopy \"{source}\" \"{installation}\" /E /IS /IT /R:5 /W:1 /NFL /NDL /NJH /NJS\n"
+        f"Start-Process \"{installation / 'Nindo.exe'}\"\n"
+        "Stop-Transcript | Out-Null\n",
         encoding="utf-8-sig")
-    subprocess.Popen(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle",
-         "Hidden", "-File", str(script)],
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        | getattr(subprocess, "DETACHED_PROCESS", 0))
+    lancer_en_fond(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                    "-File", str(script)])
     # On laisse la réponse partir, puis on s'efface : le script prend le relais.
     threading.Timer(1.5, lambda: os._exit(0)).start()
     return derniere["version"]

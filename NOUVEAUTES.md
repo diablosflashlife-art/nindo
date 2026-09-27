@@ -3,6 +3,12 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.0.2 — La mise à jour s'installe
+
+- **Mise à jour automatique réparée** : elle se téléchargeait mais ne s'installait pas. Désormais Nindō se ferme, s'installe et se rouvre tout seul.
+- **Si tu as la 1.0.0 ou la 1.0.1**, télécharge cette version une fois à la main : les suivantes arriveront toutes seules.
+- **Réveil d'Ollama plus fiable** au lancement.
+
 ## 1.0.1 — Jouer à deux
 
 - **À plusieurs, chacun garde la main** : le conteur ne fait plus jamais parler ni décider le personnage d'un autre joueur.

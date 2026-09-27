@@ -50,9 +50,8 @@ def _reveiller_ollama(settings) -> None:
     exe = shutil.which("ollama") or str(
         Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe")
     if Path(exe).is_file():
-        subprocess.Popen([exe, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
-                         | getattr(subprocess, "DETACHED_PROCESS", 0))
+        from app.maj import lancer_en_fond
+        lancer_en_fond([exe, "serve"])
 
 
 def main() -> int:
