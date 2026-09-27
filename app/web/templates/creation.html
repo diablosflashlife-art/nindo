@@ -5,7 +5,7 @@
 {% block titre %}Création — {{ camp.nom }}{% endblock %}
 {% block largeur %}etroite{% endblock %}
 {% block cle_page %}{{ villages[0].id if villages else 'konoha' }}{% endblock %}
-{% block barre %}<span class="petit muted">{{ camp.nom }}</span>{% endblock %}
+{% block barre %}{% if equipe %}<a href="/campagnes/{{ camp.id }}?pj={{ equipe[0].id }}" class="petit">← revenir à la table</a>{% else %}<span class="petit muted">{{ camp.nom }}</span>{% endif %}{% endblock %}
 {% block contenu %}
 
 {# Tous les décors de la page, déclarés une fois et en un seul endroit : le
@@ -29,11 +29,21 @@
   <div class="heros-voile"></div>
   <span class="heros-kanji" aria-hidden="true" id="kanji-creation">{{ kanji(premier_village) }}</span>
   <div class="heros-contenu">
+    {% if equipe %}
+    {# Chaque joueur a SA création : son village, sa maison, sa destinée. Il
+       rejoint la scène où se trouve l'équipe. #}
+    <p class="eyebrow">Un nouveau joueur rejoint la partie</p>
+    <h1>Deviens un shinobi</h1>
+    <p class="chapeau">Tu rejoins {% for p in equipe %}<strong>{{ p.nom }}</strong>{% if p.joueur %} ({{ p.joueur }}){% endif %}{{ ', ' if not loop.last }}{% endfor %}.
+      Ton personnage est le tien : ton nom, ta maison, ta voie, et une destinée
+      que personne d'autre ne connaît.</p>
+    {% else %}
     <p class="eyebrow">Nouvelle destinée</p>
     <h1>Deviens un shinobi</h1>
     <p class="chapeau">Tu choisis ton nom, ta maison et ta voie. Ce qui
       sommeille en toi sera écrit ailleurs — et tu ne le découvriras qu'en
       jouant.</p>
+    {% endif %}
   </div>
 </section>
 

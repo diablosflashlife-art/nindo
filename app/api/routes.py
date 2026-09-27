@@ -213,8 +213,13 @@ def _ctx_creation(request: Request, camp: Campaign, rs: Ruleset, erreur: str = "
                   saisie: dict | None = None) -> dict:
     pack = charger_pack(camp.lore_pack)
     annee = pack.annee_de(camp.epoque)
+    with Session(engine) as s:
+        equipe = [p for p in s.exec(select(Character).where(
+            Character.campaign_id == camp.id, Character.is_pc == True)).all()]  # noqa: E712
     return {
         "request": request, "camp": camp, "rs": rs, "pack": pack,
+        # Les joueurs déjà dans la partie : un nouveau venu les rejoint.
+        "equipe": [{"nom": p.nom, "joueur": p.joueur, "id": p.id} for p in equipe],
         "villages": [v for v in pack.villages(annee) if v.get("rang") == "majeur"],
         "clans_majeurs": pack.clans(rang="majeur", annee=annee),
         "clans_mineurs": pack.clans(rang="mineur", annee=annee),
@@ -273,8 +278,10 @@ async def soumettre_creation(cid: int, request: Request,
     # tirés avant validation. Le joueur n'a rempli que son nom et son visage.
     if form.get("chemin") == "remets":
         from app.engine.creation import tirer_fiche
+        deja = _pjs(session, camp.id)
         fiche = tirer_fiche(pack, rs, fiche, annee,
-                            graine=camp.graine + len(fiche.nom))
+                            graine=camp.graine + len(fiche.nom),
+                            village_impose=deja[0].village_ref if deja else "")
 
     try:
         from app.engine.creation import valider

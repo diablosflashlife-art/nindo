@@ -56,3 +56,11 @@ def test_une_seule_nature_de_chakra_au_depart(tirages):
         libres = [t for t in d.traits if t.ref.startswith("affinite_") and t.ref not in requis]
         actives = [t for t in libres if t.actif]
         assert len(actives) <= 1 and len(libres) <= 2, [t.ref for t in libres]
+
+
+def test_un_joueur_qui_rejoint_garde_le_village_de_l_equipe():
+    pack, rs = charger_pack("naruto"), charger("naruto")
+    for g in range(40):
+        fiche = tirer_fiche(pack, rs, Fiche(nom="Hana"), 0, graine=g, village_impose="kumo")
+        valider(pack, rs, fiche, 0)
+        assert fiche.village_id == "kumo"

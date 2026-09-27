@@ -5,7 +5,7 @@
 version, c'est pousser l'étiquette `v<VERSION>` sur GitHub : l'intégration
 continue fabrique Nindō.exe et le lanceur de chaque joueur le propose.
 """
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 
 # Le dépôt GitHub public d'où viennent les mises à jour, « propriétaire/nom ».
 # Vide tant que le dépôt n'existe pas : le lanceur ne cherche alors rien.

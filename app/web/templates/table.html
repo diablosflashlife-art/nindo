@@ -36,6 +36,9 @@
       {% endfor %}
     </select>
   </form>
+  {# Chaque joueur crée SON personnage : ce lien ouvre une création complète,
+     et le nouveau venu rejoint la scène de l'équipe. #}
+  <a href="/campagnes/{{ camp.id }}/creation" class="petit" title="Un autre joueur crée son personnage et rejoint la partie">+ joueur</a>
   <a href="/campagnes/{{ camp.id }}/chronique" class="petit">chronique</a>
   {# « complète » saute sous 640 px : à cinq éléments, la barre se cassait en
      deux lignes et poussait la scène vers le bas. #}
@@ -126,6 +129,10 @@
           <span>{{ p.nom }}<br><small>{{ p.joueur }}</small></span>
         </a>
         {% endfor %}
+        <a href="/campagnes/{{ camp.id }}/creation" class="onglet onglet-ajout"
+           title="Un autre joueur crée son personnage">
+          <span class="pastille">+</span><span>Ajouter<br><small>un joueur</small></span>
+        </a>
       </div>
       {% endif %}
 
@@ -205,6 +212,7 @@
         <li><strong>Les missions</strong> se prennent dans l'onglet <em>Gens</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
         <li><strong>La carte</strong> (onglet <em>Lieu</em>) : voyager coûte des tours.</li>
         <li><strong>L'onglet <em>Voie</em></strong> te dit quand une technique peut s'apprendre.</li>
+        <li><strong>Vous êtes plusieurs ?</strong> <em>+ joueur</em>, en haut : chacun crée son propre personnage, puis vous jouez chacun votre tour.</li>
       </ol>
     </div>
     <script>

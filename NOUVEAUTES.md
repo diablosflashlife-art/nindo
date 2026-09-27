@@ -3,6 +3,12 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.0.3 — À plusieurs autour de l'écran
+
+- **Ajouter un joueur** : le bouton *+ joueur* (en haut de la table) ouvre une création complète. Chaque joueur crée SON personnage — nom, maison, voie, destinée — et rejoint la scène de l'équipe.
+- **Qui agit ce tour-ci** : un clic pour passer d'un personnage à l'autre, et un raccourci pour en ajouter un.
+- **Rejoindre au destin** : un joueur qui s'en remet au hasard garde le village de l'équipe ; tout le reste est tiré.
+
 ## 1.0.2 — La mise à jour s'installe
 
 - **Mise à jour automatique réparée** : elle se téléchargeait mais ne s'installait pas. Désormais Nindō se ferme, s'installe et se rouvre tout seul.

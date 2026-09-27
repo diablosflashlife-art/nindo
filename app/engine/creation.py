@@ -82,7 +82,7 @@ def traits_de_l_archetype(pack: LorePack, rs: Ruleset, fiche: Fiche,
 # « Je m'en remets au destin »
 # --------------------------------------------------------------------------
 def tirer_fiche(pack: LorePack, rs: Ruleset, fiche: Fiche, annee: int,
-                graine: int | None = None) -> Fiche:
+                graine: int | None = None, village_impose: str = "") -> Fiche:
     """Remplit village, origine, clan, voie et points quand le joueur refuse
     de les choisir.
 
@@ -107,7 +107,11 @@ def tirer_fiche(pack: LorePack, rs: Ruleset, fiche: Fiche, annee: int,
         or pack.liste("villages")
     # les grands villages d'abord : un genin sort rarement d'un village mineur
     majeurs = [v for v in villages if v.get("rang") == "majeur"] or villages
-    fiche.village_id = rng.choice(majeurs)["id"]
+    # Un joueur qui REJOINT une équipe s'en remet au destin pour tout, sauf
+    # pour le village : un ninja d'Iwa dans une équipe de Kumo n'a aucune
+    # raison d'être là. Le reste — maison, voie, secret — reste tiré.
+    choix = [v for v in majeurs if v["id"] == village_impose]
+    fiche.village_id = (choix[0] if choix else rng.choice(majeurs))["id"]
 
     # Origine : pondérée, parce que la majorité des ninjas n'ont pas de clan.
     # Le poids se lit dans le ruleset (`poids_tirage`), avec un repli raisonnable.
