@@ -237,7 +237,7 @@ clans:
   - id: fuma
     nom: "Fûma"
     epithete: "Les Ombres et les Lames"
-    rang: mineur
+    rang: majeur
     village: oto
     prononciation: "Fou-ma"
     bonus: {vitesse: 2, perception: 1}

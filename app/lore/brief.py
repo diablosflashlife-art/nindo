@@ -141,9 +141,13 @@ def _section_clans(pack, refs: Iterable[str], annee: int) -> str:
         vus.add(ref)
         # `secret` n'entre JAMAIS ici : c'est une amorce pour le moteur, pas
         # une information que le narrateur pourrait laisser transparaître.
-        nature = ("clan majeur, dont le pouvoir se transmet par le sang"
-                  if clan.get("rang") == "majeur"
-                  else "clan mineur, dont l'art se transmet par l'apprentissage")
+        # « Par le sang » seulement quand il y a une lignée : les Fûma sont un
+        # clan majeur sans le moindre don héréditaire.
+        if clan.get("rang") == "majeur":
+            nature = ("clan majeur, dont le pouvoir se transmet par le sang"
+                      if clan.get("lignee") else "clan majeur")
+        else:
+            nature = "clan mineur, dont l'art se transmet par l'apprentissage"
         surnom = f", « {clan['epithete']} »" if clan.get("epithete") else ""
         l = [f"**{clan.get('nom', ref)}**{surnom} — {nature} "
              f"de {(pack.village(clan.get('village', '')) or {}).get('nom_fr', '?')}"]

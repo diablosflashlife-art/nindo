@@ -3,6 +3,10 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.0.5 — Les Fûma, clan majeur
+
+- **Les Fûma deviennent un clan majeur d'Oto**, aux côtés des Raimei et des Kaguya.
+
 ## 1.0.4 — Clans majeurs et mineurs
 
 - **Clan majeur / Clan mineur** : les clans s'affichent désormais ainsi, sur l'accueil comme à la création.
