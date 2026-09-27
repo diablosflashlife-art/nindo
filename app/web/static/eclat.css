@@ -708,3 +708,33 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 .carte-detail span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--texte-3)}
 .cartes-joueur{display:grid;gap:6px;padding:10px 12px;border-radius:12px;border:1px dashed var(--liseré);margin-bottom:8px}
 #cartes-groupe:empty{display:none}
+
+/* ==========================================================================
+   MISSIONS EN ACTES, TEMPS MORT, BOUTIQUE — chantier C de Nindō 2.0
+   ========================================================================== */
+.actes{display:flex;gap:4px;margin:4px 0 2px}
+.actes i{flex:1;font-style:normal;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;text-align:center;padding:3px 4px;border-radius:6px;
+  color:var(--texte-3);border:1px solid var(--liseré);background:rgba(0,0,0,.2)}
+.actes i.fait{color:var(--texte-2);border-color:rgba(63,174,143,.35);background:rgba(63,174,143,.08)}
+.actes i.courant{color:var(--or);border-color:rgba(201,162,39,.55);background:var(--or-voile)}
+.sous.rapport{color:var(--or);font-style:italic}
+.stat.ligne-simple{grid-template-columns:1fr auto}
+.stat.ligne-simple .valeur.ok{color:var(--jade)} .stat.ligne-simple .valeur.ko{color:var(--vermillon-vif)}
+.temps-mort{border-color:rgba(201,162,39,.35)}
+.tm-choix{display:grid;gap:6px}
+.tm-choix form{margin:0;display:contents}
+.proposition.tm{width:100%;text-align:left}
+.boutique .legende .ryo{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:none;color:var(--or)}
+.boutique details{margin:0 0 8px}
+.boutique summary{cursor:pointer;color:var(--texte-3)}
+.articles{display:grid;gap:5px}
+.article{display:flex;align-items:center;gap:10px;margin:0;padding:7px 10px;border-radius:10px;
+  border:1px solid var(--liseré);background:rgba(255,255,255,.025)}
+.article.cher{opacity:.55}
+.art-corps{display:grid;gap:1px;flex:1;min-width:0}
+.art-corps b{font-size:13.5px;color:var(--texte)}
+.art-corps small{font-size:11px;color:var(--texte-3)}
+.art-effet{font-family:var(--mono);font-size:10.5px!important;color:var(--jade)!important}
+.article button.ligne{flex:0 0 auto;font-family:var(--mono);font-size:11px;white-space:nowrap}

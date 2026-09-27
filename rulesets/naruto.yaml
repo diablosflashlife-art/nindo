@@ -402,11 +402,18 @@ voyage:
   tours_max: 6              # et aucun trajet n'engloutit une échéance entière
 
 rangs_mission:
-  D: {danger: 1, xp: 40}
-  C: {danger: 3, xp: 90}
-  B: {danger: 5, xp: 180}
-  A: {danger: 7, xp: 320}
-  S: {danger: 9, xp: 600}
+  D: {danger: 1, xp: 40, ryo: 300}
+  C: {danger: 3, xp: 90, ryo: 800}
+  B: {danger: 5, xp: 180, ryo: 2000}
+  A: {danger: 7, xp: 320, ryo: 5000}
+  S: {danger: 9, xp: 600, ryo: 12000}
+
+# Ce qu'un genin a en poche en sortant de l'Académie, et ce que vaut une
+# note au débrief : la paie se multiplie, la réputation bouge.
+ryo_depart: 500
+debrief:
+  paie_par_note: {S: 1.5, A: 1.25, B: 1.0, C: 0.75, D: 0.5}
+  reputation_par_note: {S: 4, A: 3, B: 2, C: 1, D: -1}
 
 # ==========================================================================
 # APPRENDRE UNE TECHNIQUE

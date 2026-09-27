@@ -157,6 +157,11 @@ class Character(SQLModel, table=True):
     # Les techniques en cours d'apprentissage : {technique: pourcentage}. Chaque
     # séance d'entraînement JOUÉE (un tour, un jet) les fait avancer.
     entrainements: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    # Les ryô : ce que les missions rapportent et ce que la boutique coûte.
+    # La réputation : ce que le village pense de ce ninja, notée mission
+    # après mission au débrief.
+    ryo: int = 0
+    reputation: int = 0
     stats: dict = Field(default_factory=dict, sa_column=Column(JSON))
     ressources: dict = Field(default_factory=dict, sa_column=Column(JSON))
     inventaire: list = Field(default_factory=list, sa_column=Column(JSON))
@@ -214,6 +219,14 @@ class Quest(SQLModel, table=True):
     # mission acceptée depuis dix tours doit se diriger vers son dénouement.
     debut_tour: Optional[int] = None
     recompense_donnee: bool = False
+
+    # LA MISSION EN ACTES (Nindō 2.0, chantier C). La complication est tirée
+    # du lore à la création et se révèle à l'acte 2 ; le débrief note la
+    # mission (S à D), verse des ryô à l'équipe et fait bouger la réputation.
+    complication: str = Field(default="", sa_column=Column(Text))
+    note: str = ""                     # S | A | B | C | D, vide tant qu'elle n'est pas close
+    ryo: int = 0                       # ce qu'elle a rapporté
+    rapport: str = Field(default="", sa_column=Column(Text))
 
 
 class Fil(SQLModel, table=True):

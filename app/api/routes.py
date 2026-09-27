@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import secrets
 import time
 
@@ -467,6 +468,16 @@ def table(cid: int, request: Request, pj: int | None = None,
                               "nature": rel.nature, "pj": src.is_pc,
                               "role": src.role_campagne})
     relations.sort(key=lambda r: -abs(r["valeur"]))
+    # Les offres expirées (jamais prises) n'encombrent pas le panneau.
+    quetes_visibles = session.exec(select(Quest).where(
+        Quest.campaign_id == cid, Quest.statut != "expirée")).all()
+    # Les personnages d'avant la 1.4 n'avaient pas de bourse : ils reçoivent
+    # celle de la sortie de l'Académie, une fois.
+    for p in pjs:
+        if not p.ryo and not p.reputation and not any(q.note for q in quetes_visibles):
+            p.ryo = int(rs.data.get("ryo_depart", 500))
+            session.add(p)
+    session.commit()
 
     return templates.TemplateResponse("table.html", {
         "request": request, "camp": camp, "pj": actif, "pjs": pjs, "noms": noms,
@@ -478,8 +489,7 @@ def table(cid: int, request: Request, pj: int | None = None,
         "lieu": session.get(Location, actif.location_id) if actif.location_id else None,
         "relations": relations,
         # Les offres expirées (jamais prises) n'encombrent pas le panneau.
-        "quetes": session.exec(select(Quest).where(
-            Quest.campaign_id == cid, Quest.statut != "expirée")).all(),
+        "quetes": quetes_visibles,
         "techniques": _techniques(session, actif, pack, rs),
         "evenements": session.exec(select(Event).where(
             Event.campaign_id == cid).order_by(Event.tour.desc()).limit(15)).all(),
@@ -500,6 +510,10 @@ def table(cid: int, request: Request, pj: int | None = None,
         "rappel": (reprise.rappeler(session, camp, actif, rs, ecrire=False)
                    if reprise.necessaire(session, camp) else None),
         "carte": carte.itineraire(session, camp, rs, actif),
+        "boutique": _boutique(pack, actif),
+        "actes": {q.id: gen_missions.acte(q, camp.tour) for q in quetes_visibles},
+        "temps_mort": _temps_mort(session, camp, actif, quetes_visibles,
+                                  cbt.active(session, camp)),
         **_ctx_rencontre(session, camp, rs, actif),
     })
 
@@ -1169,6 +1183,90 @@ def progresser(cid: int, request: Request, stat: str = Form(...),
     if retour.startswith(f"/campagnes/{cid}/") and "//" not in retour[1:]:
         return RedirectResponse(retour, status_code=303)
     return RedirectResponse(f"/campagnes/{cid}?pj={pj.id}", status_code=303)
+
+
+def _boutique(pack, pj: Character) -> list[dict]:
+    """Ce que le comptoir du village vend à un ninja : le matériel courant et
+    standard, avec son prix. Les objets rares ou interdits ne s'achètent pas au
+    coin de la rue — ils se trouvent, ou se méritent."""
+    from app.engine import techniques as tech
+    from app.engine.combat import OBJETS_COMBAT
+    out = []
+    for a in pack.materiel():
+        prix = int(a.get("cout_ryo", 0) or 0)
+        if prix <= 0 or a.get("disponibilite") not in ("courant", "standard"):
+            continue
+        regle = OBJETS_COMBAT.get(a.get("id", ""))
+        out.append({"ref": a["id"], "nom": a.get("nom", a["id"]), "fr": a.get("fr", ""),
+                    "prix": prix, "usage": a.get("usage", ""),
+                    "effet": tech.resume({"effets": regle}) if regle else "",
+                    "tactique": (a.get("tactique") or "")[:140],
+                    "abordable": int(pj.ryo or 0) >= prix})
+    out.sort(key=lambda x: x["prix"])
+    return out
+
+
+def _temps_mort(session: Session, camp: Campaign, pj: Character,
+                quetes: list, rencontre) -> dict | None:
+    """Entre deux missions, sans affrontement : ce que l'équipe peut faire
+    de son temps. Des amorces d'action, pas des rails — le texte libre reste."""
+    if rencontre is not None or any(q.statut in ("acceptée", "en cours") for q in quetes):
+        return None
+    from app.engine import fils as fils_du_recit
+    proches = session.exec(select(Relation).where(
+        Relation.campaign_id == camp.id, Relation.cible_id == pj.id)
+        .order_by(Relation.valeur.desc()).limit(3)).all()
+    liens = []
+    for r in proches:
+        c = session.get(Character, r.source_id)
+        if c is not None and not c.is_pc and c.vivant:
+            liens.append({"nom": c.nom, "role": c.role_campagne or r.nature})
+    return {
+        "liens": liens,
+        "fils": [f.question for f in fils_du_recit.ouverts(session, camp)][:3],
+        "offres": [q for q in quetes if q.statut == "proposée"],
+    }
+
+
+@router.post("/campagnes/{cid}/acheter")
+def acheter(cid: int, ref: str = Form(...), character_id: int | None = Form(None),
+            session: Session = Depends(get_session)):
+    """Acheter au comptoir : les ryô descendent, l'objet entre dans la
+    besace. Hors combat seulement, et jamais à crédit."""
+    camp = _camp(session, cid)
+    _exige_en_cours(camp)
+    pj = _pj_actif(session, cid, character_id)
+    if not pj:
+        raise HTTPException(400, "Aucun personnage joueur")
+    if cbt.active(session, camp) is not None:
+        raise HTTPException(400, "On n'achète rien au milieu d'un combat.")
+    pack = charger_pack(camp.lore_pack)
+    article = next((a for a in _boutique(pack, pj) if a["ref"] == ref), None)
+    if article is None:
+        raise HTTPException(404, "Cet article n'est pas au comptoir.")
+    if int(pj.ryo or 0) < article["prix"]:
+        raise HTTPException(400, "Pas assez de ryô.")
+    pj.ryo = int(pj.ryo or 0) - article["prix"]
+    # « 5 kunai » devient « 6 kunai » ; sinon une ligne de plus.
+    inv = list(pj.inventaire or [])
+    nom = article["nom"]
+    for i, ligne in enumerate(inv):
+        m = re.match(r"^\s*(\d+)\s+(.*)$", ligne)
+        if m and m.group(2).strip().lower() == nom.lower():
+            inv[i] = f"{int(m.group(1)) + 1} {m.group(2)}"
+            break
+        if ligne.strip().lower() == nom.lower():
+            inv[i] = f"2 {ligne.strip()}"
+            break
+    else:
+        inv.append(nom)
+    pj.inventaire = inv
+    session.add(pj)
+    session.add(Event(campaign_id=camp.id, tour=camp.tour, type="achat",
+                      resume=f"{pj.nom} a acheté {nom} ({article['prix']} ryô).",
+                      importance=1, entites=[pj.id]))
+    session.commit()
+    return RedirectResponse(f"/campagnes/{cid}?pj={pj.id}#boutique", status_code=303)
 
 
 @router.post("/campagnes/{cid}/missions")

@@ -340,6 +340,7 @@
     </div>
 
     <div class="onglet-pan" data-onglet="gens" hidden>
+    {% include "_temps_mort.html" %}
     <div class="panneau serre">
       <p class="legende">{{ icone('relation', 13) }} Celles et ceux qui t'entourent</p>
       {% for r in relations %}
@@ -367,18 +368,29 @@
       {# Le compte à rebours est une information de jeu, pas une décoration :
          une mission dont le délai passe échoue vraiment, au tour suivant. #}
       {% set reste = (q.echeance_tour - camp.tour) if q.echeance_tour is not none else none %}
+      {% set a = actes.get(q.id) %}
       <div class="vignette">
         <span class="av">{{ q.rang }}</span>
         <span class="corps">
           <span class="titre">{{ q.titre }}
             <span class="tag {{ 'vermillon' if q.statut == 'échouée' else '' }}">{{ q.statut }}</span>
+            {% if q.note %}<span class="tag {{ 'jade' if q.note in ('S','A') else ('or' if q.note == 'B' else 'vermillon') }}" title="Note du débrief">note {{ q.note }}</span>{% endif %}
             {% if reste is not none and q.statut in ('proposée','acceptée','en cours') %}
               {% if reste <= 0 %}<span class="tag vermillon">délai dépassé</span>
               {% elif reste <= 2 %}<span class="tag vermillon">{{ reste }} tour{{ 's' if reste > 1 }}</span>
               {% else %}<span class="tag or">{{ reste }} tours</span>{% endif %}
             {% endif %}
           </span>
+          {% if a %}
+          {# LES TROIS ACTES : où en est la mission, et ce qui vient. #}
+          <span class="actes" title="Acte {{ a.numero }} — {{ a.nom }}">
+            {% for n, nom in [(1, 'Approche'), (2, 'Complication'), (3, 'Dénouement')] %}
+            <i class="{{ 'fait' if n < a.numero else ('courant' if n == a.numero else '') }}">{{ nom }}</i>
+            {% endfor %}
+          </span>
+          {% endif %}
           <span class="sous">{{ q.description|truncate(110, true, '…') }}</span>
+          {% if q.rapport %}<span class="sous rapport">{{ q.rapport }}</span>{% endif %}
           {% if q.statut == 'proposée' %}
           {# Une offre se prend ou se laisse : le joueur doit le décider, pas le
              deviner. Accepter lance l'arc de la mission. #}
@@ -406,6 +418,7 @@
     </div>
 
     <div class="onglet-pan" data-onglet="voie" hidden>
+    {% include "_boutique.html" %}
     <div class="panneau serre">
       <p class="legende">{{ icone('technique', 13) }} Techniques</p>
       {% for t in techniques %}
@@ -467,6 +480,11 @@
   }
   boutons.forEach(function (b) {
     b.addEventListener('click', function () { montrer(b.dataset.cible); });
+  });
+  /* Le temps mort renvoie vers un onglet (entraînement, boutique). */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('[data-onglet-cible]');
+    if (t) montrer(t.dataset.ongletCible);
   });
   var retenu = null;
   try { retenu = localStorage.getItem(CLE); } catch (e) { retenu = null; }

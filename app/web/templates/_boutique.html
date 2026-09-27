@@ -1,0 +1,31 @@
+{# ==========================================================================
+   LE COMPTOIR DU VILLAGE — la boutique (chantier C de Nindō 2.0).
+
+   Les ryô gagnés en mission s'y dépensent en matériel courant : kunai,
+   parchemins explosifs, fumigènes, pilules, trousse. Chaque article dit ce
+   qu'il FAIT en combat quand le moteur le sait. Fermée pendant un affrontement.
+   ========================================================================== #}
+<div class="panneau serre boutique" id="boutique">
+  <p class="legende">{{ icone('technique', 13) }} Comptoir du village
+    <span class="ryo">{{ pj.ryo }} ryô</span></p>
+  {% if rencontre %}
+  <p class="petit muted" style="margin:0">Fermé pendant l'affrontement.</p>
+  {% else %}
+  <details>
+    <summary class="petit">Ta besace : {{ pj.inventaire|join(', ') if pj.inventaire else 'vide' }}</summary>
+  </details>
+  <div class="articles">
+    {% for a in boutique %}
+    <form method="post" action="/campagnes/{{ camp.id }}/acheter" class="article {{ '' if a.abordable else 'cher' }}">
+      <input type="hidden" name="character_id" value="{{ pj.id }}">
+      <input type="hidden" name="ref" value="{{ a.ref }}">
+      <span class="art-corps">
+        <b>{{ a.nom }}</b>{% if a.fr %} <small>{{ a.fr }}</small>{% endif %}
+        <small class="art-effet">{{ a.effet or a.tactique }}</small>
+      </span>
+      <button type="submit" class="ligne" {% if not a.abordable %}disabled{% endif %}>{{ a.prix }} ryô</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

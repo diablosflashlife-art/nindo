@@ -351,6 +351,7 @@ def creer_personnage(session: Session, camp: Campaign, pack: LorePack, rs: Rules
         specialisation=fiche.specialisation,
         stats=stats, ressources=rs.ressources_defaut(),
         inventaire=list(rs.data.get("inventaire_depart", [])),
+        ryo=int(rs.data.get("ryo_depart", 500)),
         location_id=depart.id if depart else None,
         source="partie", role_campagne="joueur",
     )

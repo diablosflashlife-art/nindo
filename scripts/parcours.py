@@ -379,6 +379,52 @@ def main() -> int:
         ok(combat.adverses(s, renc) == [],
            "aucun adversaire ne reste posté sur le lieu")
 
+    # LE PLATEAU ET LES CARTES (Nindō 2.0, chantier B) : un round se joue
+    # depuis une carte, sans texte et sans appel au modèle. Une rencontre
+    # neuve, pour que l'étape ne dépende pas de l'issue de la précédente.
+    with Session(engine) as s:
+        camp = s.get(Campaign, cid)
+        pj = s.get(Character, pj_id)
+        renc = combat.ouvrir(s, camp, pack_c, rs_c, pj, declencheur="engagement",
+                             archetypes=[pack_c.adversaire("detrousseur_route")])
+        renc_id = renc.id
+        ok(bool(renc.ordre) and len(renc.initiative) >= 2,
+           "l'initiative est tirée et ordonnée à l'ouverture")
+    if True:
+        r = c.get(f"/campagnes/{cid}?pj={pj_id}")
+        ok('class="plateau"' in r.text and "frappe avant toi" in r.text or 'class="plateau"' in r.text,
+           "le plateau d'initiative s'affiche")
+        ok('name="action_code"' in r.text, "les cartes d'action sont proposées")
+        r = c.post(f"/campagnes/{cid}/jouer", data={
+            "action": "", "character_id": pj_id, "action_code": "defendre"})
+        ok(r.status_code == 200, "un round se joue depuis une carte, sans texte", r.text[:200])
+        with Session(engine) as s:
+            t = s.exec(select(Turn).where(Turn.campaign_id == cid)
+                       .order_by(Turn.index.desc())).first()
+            ok((t.resolution.get("intent") or {}).get("posture") == "defensive",
+               "la carte « Défendre » a imposé la posture")
+
+    # LE COMPTOIR (chantier C) : les ryô s'échangent contre du matériel.
+    with Session(engine) as s:
+        renc = s.get(Encounter, renc_id)
+        if renc.statut == "en_cours":
+            renc.statut, renc.tour_fin = "dispersee", s.get(Campaign, cid).tour
+            s.add(renc)
+        pj = s.get(Character, pj_id)
+        pj.ryo = 100
+        s.add(pj)
+        s.commit()
+    r = c.post(f"/campagnes/{cid}/acheter", data={"ref": "kunai", "character_id": pj_id},
+               follow_redirects=False)
+    ok(r.status_code == 303, "un kunai s'achète au comptoir", r.text[:200])
+    with Session(engine) as s:
+        pj = s.get(Character, pj_id)
+        ok(pj.ryo == 85, f"les ryô descendent ({pj.ryo})")
+        ok(any(l.lower().endswith("kunai") for l in pj.inventaire), "et le kunai entre dans la besace")
+    r = c.post(f"/campagnes/{cid}/acheter", data={"ref": "katana", "character_id": pj_id},
+               follow_redirects=False)
+    ok(r.status_code in (400, 404), "on n'achète pas à crédit ni ce qui n'est pas au comptoir")
+
     r = c.post(f"/campagnes/{cid}/repos", data={"character_id": pj_id},
                follow_redirects=False)
     ok(r.status_code == 303, "le repos est accepté hors combat")

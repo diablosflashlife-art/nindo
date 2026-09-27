@@ -3,6 +3,16 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.4.0 — Missions en actes, temps mort, ryô
+
+Troisième chantier de Nindō 2.0 : la campagne prend la forme d'une vraie campagne.
+
+- **Trois actes par mission** : *Approche*, *Complication*, *Dénouement*, affichés sur chaque mission engagée. La complication tirée à la création (elle n'était jamais conservée !) se révèle maintenant à l'acte 2, dans la scène.
+- **Le débrief** : chaque mission close reçoit une **note de S à D** (vite faite, personne à terre, tout le monde debout), une **paie en ryô** versée à toute l'équipe selon le rang et la note, et fait bouger la **réputation** du village envers vous. Le rapport se lit sous la mission.
+- **Les ryô** : 500 en poche à la sortie de l'Académie, visibles sur la fiche, comptés par le conteur.
+- **Le comptoir du village** (onglet *Techniques*) : kunai, shuriken, parchemins explosifs, fumigènes, pilules, trousse… avec leur effet en combat et leur prix. Fermé pendant un affrontement.
+- **Le temps mort** (onglet *Équipe*) : sans mission engagée, l'équipe a du temps — s'entraîner, passer un moment avec un proche, enquêter sur une question ouverte, souffler, faire ses achats, puis demander une mission au bureau.
+
 ## 1.3.0 — Le combat en rounds
 
 Deuxième chantier de Nindō 2.0 : l'affrontement devient un vrai combat de jeu de rôle, lisible et tactique.

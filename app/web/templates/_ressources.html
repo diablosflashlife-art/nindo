@@ -28,6 +28,14 @@
     <span class="jauge or">
       <i style="width:{{ ((pj.xp / xp_requis * 100) if xp_requis else 0)|round|int }}%"></i></span>
   </div>
+  <div class="stat ligne-simple">
+    <span class="nom">Ryô</span>
+    <span class="valeur">{{ pj.ryo }}</span>
+  </div>
+  <div class="stat ligne-simple">
+    <span class="nom">Réputation</span>
+    <span class="valeur {{ 'ok' if pj.reputation > 0 else ('ko' if pj.reputation < 0 else '') }}">{{ '%+d'|format(pj.reputation) }}</span>
+  </div>
 
   {% if pj.etats %}
   <div class="tags" style="margin-top:12px">

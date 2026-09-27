@@ -190,7 +190,8 @@ def _s_fiche(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
                           for k, v in pj.stats.items())
         fiche.append(f"Caractéristiques : {stats}")
     fiche.append("Ressources : " + ", ".join(f"{k} {v}"
-                                             for k, v in pj.ressources.items()))
+                                             for k, v in pj.ressources.items())
+                 + f", {int(pj.ryo or 0)} ryô, réputation {int(pj.reputation or 0):+d}")
     techs = _techniques_de(session, camp, pj, pack)
     fiche.append(f"Techniques : {', '.join(techs) if techs else 'aucune'}")
     fiche.append(f"Inventaire : "
@@ -357,13 +358,16 @@ def _s_missions(session: Session, camp: Campaign) -> str:
         offre = (" — simple offre du bureau : l'équipe ne l'a pas prise"
                  if q.statut == "proposée" else "")
         from app.engine.fils import ARC_DENOUEMENT
+        from app.engine.missions import acte as acte_de
         if q.statut in ("acceptée", "en cours") and q.debut_tour is not None \
                 and camp.tour - q.debut_tour >= ARC_DENOUEMENT:
             offre += (" — ELLE SE CONCLUT MAINTENANT : si la scène l'a menée à "
                       "son terme, son statut est « réussie » ; si elle l'a "
                       "perdue, « échouée ».")
+        a = acte_de(q, camp.tour)
+        acte_txt = f"\n  Acte {a['numero']} — {a['nom']} : {a['consigne']}" if a else ""
         lignes.append(f"- [{q.statut}] {q.titre} (rang {q.rang}){delai}{offre}\n"
-                      f"  {q.description[:160]}")
+                      f"  {q.description[:160]}{acte_txt}")
     return "### MISSIONS EN COURS\n" + "\n".join(lignes)
 
 

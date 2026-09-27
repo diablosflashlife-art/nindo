@@ -1,0 +1,42 @@
+{# ==========================================================================
+   LE TEMPS MORT — entre deux missions (chantier C de Nindō 2.0).
+
+   Sans mission engagée ni affrontement, la campagne respire : c'est là que
+   vivent l'entraînement, les liens, les soins, la boutique et les enquêtes.
+   Des amorces, jamais des rails — chaque bouton prépare une action que le
+   joueur peut réécrire avant de jouer.
+   ========================================================================== #}
+{% if temps_mort %}
+<div class="panneau serre temps-mort">
+  <p class="legende">{{ icone('destinee', 13) }} Temps mort</p>
+  <p class="petit muted" style="margin:0 0 8px">Pas de mission en cours : l'équipe a du temps.
+    {{ pj.ryo }} ryô en poche, réputation {{ '%+d'|format(pj.reputation) }}.</p>
+  <div class="tm-choix">
+    <button type="button" class="proposition tm" data-onglet-cible="voie"
+            title="Onglet Techniques : chaque séance se joue, avec un jet">S'entraîner</button>
+    {% for l in temps_mort.liens %}
+    <button type="button" class="proposition tm"
+            onclick="remplir(this.getAttribute('data-texte'))"
+            data-texte="Je passe un moment avec {{ l.nom }}, sans mission ni urgence, pour mieux le connaître.">
+      Un moment avec {{ l.nom }}<span class="risque faible">{{ l.role }}</span></button>
+    {% endfor %}
+    {% for q in temps_mort.fils %}
+    <button type="button" class="proposition tm"
+            onclick="remplir(this.getAttribute('data-texte'))"
+            data-texte="J'enquête : {{ q }}">
+      Enquêter<span class="risque moyen">{{ q|truncate(48, true, '…') }}</span></button>
+    {% endfor %}
+    <button type="button" class="proposition tm" data-onglet-cible="voie"
+            title="Onglet Techniques : le comptoir du village">Boutique</button>
+    {% if pj.etats or pj.ressources.get('pv', 0) < (pj.ressources.get('pv_max') or 40) %}
+    <form method="post" action="/campagnes/{{ camp.id }}/repos">
+      <input type="hidden" name="character_id" value="{{ pj.id }}">
+      <button type="submit" class="proposition tm">Souffler et panser tes blessures</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if not temps_mort.offres %}
+  <p class="petit muted" style="margin:8px 0 0">Quand vous êtes prêts : <em>Demander une mission au bureau</em>, ci-dessous.</p>
+  {% endif %}
+</div>
+{% endif %}

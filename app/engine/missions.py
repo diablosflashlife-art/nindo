@@ -148,11 +148,14 @@ def changer_statut(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
     effets = [f"Mission « {quete.titre} » : {avant} → {statut}"]
     if statut in ("acceptée", "en cours") and quete.debut_tour is None:
         quete.debut_tour = camp.tour
+    if statut == "échouée" and not quete.note:
+        effets += debriefer(session, camp, rs, quete, pj)
     if statut == "réussie" and not quete.recompense_donnee:
         quete.recompense_donnee = True
         from app.engine import progression
         xp = XP_PAR_RANG.get(quete.rang, 40)
         effets.append(f"Mission réussie ! {progression.gagner_xp(session, camp, rs, pj, xp)}")
+        effets += debriefer(session, camp, rs, quete, pj)
         if quete.donneur_id:
             from app.models import Relation
             rel = session.exec(select(Relation).where(
@@ -172,6 +175,102 @@ def changer_statut(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
                       resume=f"« {quete.titre} » : {statut}.",
                       importance=4 if statut in ("réussie", "échouée") else 2))
     session.add(quete)
+    return effets
+
+
+# ==========================================================================
+# LA MISSION EN ACTES, ET LE DÉBRIEF — chantier C de Nindō 2.0
+# ==========================================================================
+# Trois actes, mesurés en tours depuis l'engagement : l'approche (on part, on
+# se prépare, on arrive), la complication (ce que le commanditaire ignorait
+# se révèle), le dénouement (voir engine/fils.py pour la montée et la clôture).
+ACTES = [
+    {"numero": 1, "nom": "Approche", "depuis": 0,
+     "consigne": "L'équipe part, se prépare, arrive sur place. Pose le décor de "
+                 "la mission et ce qu'on y trouve d'abord — pas encore la surprise."},
+    {"numero": 2, "nom": "Complication", "depuis": 4,
+     "consigne": "CE QUE LE COMMANDITAIRE IGNORAIT SE RÉVÈLE MAINTENANT (si ce "
+                 "n'est pas déjà fait) : {complication}. Fais-le découvrir par "
+                 "l'équipe, dans la scène, sans le nommer comme une règle."},
+    {"numero": 3, "nom": "Dénouement", "depuis": 8,
+     "consigne": "La mission touche à sa fin : fais converger vers ce qui la "
+                 "conclura, succès ou échec."},
+]
+NOTES = ["S", "A", "B", "C", "D"]
+
+
+def acte(quete: Quest, tour: int) -> dict | None:
+    """L'acte courant d'une mission engagée, avec son nom et sa consigne."""
+    if quete.statut not in ("acceptée", "en cours") or quete.debut_tour is None:
+        return None
+    age = tour - quete.debut_tour
+    courant = ACTES[0]
+    for a in ACTES:
+        if age >= a["depuis"]:
+            courant = a
+    return {**courant, "age": age,
+            "consigne": courant["consigne"].format(
+                complication=quete.complication or "un imprévu que personne n'avait annoncé")}
+
+
+def noter(session: Session, camp: Campaign, quete: Quest, statut: str) -> str:
+    """La note du débrief, de S à D. Déterministe et lisible : vite fait,
+    personne à terre, tout le monde debout — c'est ce que le bureau regarde."""
+    if statut != "réussie":
+        return "D"
+    from app.models import Condition
+    rang = NOTES.index("B")
+    debut = quete.debut_tour if quete.debut_tour is not None else camp.tour
+    fenetre = max(1, (quete.echeance_tour or camp.tour) - debut)
+    if camp.tour - debut <= fenetre / 2:
+        rang -= 1                                    # vite fait
+    equipe = session.exec(select(Character).where(
+        Character.campaign_id == camp.id, Character.is_pc == True)).all()  # noqa: E712
+    tombes = session.exec(select(Condition).where(
+        Condition.campaign_id == camp.id, Condition.code == "hors_combat",
+        Condition.depuis_tour >= debut)).all()
+    if tombes and any(c.character_id in {p.id for p in equipe} for c in tombes):
+        rang += 1                                    # quelqu'un est tombé
+    elif all(int(p.ressources.get("pv", 0)) * 100
+             >= 60 * int(p.ressources.get("pv_max") or 40) for p in equipe):
+        rang -= 1                                    # tout le monde debout
+    return NOTES[max(0, min(len(NOTES) - 1, rang))]
+
+
+def debriefer(session: Session, camp: Campaign, rs: Ruleset, quete: Quest,
+              pj: Character) -> list[str]:
+    """Le rapport au bureau : la note, la paie de l'équipe, la réputation.
+
+    Sans lui, réussir vite et proprement ou de justesse se valaient. Le
+    joueur voit maintenant ce que le village retient de sa mission.
+    """
+    statut = quete.statut
+    note = noter(session, camp, quete, statut)
+    cfg = rs.data.get("debrief", {}) or {}
+    paie = float((cfg.get("paie_par_note") or {}).get(note, 1.0))
+    reput = int((cfg.get("reputation_par_note") or {}).get(note, 0))
+    base = int((rs.data.get("rangs_mission", {}).get(quete.rang) or {}).get("ryo", 300))
+    ryo = int(round(base * paie / 10) * 10) if statut == "réussie" else 0
+
+    equipe = session.exec(select(Character).where(
+        Character.campaign_id == camp.id, Character.is_pc == True)).all()  # noqa: E712
+    for p in equipe:
+        p.ryo = int(p.ryo or 0) + ryo
+        p.reputation = int(p.reputation or 0) + reput
+        session.add(p)
+
+    quete.note, quete.ryo = note, ryo
+    quete.rapport = (f"Rapport au bureau des missions — note {note}. "
+                     + (f"{ryo} ryô versés à chaque membre de l'équipe. " if ryo else "Aucune paie. ")
+                     + f"Réputation {reput:+d}.")
+    session.add(quete)
+    session.add(MemoryFact(
+        campaign_id=camp.id, tour=camp.tour, nature="fait", importance=3,
+        texte=f"Débrief de « {quete.titre} » : note {note}, réputation {reput:+d}."))
+    effets = [f"Débrief : note {note}"]
+    if ryo:
+        effets.append(f"ryô +{ryo} (chacun)")
+    effets.append(f"réputation {reput:+d}")
     return effets
 
 
@@ -355,6 +454,9 @@ def generer(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
         description=(brut.get("description") or "").strip()[:1200],
         enjeu=(brut.get("enjeu") or oss["enjeu_type"]).strip()[:600],
         echeance_tour=oss["echeance_tour"],
+        # Gardée pour l'acte 2 : c'est ce que le commanditaire ignorait.
+        complication=" ".join(filter(None, [oss.get("complication", ""),
+                                            oss.get("revers", "")]))[:400],
     )
     session.add(quete)
 
