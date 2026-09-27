@@ -226,15 +226,16 @@ class OllamaProvider:
         return r.json()["message"]["content"]
 
     def text(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float | None = None) -> str:
+             temperature: float | None = None, max_tokens: int | None = None) -> str:
         brut = self._chat(system, user, self._modele(rapide),
                           temperature=(settings.llm_temperature
                                        if temperature is None else temperature),
-                          max_tokens=settings.llm_max_narration)
+                          max_tokens=max_tokens or settings.llm_max_narration)
         return achever(epurer(nettoyer(brut)))
 
     def flux(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float | None = None) -> Iterator[str]:
+             temperature: float | None = None,
+             max_tokens: int | None = None) -> Iterator[str]:
         """La même génération, rendue morceau par morceau.
 
         C'est le plus gros écart entre ce que le jeu vaut et ce qu'on en
@@ -246,7 +247,7 @@ class OllamaProvider:
             system, user, self._modele(rapide),
             temperature=(settings.llm_temperature
                          if temperature is None else temperature),
-            max_tokens=settings.llm_max_narration)
+            max_tokens=max_tokens or settings.llm_max_narration)
         payload["stream"] = True
         filtre = FiltreReflexion()
         with self.client.stream("POST", f"{self.base}/api/chat",
@@ -301,7 +302,7 @@ class MockProvider:
         self.rng = random.Random(7)
 
     def text(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float = 0.85) -> str:
+             temperature: float = 0.85, max_tokens: int | None = None) -> str:
         if "PRÉCÉDEMMENT" in system.upper():
             return ("[mock] Tu as quitté la scène sans avoir refermé ce que tu "
                     "y avais ouvert. Ce qui t'attendait t'attend encore, et "
@@ -315,7 +316,7 @@ class MockProvider:
                 "un peu trop longtemps pour être innocent.")
 
     def flux(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float = 0.85) -> Iterator[str]:
+             temperature: float = 0.85, max_tokens: int | None = None) -> Iterator[str]:
         """Découpe la réponse factice en morceaux, sans attente artificielle :
         le parcours de bout en bout doit rester instantané."""
         texte = self.text(system, user, rapide=rapide, temperature=temperature)
@@ -605,9 +606,9 @@ class EnLigneProvider:
 
     # --- l'interface du moteur --------------------------------------------------
     def text(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float | None = None) -> str:
+             temperature: float | None = None, max_tokens: int | None = None) -> str:
         payload = self._payload(
-            system, user, rapide=rapide, max_tokens=settings.llm_max_narration,
+            system, user, rapide=rapide, max_tokens=max_tokens or settings.llm_max_narration,
             temperature=settings.llm_temperature if temperature is None else temperature)
         texte = achever(epurer(nettoyer(self._message(self._envoyer(payload)))))
         if not texte:
@@ -615,9 +616,10 @@ class EnLigneProvider:
         return texte
 
     def flux(self, system: str, user: str, *, rapide: bool = False,
-             temperature: float | None = None) -> Iterator[str]:
+             temperature: float | None = None,
+             max_tokens: int | None = None) -> Iterator[str]:
         payload = self._payload(
-            system, user, rapide=rapide, max_tokens=settings.llm_max_narration,
+            system, user, rapide=rapide, max_tokens=max_tokens or settings.llm_max_narration,
             temperature=settings.llm_temperature if temperature is None else temperature)
         payload["stream"] = True
         filtre = FiltreReflexion()

@@ -132,3 +132,63 @@ def test_une_mission_reussie_rapporte_une_fois(partie, rs):
     q.statut = "en cours"
     missions.changer_statut(session, camp, pj, rs, q, "réussie")
     assert (pj.niveau, pj.xp) == xp_apres
+
+
+# ------------------------------------------- trouvé en partie à deux joueurs
+def test_le_recit_ne_ressuscite_pas_une_mission_echouee(partie, rs):
+    session, camp, pj, _ = partie
+    q = Quest(campaign_id=camp.id, titre="Premier rapport", statut="échouée")
+    session.add(q)
+    session.commit()
+    assert missions.changer_statut(session, camp, pj, rs, q, "en cours") == []
+    assert q.statut == "échouée"
+
+
+def test_le_recit_ne_fait_pas_echouer_une_offre(partie, rs):
+    session, camp, pj, _ = partie
+    q = Quest(campaign_id=camp.id, titre="Livraison scellée", statut="proposée")
+    session.add(q)
+    session.commit()
+    missions.changer_statut(session, camp, pj, rs, q, "échouée")
+    assert q.statut == "proposée"
+    # le joueur, lui, peut la refuser
+    missions.changer_statut(session, camp, pj, rs, q, "refusée", par_le_joueur=True)
+    assert q.statut == "refusée"
+
+
+def test_accepter_laisse_le_temps_de_mener_la_mission(partie, rs):
+    session, camp, pj, _ = partie
+    q = Quest(campaign_id=camp.id, titre="Livraison", statut="proposée",
+              echeance_tour=camp.tour + 2)
+    session.add(q)
+    session.commit()
+    missions.changer_statut(session, camp, pj, rs, q, "acceptée", par_le_joueur=True)
+    assert q.echeance_tour >= camp.tour + missions.DELAI_MINIMAL_ACCEPTEE
+
+
+def test_une_question_a_rallonge_est_coupee():
+    from app.engine.validators import valider_consequences
+
+    class _Vide:
+        def exec(self, *_):
+            class R:
+                def all(self):
+                    return []
+            return R()
+    net, _ = valider_consequences(_Vide(), Campaign(id=1, nom="x"), {
+        "mystere_nouveau": "Qui ou quoi a laissé cette substance noire sur l'aiguille "
+                           "rocheuse, et quel est son lien avec la créature ?"})
+    assert net["mystere_nouveau"].endswith("?")
+    assert len(net["mystere_nouveau"]) <= 80
+    assert "créature" not in net["mystere_nouveau"]
+
+
+def test_le_narrateur_est_rappele_a_l_ordre_pour_l_autre_joueur():
+    from app.engine.turn import Preparation
+    prep = Preparation(action="a", intent={}, bloc="b", resolution={}, systeme="s",
+                       contexte_narrateur="c", effets_combat=[], liens_techniques=[],
+                       en_combat=False, autres_pj=["Raiden Kaze"])
+    invite = prep.invite()
+    assert "Raiden Kaze appartient à un AUTRE joueur humain" in invite
+    assert invite.index("AUTRE joueur") > invite.index("RÉSULTAT MÉCANIQUE")
+    assert prep.max_tokens < 600

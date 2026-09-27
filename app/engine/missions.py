@@ -114,15 +114,37 @@ XP_PAR_RANG = {"D": 40, "C": 80, "B": 150, "A": 250, "S": 400}
 CONFIANCE_DONNEUR = 10
 
 
+# Une mission terminée ne revient pas. Mesuré en partie réelle : le récit
+# « ressuscitait » une mission échouée, puis la faisait échouer une seconde fois.
+TERMINES = ("réussie", "échouée", "refusée", "expirée")
+# Ce que le RÉCIT a le droit de décider, selon l'état de la mission. Une offre
+# qu'on n'a pas prise ne peut ni réussir ni échouer : elle se prend, ou elle
+# expire. Les boutons du joueur, eux, passent par `par_le_joueur=True`.
+TRANSITIONS_DU_RECIT = {
+    "proposée": ("acceptée", "en cours"),
+    "acceptée": ("en cours", "réussie", "échouée"),
+    "en cours": ("réussie", "échouée"),
+}
+# Le temps qu'on laisse à une mission acceptée : de quoi monter et se dénouer.
+DELAI_MINIMAL_ACCEPTEE = 15
+
+
 def changer_statut(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
-                   quete: Quest, statut: str) -> list[str]:
+                   quete: Quest, statut: str, *, par_le_joueur: bool = False) -> list[str]:
     """Le seul chemin pour changer le statut d'une mission — bouton du joueur
     ou constat du récit. Il date l'engagement (l'horloge de l'arc, voir
     engine/fils.py) et verse la récompense une fois, et une seule."""
-    if not statut or quete.statut == statut:
+    if not statut or quete.statut == statut or quete.statut in TERMINES:
+        return []
+    if not par_le_joueur and statut not in TRANSITIONS_DU_RECIT.get(quete.statut, ()):
         return []
     avant = quete.statut
     quete.statut = statut
+    if statut in ("acceptée", "en cours") and avant == "proposée":
+        # Accepter une mission à deux tours de son échéance la condamnait :
+        # mesuré en partie réelle, acceptée au tour 19, échouée au tour 22.
+        quete.echeance_tour = max(quete.echeance_tour or 0,
+                                  camp.tour + DELAI_MINIMAL_ACCEPTEE)
     effets = [f"Mission « {quete.titre} » : {avant} → {statut}"]
     if statut in ("acceptée", "en cours") and quete.debut_tour is None:
         quete.debut_tour = camp.tour

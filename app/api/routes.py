@@ -634,7 +634,7 @@ def flux(cid: int, request: Request, jeton: str):
                 yield _sse("etape", "Le maître du jeu raconte…")
 
                 morceaux = []
-                for morceau in get_llm().flux(prep.systeme, prep.invite()):
+                for morceau in get_llm().flux(prep.systeme, prep.invite(), max_tokens=prep.max_tokens):
                     morceaux.append(morceau)
                     yield _sse("mot", morceau.replace("\r", ""))
 
@@ -916,7 +916,8 @@ def repondre_mission(cid: int, qid: int, choix: str,
     statut = {"accepter": "acceptée", "refuser": "refusée"}.get(choix)
     if statut is None or quete.statut != "proposée":
         raise HTTPException(400, "Cette offre n'est plus ouverte")
-    gen_missions.changer_statut(session, camp, pj, _regles(camp), quete, statut)
+    gen_missions.changer_statut(session, camp, pj, _regles(camp), quete, statut,
+                                par_le_joueur=True)
     session.commit()
     return RedirectResponse(f"/campagnes/{cid}?pj={pj.id}", status_code=303)
 

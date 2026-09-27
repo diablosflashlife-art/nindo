@@ -147,7 +147,8 @@ Règles :
 - `graine_intrigue` : une conséquence latente qui pourra ressurgir. Peut rester vide.
 - `mystere_nouveau` : si la scène a posé une question NOUVELLE et importante
   qu'elle laisse sans réponse (qui a fait ça ? que cache cette personne ?),
-  formule-la en une question courte. Vide la plupart du temps, et jamais une
+  formule-la en une question de QUINZE MOTS AU PLUS, qui ne porte que sur une
+  chose. Vide la plupart du temps, et jamais une
   question déjà présente dans FILS OUVERTS.
 - `mysteres_resolus` : pour chaque question de FILS OUVERTS à laquelle la scène
   a apporté une VRAIE réponse, son numéro et la réponse en une phrase. Un indice

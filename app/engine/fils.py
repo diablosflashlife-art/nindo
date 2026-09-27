@@ -129,7 +129,8 @@ def consigne(session: Session, camp: Campaign) -> str:
             lignes.append(
                 f"### DÉNOUEMENT — « {quete.titre} »\nLa mission est engagée "
                 f"depuis {age} tours. Elle se conclut DANS CETTE SCÈNE : succès "
-                "ou échec, mais un résultat net, que l'équipe peut rapporter. "
+                "ou échec, mais un résultat net, que l'équipe peut rapporter — "
+                "dis-le en clair (l'objectif est atteint, ou il est perdu). "
                 "Les fils qui y sont liés reçoivent leur réponse.")
         elif age >= ARC_MONTEE:
             lignes.append(

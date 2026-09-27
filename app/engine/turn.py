@@ -74,13 +74,35 @@ class Preparation:
     registre: str = "ordinaire"     # le souffle de la scène, voir rythme.py
     entre_deux: bool = False        # aucune mission, aucun affrontement
     allure: str = rythme.ALLURE_DEFAUT  # court | normal | long, choisi par la table
+    autres_pj: list = field(default_factory=list)  # noms des autres joueurs présents
 
     def invite(self) -> str:
         return (f"{self.contexte_narrateur}\n\n### ACTION DU JOUEUR\n{self.action}"
                 f"\n\n### RÉSULTAT MÉCANIQUE (non négociable)\n{self.bloc}"
                 f"\n\n{rythme.consigne(self.registre, self.entre_deux, self.allure)}"
-                f"\n\nRaconte la suite : {self.longueur}, jamais plus, en texte "
+                f"\n\n{self.rappel_joueurs}"
+                f"Raconte la suite : {self.longueur}, jamais plus, en texte "
                 f"simple, sans astérisques ni mise en forme.")
+
+    @property
+    def rappel_joueurs(self) -> str:
+        """Rappelé en FIN d'invite, comme la longueur : mesuré en partie à
+        deux, le narrateur faisait parler et agir l'autre joueur malgré la
+        règle écrite plus haut."""
+        if not self.autres_pj:
+            return ""
+        noms = " et ".join(self.autres_pj)
+        return (f"{noms} {'appartient' if len(self.autres_pj) == 1 else 'appartiennent'} "
+                f"à un AUTRE joueur humain : ne lui fais rien dire, ne lui fais "
+                f"rien décider ni tenter. Tu peux seulement décrire ce qu'il "
+                f"perçoit ou subit.\n\n")
+
+    @property
+    def max_tokens(self) -> int:
+        """Le plafond de génération suit la longueur demandée : un modèle en
+        ligne dépassait la cible « court » d'un tiers. ~1,5 jeton par mot
+        français, marge comprise ; `achever` recoud la dernière phrase."""
+        return int(rythme.fourchette(self.registre, self.allure)[1] * 1.55) + 20
 
     @property
     def longueur(self) -> str:
@@ -96,7 +118,7 @@ def jouer(session: Session, camp: Campaign, pj: Character, action: str,
           levier: str = "") -> Turn:
     """Joue un tour d'un bloc. Voir `preparer` / `conclure` pour le détail."""
     prep = preparer(session, camp, pj, action, rs, pack, posture, levier)
-    narration = get_llm().text(prep.systeme, prep.invite())
+    narration = get_llm().text(prep.systeme, prep.invite(), max_tokens=prep.max_tokens)
     return conclure(session, camp, pj, prep, narration, rs, pack)
 
 
@@ -229,7 +251,8 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
         systeme=systeme, contexte_narrateur=contexte_narrateur,
         effets_combat=effets_combat, liens_techniques=liens_techniques,
         en_combat=en_combat, registre=registre, entre_deux=entre_deux,
-        allure=getattr(camp, "allure", None) or rythme.ALLURE_DEFAUT)
+        allure=getattr(camp, "allure", None) or rythme.ALLURE_DEFAUT,
+        autres_pj=[c.nom for c in _autres_pj(session, camp, pj)])
 
 
 def conclure(session: Session, camp: Campaign, pj: Character,
@@ -368,6 +391,17 @@ def conclure(session: Session, camp: Campaign, pj: Character,
 
 
 # --------------------------------------------------------------------------
+def _autres_pj(session: Session, camp: Campaign, pj: Character) -> list[Character]:
+    """Les autres personnages JOUEURS dans la même scène que celui qui agit."""
+    if not pj.location_id:
+        return []
+    return list(session.exec(select(Character).where(
+        Character.campaign_id == camp.id,
+        Character.location_id == pj.location_id,
+        Character.is_pc == True,           # noqa: E712
+        Character.id != pj.id)).all())
+
+
 def _pnjs_presents(session: Session, camp: Campaign,
                    pj: Character) -> list[Character]:
     if not pj.location_id:

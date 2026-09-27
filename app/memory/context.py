@@ -348,6 +348,12 @@ def _s_missions(session: Session, camp: Campaign) -> str:
             delai = f" — {r} tours restants"
         offre = (" — simple offre du bureau : l'équipe ne l'a pas prise"
                  if q.statut == "proposée" else "")
+        from app.engine.fils import ARC_DENOUEMENT
+        if q.statut in ("acceptée", "en cours") and q.debut_tour is not None \
+                and camp.tour - q.debut_tour >= ARC_DENOUEMENT:
+            offre += (" — ELLE SE CONCLUT MAINTENANT : si la scène l'a menée à "
+                      "son terme, son statut est « réussie » ; si elle l'a "
+                      "perdue, « échouée ».")
         lignes.append(f"- [{q.statut}] {q.titre} (rang {q.rang}){delai}{offre}\n"
                       f"  {q.description[:160]}")
     return "### MISSIONS EN COURS\n" + "\n".join(lignes)

@@ -3,6 +3,14 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.0.1 — Jouer à deux
+
+- **À plusieurs, chacun garde la main** : le conteur ne fait plus jamais parler ni décider le personnage d'un autre joueur.
+- **Missions plus fiables** : une mission terminée ne revient plus, une offre ignorée n'échoue plus, et accepter une mission laisse le temps de la mener.
+- **Les missions se concluent** : arrivée à son dénouement, une mission est déclarée réussie ou échouée, avec sa récompense.
+- **Questions plus nettes** : le récit pose une question à la fois, en quelques mots.
+- **Récits courts vraiment courts** : la longueur demandée est désormais tenue.
+
 ## 1.0.0 — La voie s'ouvre
 
 - **Nindō devient une application** : une fenêtre à elle, un lanceur, et des mises à jour automatiques.

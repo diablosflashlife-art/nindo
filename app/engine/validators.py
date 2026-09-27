@@ -43,6 +43,14 @@ def valider_consequences(session: Session, camp: Campaign, brut: dict) -> tuple[
                  "mystere_nouveau": "", "mysteres_resolus": []}
 
     question = (brut.get("mystere_nouveau") or "").strip()
+    if len(question) > 80:
+        # « Qui a laissé cette substance, et quel est son lien avec la
+        # créature ? » : une question à la fois, la première.
+        for coupe in (", et ", " et quel", " et qui", " et pourquoi", ", "):
+            i = question.find(coupe, 30)
+            if i > 0:
+                question = question[:i].rstrip(" ,?") + " ?"
+                break
     if len(question) >= 8:
         net["mystere_nouveau"] = question[:200] if question.endswith("?") \
             else question[:198].rstrip(" .") + " ?"
