@@ -4,16 +4,16 @@
 # ==========================================================================
 techniques:
   # --- rang E : bases de l'Académie
-  - {id: kawarimi, nom: "Kawarimi no Jutsu", fr: "Substitution", categorie: ninjutsu, rang: E,
+  - {id: kawarimi, effets: {type: garde, garde: 4, esquive: true}, nom: "Kawarimi no Jutsu", fr: "Substitution", categorie: ninjutsu, rang: E,
      cout: {chakra: 2}, stat: ninjutsu, prononciation: "Ka-wa-ri-mi",
      effet: "Échange sa place avec un objet pour esquiver une attaque."}
-  - {id: bunshin, nom: "Bunshin no Jutsu", fr: "Clone", categorie: ninjutsu, rang: E,
+  - {id: bunshin, effets: {type: garde, garde: 3}, nom: "Bunshin no Jutsu", fr: "Clone", categorie: ninjutsu, rang: E,
      cout: {chakra: 3}, stat: controle_chakra, prononciation: "Boune-chine",
      effet: "Crée des clones illusoires sans consistance."}
-  - {id: henge, nom: "Henge no Jutsu", fr: "Métamorphose", categorie: ninjutsu, rang: E,
+  - {id: henge, effets: {type: garde, garde: 2}, nom: "Henge no Jutsu", fr: "Métamorphose", categorie: ninjutsu, rang: E,
      cout: {chakra: 3}, stat: controle_chakra, prononciation: "Hène-gué",
      effet: "Prend l'apparence d'une autre personne ou d'un objet."}
-  - {id: nawanuke, nom: "Nawanuke no Jutsu", fr: "Libération", categorie: ninjutsu, rang: E,
+  - {id: nawanuke, effets: {type: mobilite}, nom: "Nawanuke no Jutsu", fr: "Libération", categorie: ninjutsu, rang: E,
      cout: {chakra: 2}, stat: controle_chakra, effet: "Se libère de liens ou d'entraves."}
   - {id: taijutsu_base, nom: "Taijutsu de l'Académie", fr: "Les kata de base", categorie: taijutsu, rang: E,
      cout: {chakra: 0}, stat: taijutsu, effet: "Enchaînements simples enseignés à tous."}
@@ -21,10 +21,10 @@ techniques:
      cout: {chakra: 0}, stat: perception, effet: "Shuriken et kunai, à distance moyenne."}
 
   # --- rang D
-  - {id: shunshin, nom: "Shunshin no Jutsu", fr: "Course fulgurante", categorie: ninjutsu, rang: D,
+  - {id: shunshin, effets: {type: mobilite}, nom: "Shunshin no Jutsu", fr: "Course fulgurante", categorie: ninjutsu, rang: D,
      cout: {chakra: 5}, stat: vitesse, prononciation: "Chounne-chine",
      effet: "Franchit une courte distance en un éclair, laissant une traînée de feuilles."}
-  - {id: kanashibari, nom: "Kanashibari no Jutsu", fr: "Paralysie temporaire", categorie: genjutsu, rang: D,
+  - {id: kanashibari, effets: {type: controle, tours: 1, etat: "paralysé", stat_defense: endurance}, nom: "Kanashibari no Jutsu", fr: "Paralysie temporaire", categorie: genjutsu, rang: D,
      cout: {chakra: 6}, stat: genjutsu, prononciation: "Ka-na-chi-ba-ri",
      effet: "Cloue une cible sur place par la seule pression du regard."}
   - {id: konoha_senpuu, nom: "Konoha Senpû", fr: "Tourbillon de Konoha", categorie: taijutsu, rang: D,
@@ -34,20 +34,20 @@ techniques:
   - {id: fuin_base, nom: "Fûin no Jutsu", fr: "Technique de scellement", categorie: fuinjutsu, rang: D,
      cout: {chakra: 6}, stat: controle_chakra, prononciation: "Fou-ine",
      effet: "Scelle un objet ou contient un flux de chakra pendant un temps limité."}
-  - {id: iryo_base, nom: "Shôsen Jutsu", fr: "Paume mystique", categorie: iryo, rang: D,
+  - {id: iryo_base, effets: {type: soin, pv: 8}, nom: "Shôsen Jutsu", fr: "Paume mystique", categorie: iryo, rang: D,
      cout: {chakra: 7}, stat: controle_chakra, prononciation: "Choh-sène",
      effet: "Referme une plaie et atténue la douleur. Ne remplace pas le repos."}
-  - {id: kagemane, nom: "Kagemane no Jutsu", fr: "Manipulation des ombres", categorie: ninjutsu, rang: D,
+  - {id: kagemane, effets: {type: controle, tours: 1, etat: "pris dans l'ombre", stat_defense: vitesse}, nom: "Kagemane no Jutsu", fr: "Manipulation des ombres", categorie: ninjutsu, rang: D,
      cout: {chakra: 7}, stat: intelligence, clan: nara, prononciation: "Ka-gué-ma-né",
      effet: "Relie son ombre à celle de la cible et impose ses mouvements."}
   - {id: jyuken_base, nom: "Jûken", fr: "Le poing souple", categorie: taijutsu, rang: D,
      cout: {chakra: 4}, stat: taijutsu, clan: hyuga, prononciation: "Djou-kène",
      degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 6)",
      effet: "Frappe le réseau de chakra plutôt que le corps. Ignore une partie de la défense."}
-  - {id: shintenshin, nom: "Shintenshin no Jutsu", fr: "Transfert d'esprit", categorie: ninjutsu, rang: D,
+  - {id: shintenshin, effets: {type: controle, tours: 2, etat: "corps volé", stat_defense: genjutsu}, nom: "Shintenshin no Jutsu", fr: "Transfert d'esprit", categorie: ninjutsu, rang: D,
      cout: {chakra: 9}, stat: genjutsu, clan: yamanaka, prononciation: "Chine-tène-chine",
      effet: "Prend le contrôle du corps d'une cible. Le corps de l'utilisateur reste sans défense."}
-  - {id: kikaichu, nom: "Kikaichû", fr: "Insectes parasites", categorie: ninjutsu, rang: D,
+  - {id: kikaichu, effets: {type: affaiblir, degats: 2, jet: -2, tours: 2, etat: "chakra dévoré"}, nom: "Kikaichû", fr: "Insectes parasites", categorie: ninjutsu, rang: D,
      cout: {chakra: 5}, stat: perception, clan: aburame, prononciation: "Ki-kaï-tchou",
      effet: "Déploie une nuée d'insectes qui dévorent le chakra."}
   - {id: gijuu, nom: "Gijû Ninpô", fr: "Combat symbiotique", categorie: taijutsu, rang: D,
@@ -59,26 +59,26 @@ techniques:
      effet: "Augmente sa masse et sa force. Coûte des calories autant que du chakra."}
 
   # --- rang C
-  - {id: katon_goukakyuu, nom: "Katon : Gôkakyû no Jutsu", fr: "Boule de feu suprême",
+  - {id: katon_goukakyuu, effets: {type: attaque, degats: 4, zone: true}, nom: "Katon : Gôkakyû no Jutsu", fr: "Boule de feu suprême",
      categorie: ninjutsu, element: katon, rang: C, cout: {chakra: 8}, stat: ninjutsu,
      prononciation: "Ka-tone Goh-ka-kyou",
      degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
      effet: "Projette une large sphère de flammes.", clan: uchiha}
-  - {id: suiton_suiryudan, nom: "Suiton : Suiryûdan no Jutsu", fr: "Dragon d'eau",
+  - {id: suiton_suiryudan, effets: {type: attaque, degats: 5}, nom: "Suiton : Suiryûdan no Jutsu", fr: "Dragon d'eau",
      categorie: ninjutsu, element: suiton, rang: C, cout: {chakra: 9}, stat: ninjutsu,
      prononciation: "Soui-tone Soui-ryou-dane",
      degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
      effet: "Une masse d'eau prend la forme d'un dragon et charge.",
      limites: {requiert_terrain: {eau: [presente, abondante]}}}
-  - {id: doton_doryuheki, nom: "Doton : Doryûheki", fr: "Mur de terre",
+  - {id: doton_doryuheki, effets: {type: garde, garde: 7}, nom: "Doton : Doryûheki", fr: "Mur de terre",
      categorie: ninjutsu, element: doton, rang: C, cout: {chakra: 7}, stat: ninjutsu,
      prononciation: "Do-tone Do-ryou-hé-ki",
      effet: "Élève une paroi de roche. Défense solide, mobilité nulle."}
-  - {id: futon_daitoppa, nom: "Fûton : Daitoppa", fr: "Grande percée",
+  - {id: futon_daitoppa, effets: {type: attaque, degats: 2, zone: true}, nom: "Fûton : Daitoppa", fr: "Grande percée",
      categorie: ninjutsu, element: futon, rang: C, cout: {chakra: 7}, stat: ninjutsu,
      prononciation: "Fou-tone Daï-tope-pa",
      effet: "Souffle violent qui disperse et déséquilibre."}
-  - {id: kage_bunshin, nom: "Kage Bunshin no Jutsu", fr: "Multiclonage",
+  - {id: kage_bunshin, effets: {type: clones, clones: 2}, nom: "Kage Bunshin no Jutsu", fr: "Multiclonage",
      categorie: ninjutsu, rang: C, cout: {chakra: 14}, stat: chakra,
      prononciation: "Ka-gué Boune-chine",
      prerequis: {stats: {chakra: 16}},
@@ -89,13 +89,13 @@ techniques:
      prononciation: "Kou-tchi-yo-sé",
      prerequis: {trait: pacte_invocation},
      effet: "Appelle la créature liée par contrat."}
-  - {id: genjutsu_brume, nom: "Magen : Narakumi no Jutsu", fr: "Vision de l'enfer", categorie: genjutsu, rang: C,
+  - {id: genjutsu_brume, effets: {type: controle, tours: 2, etat: "terrifié", stat_defense: genjutsu}, nom: "Magen : Narakumi no Jutsu", fr: "Vision de l'enfer", categorie: genjutsu, rang: C,
      cout: {chakra: 8}, stat: genjutsu, effet: "La cible revit ses pires terreurs et reste figée quelques instants."}
-  - {id: kenjutsu_ecole, nom: "Konoha-ryû : Mikazuki no Mai", fr: "Danse du croissant de lune", categorie: kenjutsu, rang: C,
+  - {id: kenjutsu_ecole, effets: {type: attaque, degats: 5}, nom: "Konoha-ryû : Mikazuki no Mai", fr: "Danse du croissant de lune", categorie: kenjutsu, rang: C,
      cout: {chakra: 3}, stat: vitesse, prononciation: "Kène-djou-tsou",
      degats: "max(1, roll + (atk_power - 10) // 2 + 5 - (def_power - 10) // 4)",
      effet: "Des clones frappent ensemble au sabre, sous trois angles à la fois.", limites: {requiert_objet: sabre}}
-  - {id: kugutsu_base, nom: "Kugutsu no Jutsu", fr: "Art des marionnettes", categorie: kugutsu, rang: C,
+  - {id: kugutsu_base, effets: {type: attaque, degats: 4}, nom: "Kugutsu no Jutsu", fr: "Art des marionnettes", categorie: kugutsu, rang: C,
      cout: {chakra: 9}, stat: controle_chakra, prononciation: "Kou-gou-tsou",
      effet: "Dirige une marionnette armée par des fils de chakra.", village: suna}
 
@@ -110,13 +110,13 @@ techniques:
   - {id: fuin_scellement, nom: "Fûin no Makimono", fr: "Parchemin de scellement", categorie: fuinjutsu, rang: C,
      cout: {chakra: 7}, stat: controle_chakra,
      effet: "Range une arme, un corps ou un document dans un parchemin. Ce qu'on scelle ne se voit plus."}
-  - {id: fuin_barriere, nom: "Shishienjin", fr: "Formation des quatre flammes violettes", categorie: fuinjutsu, rang: C,
+  - {id: fuin_barriere, effets: {type: garde, garde: 8}, nom: "Shishienjin", fr: "Formation des quatre flammes violettes", categorie: fuinjutsu, rang: C,
      cout: {chakra: 10}, stat: controle_chakra,
      effet: "Quatre marques posées à l'avance ferment un espace. Il faut du temps, et savoir où l'ennemi viendra."}
-  - {id: iryo_diagnostic, nom: "Chakura no Mesu", fr: "Scalpel de chakra", categorie: iryo, rang: D,
+  - {id: iryo_diagnostic, effets: {type: attaque, degats: 3}, nom: "Chakura no Mesu", fr: "Scalpel de chakra", categorie: iryo, rang: D,
      cout: {chakra: 4}, stat: intelligence, prononciation: "Choh-sène",
      effet: "Une lame de chakra qui lit et tranche sous la peau sans l'ouvrir : fracture, poison, hémorragie."}
-  - {id: iryo_antidote, nom: "Dokunuki no Jutsu", fr: "Extraction du poison", categorie: iryo, rang: C,
+  - {id: iryo_antidote, effets: {type: soin, pv: 6, leve: poison}, nom: "Dokunuki no Jutsu", fr: "Extraction du poison", categorie: iryo, rang: C,
      cout: {chakra: 8}, stat: controle_chakra,
      effet: "Attire le poison hors d'une plaie et le contient. Épuisant, et rarement complet."}
   - {id: kenjutsu_iai, nom: "Iaidô", fr: "L'art de la dégaine", categorie: kenjutsu, rang: D,
@@ -129,7 +129,7 @@ techniques:
      degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 5)",
      effet: "Une lame occupe, l'autre frappe. Demande deux armes et beaucoup de patience.",
      limites: {requiert_objet: sabre}}
-  - {id: genjutsu_leurre, nom: "Kori Shinchû no Jutsu", fr: "L'esprit dévoyé", categorie: genjutsu, rang: D,
+  - {id: genjutsu_leurre, effets: {type: controle, tours: 1, etat: "égaré", stat_defense: perception}, nom: "Kori Shinchû no Jutsu", fr: "L'esprit dévoyé", categorie: genjutsu, rang: D,
      cout: {chakra: 5}, stat: genjutsu,
      effet: "La cible voit un chemin, un lieu ou une silhouette qui n'existe pas, et le suit."}
   - {id: filature, nom: "Kakuremino no Jutsu", fr: "Cape d'invisibilité", categorie: espionnage, rang: D,
@@ -141,7 +141,7 @@ techniques:
   - {id: deguisement, nom: "Hensôjutsu", fr: "L'art du déguisement", categorie: espionnage, rang: D,
      cout: {chakra: 1}, stat: social,
      effet: "Le vêtement, la démarche, l'accent. Tient tant qu'on ne pose pas de question précise."}
-  - {id: taijutsu_ecole_souple, nom: "Shishi Rendan", fr: "L'enchaînement du lion", categorie: taijutsu, rang: D,
+  - {id: taijutsu_ecole_souple, effets: {type: attaque, degats: 3}, nom: "Shishi Rendan", fr: "L'enchaînement du lion", categorie: taijutsu, rang: D,
      cout: {chakra: 2}, stat: taijutsu,
      degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 5)",
      effet: "Un coup projette l'adversaire en l'air ; la suite le ramène au sol avant qu'il ne retombe."}
@@ -150,7 +150,7 @@ techniques:
      effet: "Marcher sur un mur, sur l'eau, sur une branche mouillée. La base de tout le reste."}
 
   # --- rang B et au-delà
-  - {id: chidori, nom: "Chidori", fr: "Mille oiseaux", categorie: ninjutsu, element: raiton,
+  - {id: chidori, effets: {type: attaque, degats: 9}, nom: "Chidori", fr: "Mille oiseaux", categorie: ninjutsu, element: raiton,
      rang: A, cout: {chakra: 18}, stat: ninjutsu, stat_secondaire: controle_chakra,
      prononciation: "Tchi-do-ri",
      prerequis: {stats: {controle_chakra: 22, vitesse: 18}, niveau_min: 9,
@@ -159,21 +159,21 @@ techniques:
      limites: {usages_par_jour: 4,
                risque_sans_prerequis: "Trajectoire incontrôlable : l'utilisateur s'expose au contre."},
      effet: "Concentre la foudre dans la main et charge en ligne droite."}
-  - {id: rasengan, nom: "Rasengan", fr: "Orbe tourbillonnant", categorie: ninjutsu,
+  - {id: rasengan, effets: {type: attaque, degats: 9}, nom: "Rasengan", fr: "Orbe tourbillonnant", categorie: ninjutsu,
      rang: A, cout: {chakra: 18}, stat: controle_chakra,
      prononciation: "Ra-sène-gane",
      prerequis: {stats: {controle_chakra: 24}, niveau_min: 9},
      degats: "max(1, roll + (atk_power - 10) // 2 + 8 - (def_power - 10) // 4)",
      limites: {usages_par_jour: 4},
      effet: "Sphère de chakra en rotation pure, sans transformation élémentaire."}
-  - {id: raiton_armure, nom: "Raiton no Yoroi", fr: "Armure de foudre", categorie: ninjutsu, element: raiton,
+  - {id: raiton_armure, effets: {type: garde, garde: 6}, nom: "Raiton no Yoroi", fr: "Armure de foudre", categorie: ninjutsu, element: raiton,
      rang: B, cout: {chakra: 12}, stat: ninjutsu, prononciation: "Raï-tone",
      effet: "Enveloppe le corps de foudre : vitesse et réflexes décuplés, chakra dévoré."}
   - {id: fuin_contrat, nom: "Keiyaku Fûin", fr: "Sceau de contrat", categorie: fuinjutsu, rang: B,
      cout: {chakra: 14}, stat: controle_chakra,
      prerequis: {stats: {controle_chakra: 20}},
      effet: "Lie deux volontés par un pacte écrit. Le briser a un prix."}
-  - {id: iryo_avance, nom: "In'yu Shômetsu", fr: "Guérison par dissipation", categorie: iryo, rang: B,
+  - {id: iryo_avance, effets: {type: soin, pv: 18}, nom: "In'yu Shômetsu", fr: "Guérison par dissipation", categorie: iryo, rang: B,
      cout: {chakra: 15}, stat: controle_chakra,
      prerequis: {stats: {controle_chakra: 20, intelligence: 16}},
      effet: "Répare des lésions profondes. Exige calme et précision."}
@@ -181,10 +181,10 @@ techniques:
   # Chacune est la PORTE du clan : ce qu'un genin de cette maison sait faire au
   # premier jour. Le reste de l'héritage passe par la lignée, et s'éveille.
   # Descriptions adaptées du wiki Solve.
-  - {id: suika, nom: "Suika no Jutsu", fr: "Liquéfaction", categorie: ninjutsu, element: suiton,
+  - {id: suika, effets: {type: garde, garde: 5, esquive: true}, nom: "Suika no Jutsu", fr: "Liquéfaction", categorie: ninjutsu, element: suiton,
      rang: D, cout: {chakra: 5}, stat: controle_chakra, clan: hozuki, prononciation: "Soui-ka",
      effet: "Une partie du corps perd sa cohésion et devient eau le temps d'un coup. La lame passe au travers."}
-  - {id: kirigakure, nom: "Kirigakure no Jutsu", fr: "Dissimulation dans la brume", categorie: ninjutsu,
+  - {id: kirigakure, effets: {type: garde, garde: 5}, nom: "Kirigakure no Jutsu", fr: "Dissimulation dans la brume", categorie: ninjutsu,
      element: suiton, rang: D, cout: {chakra: 5}, stat: controle_chakra, clan: karatachi,
      prononciation: "Ki-ri-ga-kou-ré",
      effet: "Une brume épaisse tombe sur la zone. Pour un Karatachi, elle ne cache rien."}
@@ -192,16 +192,16 @@ techniques:
      rang: D, cout: {chakra: 6}, stat: ninjutsu, clan: hoshigaki,
      degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 4)",
      effet: "L'eau prend la forme d'une mâchoire et mord. Plus forte au contact de la mer."}
-  - {id: suna_shigure, nom: "Sabaku Shigure", fr: "Averse de sable", categorie: ninjutsu, element: doton,
+  - {id: suna_shigure, effets: {type: affaiblir, degats: 3, jet: -2, tours: 1, etat: "aveuglé par le sable", zone: true}, nom: "Sabaku Shigure", fr: "Averse de sable", categorie: ninjutsu, element: doton,
      rang: D, cout: {chakra: 6}, stat: controle_chakra, clan: jishaku, prononciation: "Sa-ba-kou Chi-gou-ré",
      effet: "Le sable se lève et s'abat en pluie dense. Aveugle, blesse, et ne retombe pas au hasard."}
-  - {id: inton_voile, nom: "Inton : Kage Tobari", fr: "Le voile de l'ombre", categorie: genjutsu, rang: D,
+  - {id: inton_voile, effets: {type: controle, tours: 1, etat: "face à sa peur", stat_defense: genjutsu}, nom: "Inton : Kage Tobari", fr: "Le voile de l'ombre", categorie: genjutsu, rang: D,
      cout: {chakra: 6}, stat: genjutsu, clan: mugen, prononciation: "I-ne-tone",
      effet: "L'ombre intérieure de la cible remonte à la surface : elle voit ce qu'elle craint le plus."}
   - {id: futon_guide, nom: "Fûton : Kaze no Michibiki", fr: "Le vent qui guide", categorie: ninjutsu, element: futon, rang: D,
      cout: {chakra: 4}, stat: perception, clan: ensho,
      effet: "Écouter le vent : il dit d'où vient la tempête, où passe la route, qui approche."}
-  - {id: onpa, nom: "Onpa Shindô", fr: "Onde de vibration", categorie: ninjutsu, rang: D,
+  - {id: onpa, effets: {type: affaiblir, degats: 2, jet: -2, tours: 1, etat: "assourdi"}, nom: "Onpa Shindô", fr: "Onde de vibration", categorie: ninjutsu, rang: D,
      cout: {chakra: 5}, stat: ninjutsu, clan: raimei, prononciation: "One-pa",
      degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 6)",
      effet: "Le corps émet une vibration qui trouble l'équilibre et l'ouïe. La défense ne l'arrête pas."}
@@ -209,11 +209,11 @@ techniques:
      cout: {chakra: 4}, stat: taijutsu, clan: kaguya, prononciation: "Té-chi Sène-dane",
      degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 4)",
      effet: "Les os des doigts jaillissent et partent comme des projectiles."}
-  - {id: fuma_lancer, nom: "Fûma Shuriken", fr: "Le grand shuriken démontable", categorie: taijutsu, rang: D,
+  - {id: fuma_lancer, effets: {type: attaque, degats: 4}, nom: "Fûma Shuriken", fr: "Le grand shuriken démontable", categorie: taijutsu, rang: D,
      cout: {chakra: 1}, stat: perception, clan: fuma, prononciation: "Fou-ma",
      degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
      effet: "Un shuriken géant qu'on lance à deux mains. Le second, caché dans l'ombre du premier, est celui qui tue."}
-  - {id: brume_toxique, nom: "Dokugiri", fr: "Brume empoisonnée", categorie: ninjutsu, rang: D,
+  - {id: brume_toxique, effets: {type: affaiblir, degats: 2, jet: -2, tours: 2, etat: "empoisonné", zone: true}, nom: "Dokugiri", fr: "Brume empoisonnée", categorie: ninjutsu, rang: D,
      cout: {chakra: 5}, stat: controle_chakra, clan: salamandre,
      effet: "La poche salamandre libère un souffle empoisonné. Qui reste dedans s'affaiblit."}
   - {id: raiton_decharge, nom: "Raiton : Jibashi", fr: "Décharge électrique", categorie: ninjutsu, element: raiton, rang: D,
@@ -228,15 +228,15 @@ techniques:
      cout: {chakra: 3}, stat: taijutsu, clan: narukami,
      degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
      effet: "Le Raiton traverse les muscles et accélère la frappe au-delà de ce qu'un corps devrait permettre."}
-  - {id: essaim_abeilles, nom: "Mitsubachi Senbon", fr: "Les aiguilles de la ruche", categorie: ninjutsu, rang: D,
+  - {id: essaim_abeilles, effets: {type: affaiblir, degats: 2, jet: -1, tours: 2, etat: "piqué"}, nom: "Mitsubachi Senbon", fr: "Les aiguilles de la ruche", categorie: ninjutsu, rang: D,
      cout: {chakra: 4}, stat: perception, clan: kamizuru,
      effet: "Les abeilles répondent aux phéromones : elles piquent, pistent, ou forment un mur vivant."}
-  - {id: mine_explosive, nom: "Bakuton : Jiraiken", fr: "Le poing-mine", categorie: ninjutsu, element: doton, rang: D,
+  - {id: mine_explosive, effets: {type: attaque, degats: 5}, nom: "Bakuton : Jiraiken", fr: "Le poing-mine", categorie: ninjutsu, element: doton, rang: D,
      cout: {chakra: 6}, stat: ninjutsu, clan: clan_bakuton, prononciation: "Ba-kou-tone",
      degats: "max(1, roll + (atk_power - 10) // 2 + 5 - (def_power - 10) // 4)",
      effet: "Le chakra imprègne le sol ou un objet, qui détone au contact. Ne se désamorce pas."}
 
-  - {id: amaterasu, nom: "Amaterasu", fr: "Illumination céleste", categorie: ninjutsu, element: katon, rang: S,
+  - {id: amaterasu, effets: {type: attaque, degats: 14, zone: true}, nom: "Amaterasu", fr: "Illumination céleste", categorie: ninjutsu, element: katon, rang: S,
      cout: {chakra: 28}, stat: genjutsu, prononciation: "A-ma-té-ra-sou",
      prerequis: {capacite: sharingan, capacite_palier: 4},
      degats: "max(1, roll + (atk_power - 10) // 2 + 14 - (def_power - 10) // 6)",

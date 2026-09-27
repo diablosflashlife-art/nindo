@@ -666,3 +666,45 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 @keyframes de-roule{0%{transform:rotate(-8deg) translateY(-1px)}50%{transform:rotate(6deg) translateY(1px)}100%{transform:rotate(-8deg) translateY(-1px)}}
 @keyframes de-pose{0%{transform:scale(1.35)}60%{transform:scale(.94)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.bloc-jet.roule .de,.bloc-jet.pose .de{animation:none}}
+
+/* ==========================================================================
+   LE PLATEAU DE COMBAT ET LES CARTES — chantier B de Nindō 2.0
+   ========================================================================== */
+.plateau{display:grid;gap:6px;margin-top:10px}
+.combattant{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;
+  border:1px solid var(--liseré);background:rgba(0,0,0,.22)}
+.combattant.joueur{border-color:rgba(201,162,39,.55);background:var(--or-voile)}
+.combattant.allie{border-color:rgba(63,174,143,.35)}
+.combattant.ennemi{border-color:rgba(217,69,47,.35)}
+.combattant.hors{opacity:.42}
+.combattant .init{flex:0 0 auto;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;
+  font-family:var(--mono);font-size:12px;color:var(--texte-2);border:1px solid var(--liseré-fort);background:rgba(0,0,0,.3)}
+.comb-corps{display:grid;gap:4px;flex:1;min-width:0}
+.comb-tete{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.comb-nom{font-family:var(--display);font-size:15px;color:var(--texte)}
+.comb-avant{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--vermillon-vif)}
+.comb-tier{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--texte-3)}
+.comb-etat{font-family:var(--mono);font-size:11px;color:var(--texte-3)}
+.comb-jauges{display:grid;grid-template-columns:1fr auto 1fr auto;gap:4px 8px;align-items:center}
+.comb-jauges .jauge{height:6px}
+.comb-chiffre{font-family:var(--mono);font-size:11px;color:var(--texte-2)}
+.comb-chiffre small{color:var(--texte-3)}
+.comb-conditions{display:flex;flex-wrap:wrap;gap:4px}
+.comb-conditions .tag{font-size:10px;padding:1px 7px}
+.comb-tactique{font-size:12px;line-height:1.4;color:var(--texte-3);font-style:italic}
+
+.cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin:0 0 8px}
+.carte-action{display:grid;gap:3px;padding:10px 12px;border-radius:12px;cursor:pointer;
+  border:1px solid var(--liseré);background:rgba(255,255,255,.03);transition:border-color .2s,background .2s,transform .2s}
+.carte-action input{position:absolute;opacity:0;pointer-events:none}
+.carte-action b{font-family:var(--display);font-size:15px;color:var(--texte)}
+.carte-action small{font-size:11.5px;line-height:1.35;color:var(--texte-3)}
+.carte-action.choisie{border-color:var(--vermillon-vif);background:var(--vermillon-voile);transform:translateY(-1px)}
+.carte-action.choisie b{color:var(--vermillon-vif)}
+.carte-action.indispo{opacity:.4;cursor:not-allowed}
+.cartes-details{display:grid;gap:8px;margin:0 0 10px}
+.carte-detail{display:grid;gap:4px}
+.carte-detail[hidden]{display:none!important}
+.carte-detail span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--texte-3)}
+.cartes-joueur{display:grid;gap:6px;padding:10px 12px;border-radius:12px;border:1px dashed var(--liseré);margin-bottom:8px}
+#cartes-groupe:empty{display:none}

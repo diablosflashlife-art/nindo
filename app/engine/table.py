@@ -24,7 +24,7 @@ from sqlmodel import Session, select
 from app.engine import turn as moteur
 from app.llm.prompts import NARRATEUR, NARRATEUR_COMBAT, pour_le_groupe
 from app.lore.pack import LorePack
-from app.models import Campaign, Character, Turn
+from app.models import Campaign, Character, CharacterTechnique, Turn
 from app.rules.engine import Ruleset
 
 
@@ -49,6 +49,10 @@ def fusionner(preps: list[tuple[Character, moteur.Preparation]]) -> moteur.Prepa
     meneur, base = preps[0]
     en_combat = any(p.en_combat for _, p in preps)
     resolution = dict(base.resolution)
+    # Un round partagé : un seul bloc et une seule liste d'effets, sinon le
+    # narrateur lirait le même round deux fois.
+    partage = en_combat and all(
+        (p.resolution.get("combat") or {}).get("partage") for _, p in preps)
     resolution["joueurs"] = [
         {"id": pj.id, "nom": pj.nom, "joueur": pj.joueur or "", "action": p.action,
          "resolution": {k: v for k, v in p.resolution.items()
@@ -59,14 +63,16 @@ def fusionner(preps: list[tuple[Character, moteur.Preparation]]) -> moteur.Prepa
     return moteur.Preparation(
         action="\n".join(f"{pj.nom} : {' '.join(p.action.split())}" for pj, p in preps),
         intent=base.intent,
-        bloc="\n\n".join(f"— {pj.nom} —\n{p.bloc}" for pj, p in preps),
+        bloc=(base.bloc if partage else
+              "\n\n".join(f"— {pj.nom} —\n{p.bloc}" for pj, p in preps)),
         resolution=resolution,
         systeme=pour_le_groupe(NARRATEUR_COMBAT if en_combat else NARRATEUR),
         # Le contexte est celui du meneur, où les autres joueurs sont présentés
         # comme « à ne pas faire agir ». Ce tour-ci, ils ont déclaré : on le dit.
         contexte_narrateur=base.contexte_narrateur.replace(
             AVERTISSEMENT_AUTRES_PJ, AVERTISSEMENT_TOUR_DE_TABLE),
-        effets_combat=[f"{pj.nom} — {e}" for pj, p in preps for e in p.effets_combat],
+        effets_combat=(list(base.effets_combat) if partage else
+                       [f"{pj.nom} — {e}" for pj, p in preps for e in p.effets_combat]),
         liens_techniques=[lt for _, p in preps for lt in p.liens_techniques],
         en_combat=en_combat,
         registre=base.registre,
@@ -92,7 +98,7 @@ def arbitrer(session: Session, camp: Campaign, entrees: list[dict], rs: Ruleset,
         out.append((pj.id, moteur.arbitrer(
             session, camp, pj, e["action"], rs, pack,
             posture=e.get("posture", ""), levier=e.get("levier", ""),
-            entrainement=e.get("entrainement", ""))))
+            entrainement=e.get("entrainement", ""), choix=e.get("choix"))))
     return out
 
 
@@ -104,15 +110,30 @@ def resoudre(session: Session, camp: Campaign,
     mène, la préparation fusionnée). `choix` : {id du personnage: {"technique",
     "forcer"}}, ce que chacun a décidé sur son annonce."""
     choix = choix or {}
+    persos = [(session.get(Character, pid), arb) for pid, arb in arbitrages]
+    persos = [(pj, arb) for pj, arb in persos if pj is not None]
+
+    # EN COMBAT, UN SEUL ROUND POUR TOUTE LA TABLE : chaque joueur agit à son
+    # rang d'initiative, les adversaires ripostent une fois. Jouer un round par
+    # joueur faisait riposter deux fois et avançait le compteur deux fois.
+    round_partage = None
+    from app.engine import combat
+    renc = combat.active(session, camp)
+    if renc is not None and len(persos) > 1 and all(a.en_combat for _, a in persos):
+        actions = []
+        for pj, arb in persos:
+            liens = [session.get(CharacterTechnique, i) for i in arb.liens_techniques]
+            maitrise = max((ct.maitrise for ct in liens if ct is not None), default=50)
+            actions.append((pj, arb.intent, arb.total_bonus, maitrise))
+        round_partage = combat.round_de_table(session, camp, pack, rs, renc, actions)
+
     preps = []
-    for pid, arb in arbitrages:
-        pj = session.get(Character, pid)
-        if pj is None:
-            continue
-        c = choix.get(pid) or {}
+    for pj, arb in persos:
+        c = choix.get(pj.id) or {}
         preps.append((pj, moteur.resoudre(
             session, camp, pj, arb, rs, pack,
-            technique=c.get("technique", ""), forcer=bool(c.get("forcer")))))
+            technique=c.get("technique", ""), forcer=bool(c.get("forcer")),
+            round_partage=round_partage)))
     if len(preps) == 1:
         return preps[0]
     return preps[0][0], fusionner(preps)

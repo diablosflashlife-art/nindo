@@ -1,0 +1,15 @@
+{# Les cartes de chaque joueur du tour de table, pendant un round. Renvoyées
+   en hx-swap-oob après chaque round, comme celles du joueur seul. #}
+{% from "_cartes.html" import cartes %}
+<div id="cartes-groupe" {% if oob %}hx-swap-oob="true"{% endif %}>
+{% if rencontre %}
+  {% for p in pjs_au_combat %}
+  {% if choix_par_pj.get(p.id) %}
+  <div class="cartes-joueur" data-pj="{{ p.id }}">
+    <span class="jet-nom">{{ p.nom }}</span>
+    {{ cartes('_' ~ p.id, choix_par_pj[p.id], actions_combat, leviers) }}
+  </div>
+  {% endif %}
+  {% endfor %}
+{% endif %}
+</div>

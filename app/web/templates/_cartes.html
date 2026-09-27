@@ -1,0 +1,64 @@
+{# ==========================================================================
+   LES CARTES D'ACTION D'UN ROUND — chantier B de Nindō 2.0.
+
+   Le joueur choisit une CARTE (attaquer, technique, défendre, manœuvre,
+   objet, se désengager) et ce qu'elle engage : la cible, la technique avec
+   son effet et son coût, l'objet, l'avantage cherché. L'arbitre n'a plus rien
+   à deviner, et le round se prépare sans appel au modèle.
+
+   Macro : `suffixe` distingue les joueurs du tour de table (« _12 »).
+   ========================================================================== #}
+{% macro cartes(suffixe, choix, actions, leviers) %}
+<div class="cartes" data-suffixe="{{ suffixe }}">
+  {% for code, a in actions.items() %}
+  {% set possible = (code != 'technique' or choix.techniques) and (code != 'objet' or choix.objets) %}
+  <label class="carte-action {{ 'choisie' if loop.first }} {{ 'indispo' if not possible }}">
+    <input type="radio" name="action_code{{ suffixe }}" value="{{ code }}"
+           {% if loop.first %}checked{% endif %} {% if not possible %}disabled{% endif %}>
+    <b>{{ a.label }}</b>
+    <small>{{ a.aide }}</small>
+  </label>
+  {% endfor %}
+</div>
+<div class="cartes-details">
+  {% if choix.cibles %}
+  <label class="carte-detail" data-pour="attaquer assaut technique objet">
+    <span>Cible</span>
+    <select name="cible{{ suffixe }}">
+      {% for c in choix.cibles %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      {% for c in choix.allies %}<option value="{{ c }}">{{ c }} (allié — pour un soin)</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% if choix.techniques %}
+  <label class="carte-detail" data-pour="technique" hidden>
+    <span>Technique</span>
+    <select name="technique{{ suffixe }}">
+      {% for t in choix.techniques %}
+      <option value="{{ t.ref }}" {% if not t.dispo %}disabled{% endif %}>
+        {{ t.nom }} — {{ t.resume }}{% if t.cout %} · {{ t.cout }} chakra{% endif %}{% if not t.dispo %} (pas assez de chakra){% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% if choix.objets %}
+  <label class="carte-detail" data-pour="objet" hidden>
+    <span>Objet</span>
+    <select name="objet{{ suffixe }}">
+      {% for o in choix.objets %}
+      <option value="{{ o.ref }}">{{ o.nom }} — {{ o.resume }}{% if o.consomme %} · usage unique{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <label class="carte-detail" data-pour="manoeuvre" hidden>
+    <span>Avantage cherché</span>
+    <select name="levier{{ suffixe }}">
+      {% for l in leviers %}
+      <option value="{{ l.code }}" {% if l.acquis %}disabled{% endif %}>
+        {{ l.libelle }}{% if l.acquis %} — déjà acquis{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+</div>
+{% endmacro %}

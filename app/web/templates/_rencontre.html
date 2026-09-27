@@ -1,36 +1,50 @@
 {# ==========================================================================
-   LE PANNEAU D'AFFRONTEMENT
-   Rendu à deux endroits : dans la table au chargement, et renvoyé en
-   hx-swap-oob après chaque échange. Sans ce second usage, il fallait recharger
-   la page pour voir l'état des adversaires changer.
+   LE PLATEAU DE COMBAT — chantier B de Nindō 2.0.
 
-   AUCUN CHIFFRE DE POINTS DE VIE. Le joueur lit « blessé », « il tient à
-   peine », et une jauge. Afficher 7/28 le ferait jouer contre une barre de
-   vie ; le lui cacher entièrement le laisserait sans prise sur la scène.
+   Rendu à deux endroits : dans la table au chargement, et renvoyé en
+   hx-swap-oob après chaque round. Chaque combattant à sa place dans l'ordre
+   d'initiative ; ceux qui frappent avant le joueur sont marqués.
+
+   TON CAMP EN CHIFFRES, LE CAMP ADVERSE EN ÉTAT APPARENT. Afficher 7/28 pour
+   un ennemi ferait jouer contre une barre de vie ; le lui cacher entièrement
+   le laisserait sans prise sur la scène. Le levier « renseignement » dévoile
+   son rang et sa manière de se battre : c'est ce qu'on gagne à observer.
    ========================================================================== #}
 <div id="rencontre" {% if oob %}hx-swap-oob="true"{% endif %}>
 {% if rencontre %}
 <div class="panneau rencontre">
-  <p class="legende">Affrontement · échange {{ rencontre.echange + 1 }} / {{ echanges_max }}</p>
+  <p class="legende">Affrontement · round {{ rencontre.echange + 1 }} / {{ echanges_max }}</p>
   <p class="renc-titre">{{ rencontre.titre }}</p>
 
-  {# --- l'adversaire, et ce qu'on voit de lui --------------------------- #}
-  {% for e in ennemis %}
-  <div class="stat ennemi">
-    <span class="nom">{{ e.nom }}</span>
-    <span class="valeur"><span class="tag vermillon">{{ e.etat }}</span></span>
-    <span class="jauge sang"><i style="width:{{ e.pct }}%"></i></span>
+  <div class="plateau">
+    {% for c in plateau %}
+    <div class="combattant {{ c.camp }} {{ 'hors' if c.hors }}" data-id="{{ c.id }}">
+      <span class="init" title="Initiative">{{ c.initiative }}</span>
+      <span class="comb-corps">
+        <span class="comb-tete">
+          <span class="comb-nom">{{ c.nom }}</span>
+          {% if c.avant_toi and not c.hors %}<span class="comb-avant">frappe avant toi</span>{% endif %}
+          {% if c.tier_label %}<span class="comb-tier">{{ c.tier_label }}</span>{% endif %}
+        </span>
+        {% if c.camp == 'ennemi' %}
+        <span class="jauge sang"><i style="width:{{ 0 if c.hors else c.pct }}%"></i></span>
+        <span class="comb-etat">{{ c.etat }}</span>
+        {% else %}
+        <span class="comb-jauges">
+          <span class="jauge jade" title="Points de vie"><i style="width:{{ c.pct }}%"></i></span>
+          <span class="comb-chiffre">{{ c.pv }}<small>/{{ c.pv_max }}</small></span>
+          <span class="jauge chakra" title="Chakra"><i style="width:{{ (c.chakra * 100 / c.chakra_max)|round|int if c.chakra_max else 0 }}%"></i></span>
+          <span class="comb-chiffre">{{ c.chakra }}<small>/{{ c.chakra_max }}</small></span>
+        </span>
+        {% endif %}
+        {% if c.conditions %}
+        <span class="comb-conditions">{% for k in c.conditions %}<span class="tag {{ 'jade' if 'garde' in k or 'doublure' in k else 'vermillon' }}">{{ k }}</span>{% endfor %}</span>
+        {% endif %}
+        {% if c.tactique %}<span class="comb-tactique">{{ c.tactique }}</span>{% endif %}
+      </span>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-
-  {% if hors_combat %}
-  <p class="petit muted" style="margin:.4rem 0 0">
-    Hors de combat : {{ hors_combat|join(', ') }}</p>
-  {% endif %}
-  {% if allies_au_combat %}
-  <p class="petit muted" style="margin:.2rem 0 0">
-    À tes côtés : {{ allies_au_combat|join(', ') }}</p>
-  {% endif %}
 
   {# --- les avantages : ce qui réduit l'écart, pas un bonus au dé ------- #}
   {% if leviers_acquis %}

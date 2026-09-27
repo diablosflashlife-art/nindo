@@ -160,6 +160,8 @@
                                     document.querySelectorAll('.table-action').forEach(function(t){t.value='';});
                                   }
                                   window.scrollTo(0, document.body.scrollHeight)">
+        {# En combat, les cartes de chaque joueur (renvoyées après chaque round). #}
+        {% include "_cartes_groupe.html" %}
         {% for p in equipe_scene %}
         <div class="declaration {{ 'active' if p.id == pj.id }}">
           <input type="hidden" name="joueur" value="{{ p.id }}">
@@ -173,14 +175,9 @@
             Séance d'entraînement — le dé décidera de ta progression.
             <button type="button" class="discret" id="seance-annuler">annuler</button></div>
           {% endif %}
-          {% if rencontre and postures %}
-          <select name="posture_{{ p.id }}" class="declaration-posture" aria-label="Posture de {{ p.nom }}">
-            {% for po in postures %}<option value="{{ po.code }}">{{ po.label }}</option>{% endfor %}
-          </select>
-          {% endif %}
           <textarea class="table-action" name="action_{{ p.id }}" rows="2"
                     {% if p.id == pj.id %}id="action"{% endif %}
-                    placeholder="{{ p.nom }} — {{ 'comment t’y prends-tu ?' if rencontre else 'que tentes-tu ?' }}">{% if p.id == pj.id %}{{ phrase_prepare or '' }}{% endif %}</textarea>
+                    placeholder="{{ p.nom }} — {{ 'comment t’y prends-tu ? (facultatif : la carte suffit)' if rencontre else 'que tentes-tu ?' }}">{% if p.id == pj.id %}{{ phrase_prepare or '' }}{% endif %}</textarea>
         </div>
         {% endfor %}
         <input type="hidden" name="auto" class="de-auto-valeur" value="">
@@ -211,8 +208,8 @@
           Séance d'entraînement — le dé décidera de ta progression.
           <button type="button" class="discret" id="seance-annuler">annuler</button></div>
         {% include "_postures.html" %}
-        <textarea name="action" id="action" rows="3" required
-          placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ?{% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}">{{ phrase_prepare or '' }}</textarea>
+        <textarea name="action" id="action" rows="{{ 2 if rencontre else 3 }}" {% if not rencontre %}required{% endif %}
+          placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ? (facultatif : la carte suffit){% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}">{{ phrase_prepare or '' }}</textarea>
         <input type="hidden" name="auto" class="de-auto-valeur" value="">
         <div class="rangee espace" style="justify-content:space-between">
           <span class="petit muted">Écris librement, ou choisis une piste ci-dessus.</span>
@@ -268,6 +265,7 @@
         <li><strong>Écris ce que fait ton ninja</strong>, librement — ou clique une piste proposée.</li>
         <li><strong>Le maître du jeu annonce le jet</strong> : la caractéristique, la difficulté, tes chances et ce que coûte un échec. Tu peux engager une technique, <em>forcer</em> (+3 au dé, mais un échec devient critique) ou reformuler. Puis <em>Lancer le dé</em>.</li>
         <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué. Pressé ? Coche <em>lancer tout seul</em>.</li>
+        <li><strong>En combat, chacun agit à son rang d'initiative</strong> : le plateau montre qui frappe avant toi. Choisis une carte — <em>Attaquer</em>, <em>Technique</em> (chaque jutsu a un effet réel : dégâts, garde, doublures, contrôle, soin), <em>Défendre</em>, <em>Manœuvre</em>, <em>Objet</em>, <em>Se désengager</em> — et ta cible. Le round se joue d'un coup.</li>
         <li><strong>Les missions</strong> se prennent dans l'onglet <em>Équipe</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
         <li><strong>La carte</strong> (onglet <em>Carte</em>) : voyager coûte des tours.</li>
         <li><strong>Apprendre une technique</strong> : onglet <em>Techniques</em>, bouton <em>S'entraîner</em>. Chaque séance se joue, avec un jet de dé, jusqu'à 100 %.</li>
@@ -737,24 +735,32 @@ window.remplir = remplir;
   chercher();
 })();
 
-/* Le choix de posture. Délégué sur document parce que le bloc est remplacé à
-   chaque échange par hx-swap-oob : un écouteur posé sur les labels eux-mêmes
-   disparaîtrait au premier échange. */
+/* Les cartes d'action d'un round. Déléguées sur document parce que le bloc est
+   remplacé à chaque round par hx-swap-oob : un écouteur posé sur les cartes
+   elles-mêmes disparaîtrait au premier round. Chaque carte montre les détails
+   qui la concernent (cible, technique, objet, avantage) et cache les autres. */
 (function () {
   function accorder() {
-    var bloc = document.getElementById('postures');
-    if (!bloc) return;
-    var coche = bloc.querySelector('input[name="posture"]:checked');
-    bloc.querySelectorAll('.posture').forEach(function (l) {
-      l.classList.toggle('choisie', l.contains(coche));
+    document.querySelectorAll('.cartes').forEach(function (bloc) {
+      var coche = bloc.querySelector('input[type="radio"]:checked');
+      var code = coche ? coche.value : '';
+      bloc.querySelectorAll('.carte-action').forEach(function (l) {
+        l.classList.toggle('choisie', l.contains(coche));
+      });
+      var details = bloc.nextElementSibling;
+      if (!details || !details.classList.contains('cartes-details')) return;
+      details.querySelectorAll('.carte-detail').forEach(function (d) {
+        d.hidden = (d.dataset.pour || '').split(' ').indexOf(code) < 0;
+      });
     });
-    var levier = bloc.querySelector('.levier-choix');
-    if (levier) levier.hidden = !coche || coche.value !== 'manoeuvre';
+    /* En combat le texte libre est une couleur, pas une obligation. */
+    var champ = document.getElementById('action');
+    if (champ) champ.required = !document.querySelector('.cartes');
   }
 
   window.accorderPostures = accorder;
   document.addEventListener('change', function (e) {
-    if (e.target && e.target.name === 'posture') accorder();
+    if (e.target && /^action_code/.test(e.target.name || '')) accorder();
   });
   document.body.addEventListener('htmx:afterSwap', accorder);
   accorder();

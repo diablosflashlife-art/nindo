@@ -36,9 +36,9 @@ from app.engine.voix import plan_de_lecture
 from app.llm.provider import conteur, get_llm
 from app.engine import fils as fils_du_recit
 from app.lore.pack import charger as charger_pack
-from app.models import (Campaign, Character, CharacterTechnique, Destiny,
-                        DestinyTrait, Encounter, Event, Location, Quest,
-                        Relation, Secret, Summary, Turn)
+from app.models import (Campaign, Character, CharacterTechnique, Condition,
+                        Destiny, DestinyTrait, Encounter, Event, Location,
+                        Quest, Relation, Secret, Summary, Turn)
 from app.rules.engine import Ruleset
 from app.rules.loader import charger as charger_ruleset
 from app.rules.loader import charger_pour
@@ -514,7 +514,12 @@ def _ctx_rencontre(session: Session, camp: Campaign, rs: Ruleset,
     """
     renc = cbt.active(session, camp)
     if renc is None:
-        return {"rencontre": None, "postures": [], "leviers": []}
+        return {"rencontre": None, "postures": [], "leviers": [], "plateau": [],
+                "choix_par_pj": {}, "actions_combat": {}}
+
+    pack = charger_pack(camp.lore_pack)
+    from app.engine import techniques as tech
+    from app.engine.turn import ACTIONS_COMBAT
 
     ennemis = []
     for c in cbt.adverses(session, renc):
@@ -527,10 +532,85 @@ def _ctx_rencontre(session: Session, camp: Campaign, rs: Ruleset,
                      else "blessé" if pct > 35 else "il tient à peine"),
         })
 
+    # LE PLATEAU : chaque combattant à sa place dans l'ordre d'initiative,
+    # avec ce que le joueur a le droit de voir. Son camp en chiffres, le camp
+    # adverse en état apparent — un MJ qui montre les PV ennemis fait jouer
+    # contre une barre de vie.
+    init = renc.initiative or {}
+    tombes = {c.id for c in cbt.tombes(session, renc)}
+    partis = {c.id for c in cbt.fuis(session, renc)}
+    renseigne = "renseignement" in renc.leviers
+    ma_init = int(init.get(str(pj.id), 0))
+    plateau = []
+    for cid in (renc.ordre or []):
+        c = session.get(Character, cid)
+        if c is None:
+            continue
+        camp_ = "joueur" if c.id == pj.id else ("allie" if cid in renc.camp_joueur else "ennemi")
+        maximum = cbt.pv_max(session, rs, c)
+        pv = int(c.ressources.get("pv", 0))
+        pct = int(pv * 100 / maximum) if maximum else 0
+        actif = cbt._effets_de(renc, c.id)
+        conditions = [k.libelle for k in session.exec(select(Condition).where(
+            Condition.character_id == c.id)).all()]
+        if actif.get("echange") == renc.echange and actif.get("garde"):
+            conditions.append(f"garde +{actif['garde']}")
+        if int(actif.get("clones", 0)) > 0:
+            conditions.append(f"{actif['clones']} doublure(s)")
+        plateau.append({
+            "id": c.id, "nom": c.nom, "camp": camp_, "is_pc": c.is_pc,
+            "initiative": int(init.get(str(cid), 0)),
+            "avant_toi": int(init.get(str(cid), 0)) > ma_init and camp_ == "ennemi",
+            "pct": max(2, min(100, pct)), "pv": pv, "pv_max": maximum,
+            "chakra": int(c.ressources.get("chakra", 0)),
+            "chakra_max": int(rs.ressources_pour_tier(c.tier).get("chakra", 30)),
+            "etat": ("hors de combat" if cid in tombes else "parti" if cid in partis
+                     else "intact" if pct > 80 else "entamé" if pct > 60
+                     else "blessé" if pct > 35 else "il tient à peine"),
+            "hors": cid in tombes or cid in partis,
+            "conditions": conditions,
+            "tier_label": rs.tier_label(c.tier) if (camp_ != "ennemi" or renseigne) else "",
+            "tactique": (cbt._lire_note(c, "tactique") if camp_ == "ennemi" and renseigne else ""),
+        })
+
+    # LES CARTES de chaque joueur au combat : ses techniques avec leur effet et
+    # leur coût, ses objets, les cibles. Calculées ici pour que la table et la
+    # réponse HTMX montrent exactement la même chose.
     acquis = set(renc.leviers)
+    cibles = [c.nom for c in cbt.adverses(session, renc)]
+    choix_par_pj = {}
+    for cid in renc.camp_joueur:
+        c = session.get(Character, cid)
+        if c is None or not c.is_pc:
+            continue
+        chakra = int(c.ressources.get("chakra", 0))
+        techniques = []
+        for ct in session.exec(select(CharacterTechnique).where(
+                CharacterTechnique.character_id == c.id)).all():
+            t = pack.technique(ct.technique_ref) or {}
+            if not t:
+                continue
+            palier = rs.palier_maitrise(ct.maitrise)
+            cout = int(round(int((t.get("cout") or {}).get("chakra", 0))
+                             * float(palier.get("cout", 1.0))))
+            techniques.append({"ref": ct.technique_ref, "nom": t.get("nom", ct.technique_ref),
+                               "fr": t.get("fr", ""), "resume": tech.resume(t),
+                               "cout": cout, "dispo": chakra >= cout,
+                               "bonus": int(palier.get("jet", 0))})
+        techniques.sort(key=lambda x: (not x["dispo"], x["cout"]))
+        choix_par_pj[c.id] = {
+            "techniques": techniques,
+            "objets": cbt.objets_utilisables(pack, c),
+            "cibles": cibles,
+            "allies": [a.nom for a in cbt.allies(session, renc, c)],
+        }
+
     return {
         "rencontre": renc,
         "ennemis": ennemis,
+        "plateau": plateau,
+        "choix_par_pj": choix_par_pj,
+        "actions_combat": ACTIONS_COMBAT,
         "hors_combat": [c.nom for c in cbt.tombes(session, renc)],
         "allies_au_combat": [c.nom for c in cbt.allies(session, renc, pj)],
         "postures": cbt.postures_offertes(rs),
@@ -541,22 +621,34 @@ def _ctx_rencontre(session: Session, camp: Campaign, rs: Ruleset,
                            for c in renc.leviers],
         "progres_requis": int(rs.combat.get("objectif_progres_requis", 3)),
         "echanges_max": int(rs.combat.get("echanges_max", 12)),
+        "pjs_au_combat": [session.get(Character, cid) for cid in renc.camp_joueur
+                          if (session.get(Character, cid) or Character()).is_pc],
     }
 
 
+def _carte(form, suffixe: str = "") -> dict:
+    """Le choix de combat fait sur les cartes, tel que le formulaire l'envoie."""
+    return {"action_code": (form.get(f"action_code{suffixe}") or "").strip(),
+            "cible": (form.get(f"cible{suffixe}") or "").strip(),
+            "technique": (form.get(f"technique{suffixe}") or "").strip(),
+            "objet": (form.get(f"objet{suffixe}") or "").strip(),
+            "levier": (form.get(f"levier{suffixe}") or "").strip()}
+
+
 @router.post("/campagnes/{cid}/jouer", response_class=HTMLResponse)
-def action(cid: int, request: Request, action: str = Form(...),
-           character_id: int | None = Form(None),
-           posture: str = Form(""), levier: str = Form(""),
-           entrainement: str = Form(""),
-           session: Session = Depends(get_session)):
+async def action(cid: int, request: Request, action: str = Form(""),
+                 character_id: int | None = Form(None),
+                 posture: str = Form(""), levier: str = Form(""),
+                 entrainement: str = Form(""),
+                 session: Session = Depends(get_session)):
     camp = _camp(session, cid)
     _exige_en_cours(camp)
     pj = _pj_actif(session, cid, character_id)
     if not pj:
         raise HTTPException(400, "Aucun personnage joueur")
     texte = action.strip()
-    if not texte:
+    carte = _carte(await request.form())
+    if not texte and not carte["action_code"]:
         raise HTTPException(400, "Action vide")
 
     rs, pack = _regles(camp), charger_pack(camp.lore_pack)
@@ -565,7 +657,8 @@ def action(cid: int, request: Request, action: str = Form(...),
         # incrémentaient toutes les deux `camp.tour` sur la même valeur lue.
         with tour_exclusif(cid):
             tour = jouer(session, camp, pj, texte, rs, pack,
-                         posture=posture, levier=levier, entrainement=entrainement)
+                         posture=posture, levier=levier or carte["levier"],
+                         entrainement=entrainement, choix=carte)
     except CampagneOccupee as exc:
         return templates.TemplateResponse("_erreur.html", {
             "request": request, "message": str(exc)}, status_code=409)
@@ -621,8 +714,8 @@ def _sse(evenement: str, donnees: str) -> str:
 
 
 @router.post("/campagnes/{cid}/jouer/flux", response_class=HTMLResponse)
-def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
-                  character_id: int | None = Form(None),
+async def jouer_en_flux(cid: int, request: Request, action: str = Form(""),
+                        character_id: int | None = Form(None),
                   posture: str = Form(""), levier: str = Form(""),
                   entrainement: str = Form(""), auto: str = Form(""),
                   session: Session = Depends(get_session)):
@@ -641,7 +734,8 @@ def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
     if not pj:
         raise HTTPException(400, "Aucun personnage joueur")
     texte = action.strip()
-    if not texte:
+    # En combat, la carte choisie suffit : le texte libre est facultatif.
+    if not texte and not (cbt.active(session, camp) and (await request.form()).get("action_code")):
         raise HTTPException(400, "Action vide")
 
     _purger_jetons()
@@ -649,6 +743,7 @@ def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
     _EN_ATTENTE[jeton] = {"cid": cid, "pj": pj.id, "action": texte,
                           "posture": posture, "levier": levier,
                           "entrainement": entrainement, "auto": auto == "1",
+                          "carte": _carte(await request.form()),
                           "depuis": time.monotonic()}
     return templates.TemplateResponse("_flux.html", {
         "request": request, "camp": camp, "pj": pj, "action": texte,
@@ -673,11 +768,12 @@ async def jouer_table(cid: int, request: Request, session: Session = Depends(get
         texte = (form.get(f"action_{pid}") or "").strip()
         if perso is None or perso.campaign_id != cid or not perso.is_pc:
             continue
-        if not texte:
+        carte = _carte(form, f"_{pid}")
+        if not texte and not carte["action_code"]:
             texte = "Je reste attentif et j'observe ce qui se passe."
         entrees.append({"pj": pid, "nom": perso.nom, "action": texte,
                         "posture": form.get(f"posture_{pid}") or "",
-                        "levier": form.get(f"levier_{pid}") or "",
+                        "levier": carte["levier"], "choix": carte,
                         "entrainement": form.get(f"entrainement_{pid}") or ""})
     if not entrees or all(e["action"].startswith("Je reste attentif") for e in entrees):
         raise HTTPException(400, "Aucune action déclarée")
@@ -746,7 +842,8 @@ def flux(cid: int, request: Request, jeton: str):
                         arbitrages = [(pj.id, arbitrer(
                             session, camp, pj, demande["action"], rs, pack,
                             posture=demande["posture"], levier=demande["levier"],
-                            entrainement=demande.get("entrainement", "")))]
+                            entrainement=demande.get("entrainement", ""),
+                            choix=demande.get("carte")))]
 
                     if not demande.get("auto") and any(a.annonce for _, a in arbitrages):
                         # LE JOUEUR LANCE LUI-MÊME. On lui montre l'annonce et

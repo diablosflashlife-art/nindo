@@ -13,7 +13,7 @@
   {% for pj, a in arbitrages %}
   <div class="arbitrage" data-pj="{{ pj.id }}">
     {% if arbitrages|length > 1 %}<span class="jet-nom">{{ pj.nom }}</span>{% endif %}
-    {% if a.annonce %}
+    {% if a.annonce and not a.en_combat %}
     <div class="arb-tete">
       <span class="arb-jet">Jet de {{ a.stat_label }}</span>
       <span class="arb-dc">{{ a.difficulte_label }} · {{ a.dc }}</span>
@@ -54,12 +54,22 @@
         Si ça rate quand même, l'échec est critique.</span>
     </label>
     {% endif %}
+    {% elif a.en_combat %}
+    <div class="arb-tete"><span class="arb-jet">Round {{ a.combat.get('round', '') }} — {{ a.combat.get('action', 'Échange') }}
+        {%- if a.combat.get('technique') %} · {{ a.combat.technique }}{% endif %}
+        {%- if a.combat.get('objet') %} · {{ a.combat.objet }}{% endif %}
+        {%- if a.combat.get('cible') %} sur {{ a.combat.cible }}{% endif %}</span>
+      <span class="arb-dc">{{ a.combat.get('titre', '') }}</span></div>
+    {% if a.combat.get('avant') %}
+    <p class="arb-enjeu"><span>Avant toi</span> {{ a.combat.avant|join(', ') }}
+      {{ 'frappe' if a.combat.avant|length == 1 else 'frappent' }} d'abord.</p>
+    {% else %}
+    <p class="arb-enjeu"><span>Initiative</span> tu agis avant eux.</p>
+    {% endif %}
+    {% for b in a.bonus %}<span class="arb-mod">{{ '%+d'|format(b.valeur) }} {{ b.libelle }}</span>{% endfor %}
     {% elif a.impossible %}
     <div class="arb-tete"><span class="arb-jet">Impossible telle quelle</span>
       <span class="arb-dc">{{ a.impossible }}</span></div>
-    {% elif a.en_combat %}
-    <div class="arb-tete"><span class="arb-jet">Échange</span>
-      <span class="arb-dc">l'affrontement se résout dès que tu lances</span></div>
     {% else %}
     <div class="arb-tete"><span class="arb-jet">Pas de jet</span>
       <span class="arb-dc">aucun enjeu mécanique : la scène s'écrit directement</span></div>

@@ -46,8 +46,9 @@ from app.llm.schemas import CONSEQUENCES as SCHEMA_CONSEQUENCES
 from app.llm.schemas import INTENT, INTENT_COMBAT
 from app.lore.pack import LorePack
 from app.memory.context import construire, taille_estimee, vectoriser
-from app.models import (Campaign, Character, CharacterTechnique, Event, Location,
-                        MemoryFact, Quest, Relation, Summary, Turn, maintenant)
+from app.models import (Campaign, Character, CharacterTechnique, Encounter, Event,
+                        Location, MemoryFact, Quest, Relation, Summary, Turn,
+                        maintenant)
 from app.rules.engine import Ruleset
 
 
@@ -146,9 +147,11 @@ class Preparation:
 
 def jouer(session: Session, camp: Campaign, pj: Character, action: str,
           rs: Ruleset, pack: LorePack, posture: str = "",
-          levier: str = "", entrainement: str = "") -> Turn:
+          levier: str = "", entrainement: str = "",
+          choix: dict | None = None) -> Turn:
     """Joue un tour d'un bloc. Voir `preparer` / `conclure` pour le détail."""
-    prep = preparer(session, camp, pj, action, rs, pack, posture, levier, entrainement)
+    prep = preparer(session, camp, pj, action, rs, pack, posture, levier, entrainement,
+                    choix=choix)
     narration = get_llm().text(prep.systeme, prep.invite(), max_tokens=prep.max_tokens)
     return conclure(session, camp, pj, prep, narration, rs, pack)
 
@@ -192,17 +195,21 @@ class Arbitrage:
     en_combat: bool = False
     posture: str = ""
     levier: str = ""
+    combat: dict = field(default_factory=dict)      # l'aperçu du round : action, cible, plus rapides
     seance: dict | None = None                      # l'offre d'entraînement vérifiée
     liens_techniques: list = field(default_factory=list)   # ids de CharacterTechnique cités
 
     @property
     def annonce(self) -> bool:
         """Y a-t-il quelque chose à montrer au joueur avant le dé ?"""
-        return self.requiert_jet and not self.impossible and not self.en_combat
+        if self.en_combat:
+            return True
+        return self.requiert_jet and not self.impossible
 
     @property
     def difficulte_label(self) -> str:
-        return DIFFICULTE_LIBELLES.get(self.difficulte, self.difficulte)
+        d = DIFFICULTE_LIBELLES.get(self.difficulte, self.difficulte)
+        return d[0].upper() + d[1:] if d else d
 
     @property
     def total_bonus(self) -> int:
@@ -219,9 +226,31 @@ class Arbitrage:
                 "enjeu_echec": self.enjeu_echec}
 
 
+# Les actions de combat que l'interface propose, et la posture du ruleset
+# qu'elles engagent. Le joueur choisit une CARTE ; le texte libre devient une
+# couleur pour le narrateur, et l'arbitre n'a plus rien à deviner.
+ACTIONS_COMBAT = {
+    "attaquer": {"posture": "mesuree", "label": "Attaquer",
+                 "aide": "Tu frappes sans t'exposer."},
+    "assaut": {"posture": "offensive", "label": "Assaut",
+               "aide": "Tu frappes fort et tu t'ouvres."},
+    "technique": {"posture": "technique", "label": "Technique",
+                  "aide": "Tu engages du chakra : l'effet dépend de la technique."},
+    "defendre": {"posture": "defensive", "label": "Défendre",
+                 "aide": "Tu encaisses, tu protèges, tu attends l'ouverture."},
+    "manoeuvre": {"posture": "manoeuvre", "label": "Manœuvre",
+                  "aide": "Terrain, ruse, renfort : tu réduis l'écart au lieu de frapper."},
+    "objet": {"posture": "mesuree", "label": "Objet",
+              "aide": "Parchemin, fumigène, pilule : ta besace agit."},
+    "desengager": {"posture": "desengagement", "label": "Se désengager",
+                   "aide": "Tu cherches à rompre le contact."},
+}
+
+
 def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
              rs: Ruleset, pack: LorePack, posture: str = "",
-             levier: str = "", entrainement: str = "") -> Arbitrage:
+             levier: str = "", entrainement: str = "",
+             choix: dict | None = None) -> Arbitrage:
     """Étapes 1bis et 2 : embuscade, interprétation — et l'annonce du jet.
 
     `posture` et `levier` sont les choix MÉCANIQUES du joueur. Les laisser
@@ -246,23 +275,64 @@ def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
 
     contexte = construire(session, camp, pj, action, rs, pack, role="arbitre")
 
+    choix = choix or {}
     if renc is not None:
-        # ---------------- régime de combat : l'action sera un échange
-        intent = llm.json(
-            ARBITRE_COMBAT,
-            f"{contexte}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
-            INTENT_COMBAT)
-        if posture in rs.postures:
-            intent["posture"] = posture
-        if levier in rs.leviers():
-            intent["levier"] = levier
+        # ---------------- régime de combat : l'action sera un round
+        code = choix.get("action_code") or ""
+        if code in ACTIONS_COMBAT:
+            # LA CARTE CHOISIE FAIT FOI, et le modèle n'est pas appelé : un
+            # round se prépare en quelques millisecondes, pas en dix secondes.
+            intent = {"posture": ACTIONS_COMBAT[code]["posture"],
+                      "cible": choix.get("cible", ""), "technique": "",
+                      "arme": "", "levier": "", "objectif": "",
+                      "resume": action or ACTIONS_COMBAT[code]["label"]}
+            if code == "technique" and choix.get("technique"):
+                intent["technique"] = choix["technique"]
+            if code == "objet" and choix.get("objet"):
+                intent["objet"] = choix["objet"]
+            if code == "manoeuvre":
+                intent["levier"] = choix.get("levier", "")
+            if not action.strip():
+                t = pack.technique(intent.get("technique", "")) or {}
+                action = (f"{ACTIONS_COMBAT[code]['label']}"
+                          + (f" — {t.get('nom')}" if t else "")
+                          + (f" — {intent['objet']}" if intent.get("objet") else "")
+                          + (f" sur {intent['cible']}" if intent.get("cible") else ""))
+        else:
+            intent = llm.json(
+                ARBITRE_COMBAT,
+                f"{contexte}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
+                INTENT_COMBAT)
+            if posture in rs.postures:
+                intent["posture"] = posture
+            if levier in rs.leviers():
+                intent["levier"] = levier
         bonus, liens = _technique_citee(
             session, pj, f"{intent.get('technique', '')} "
                          f"{intent.get('resume', '')} {action}", rs, pack)
+        # Si la technique est celle d'une carte, on la crédite même si le
+        # texte libre ne la nomme pas.
+        if intent.get("technique") and not liens:
+            ct = session.exec(select(CharacterTechnique).where(
+                CharacterTechnique.character_id == pj.id,
+                CharacterTechnique.technique_ref == intent["technique"])).first()
+            if ct is not None:
+                liens = [ct]
+                bonus = int(rs.palier_maitrise(ct.maitrise).get("jet", 0))
+        avant = combat.agissent_avant(renc, pj, combat.adverses(session, renc))
+        libelle_action = next((v["label"] for k, v in ACTIONS_COMBAT.items()
+                               if v["posture"] == intent.get("posture")), "Échange")
+        t = pack.technique(intent.get("technique", "")) or {}
         return Arbitrage(action=action, intent=intent, en_combat=True,
                          posture=intent.get("posture", ""), levier=intent.get("levier", ""),
                          bonus=[{"libelle": "maîtrise", "valeur": bonus}] if bonus else [],
-                         liens_techniques=[ct.id for ct in liens])
+                         liens_techniques=[ct.id for ct in liens],
+                         combat={"round": renc.echange + 1, "action": libelle_action,
+                                 "cible": intent.get("cible", ""),
+                                 "technique": t.get("nom", ""),
+                                 "objet": intent.get("objet", ""),
+                                 "avant": [c.nom for c in avant],
+                                 "titre": renc.titre})
 
     # ---------------- régime ordinaire : un jet contre une difficulté
     intent = llm.json(
@@ -328,6 +398,18 @@ def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
         arb.difficulte = "normal"
     arb.dc = rs.valeur_difficulte(arb.difficulte)
 
+    # UN DUEL ENTRE JOUEURS se joue contre la GARDE de l'autre : dix, plus son
+    # modificateur de défense, plus deux. Mesuré en partie à deux : deux jets
+    # indépendants réussissaient tous les deux et le narrateur tranchait seul.
+    adversaire = next((p for p in _autres_pj(session, camp, pj)
+                       if intent.get("action_type") == "combat"
+                       and _designe(intent.get("cible", ""), p)), None)
+    if adversaire is not None:
+        stat_def = rs.combat.get("defense_stat", "endurance")
+        valeur = int(adversaire.stats.get(stat_def, 10))
+        arb.dc = 10 + (valeur - 10) // 2 + 2
+        arb.difficulte = f"garde de {adversaire.nom}"
+
     # Le détail du bonus, ligne par ligne : c'est ce qu'un joueur vérifie sur
     # sa fiche avant de lancer, et ce que le moteur ne montrait jamais.
     arb.modificateur = (arb.stat_valeur - 10) // 2
@@ -367,18 +449,19 @@ def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
         arb.forcer = {"bonus": int(cfg_forcer.get("bonus", 3)),
                       "chakra": int(cfg_forcer.get("chakra", 2)),
                       "dispo": chakra >= int(cfg_forcer.get("chakra", 2))}
-    arb.chances = rs.chances(pj.stats, stat, arb.difficulte,
-                             bonus_technique + blessures)
+    arb.chances = rs.chances(pj.stats, stat, arb.dc, bonus_technique + blessures)
     return arb
 
 
 def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
              rs: Ruleset, pack: LorePack, technique: str = "",
-             forcer: bool = False) -> Preparation:
+             forcer: bool = False, round_partage: dict | None = None) -> Preparation:
     """Étape 3 : le dé, et tout ce qui en découle avant la narration.
 
     `technique` et `forcer` sont les choix faits par le joueur SUR l'annonce.
     Ils se paient ici, jamais avant : reformuler ne coûte rien.
+    `round_partage` : en tour de table, le round déjà joué pour tout le camp
+    (voir `combat.round_de_table`), pour ne pas le rejouer par joueur.
     """
     action, intent = arb.action, arb.intent
     liens_techniques = [ct for ct in (session.get(CharacterTechnique, i)
@@ -387,7 +470,10 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
 
     if arb.en_combat:
         # ---------------- régime de combat : l'action est un échange
-        renc = combat.active(session, camp)
+        # Le round partagé peut avoir REFERMÉ la rencontre (dernier adversaire
+        # tombé) : on la retrouve par son identifiant, pas par « active ».
+        renc = (session.get(Encounter, round_partage["rencontre_id"])
+                if round_partage is not None else combat.active(session, camp))
         if renc is None:
             # La rencontre s'est refermée entre l'annonce et le dé (un autre
             # joueur, une reprise) : l'action se rejoue à froid.
@@ -395,16 +481,22 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
                 session, camp, pj, action, rs, pack, arb.posture, arb.levier), rs, pack)
         bonus = arb.total_bonus
         maitrise = max((ct.maitrise for ct in liens_techniques), default=50)
-        issue = combat.echanger(session, camp, pack, rs, pj, renc, intent,
-                                bonus, maitrise)
+        if round_partage is not None:
+            # Tour de table : le round a été joué UNE fois pour tout le camp.
+            issue = dict(round_partage)
+            issue["reussi"] = bool(round_partage["reussi"].get(pj.id))
+        else:
+            issue = combat.echanger(session, camp, pack, rs, pj, renc, intent,
+                                    bonus, maitrise)
         bloc = issue["bloc"]
         resolution["combat"] = {
             "rencontre_id": renc.id, "echange": renc.echange,
             "statut": issue["statut"], "reussi": issue["reussi"],
             "titre": renc.titre, "lignes": issue["lignes"],
             "leviers": list(renc.leviers), "objectif": renc.objectif,
-            "progres": renc.progres, "fosse": dict(renc.fosse)}
-        effets_combat = issue["effets"]
+            "progres": renc.progres, "fosse": dict(renc.fosse),
+            "partage": round_partage is not None}
+        effets_combat = list(issue["effets"])
         systeme, en_combat = NARRATEUR_COMBAT, True
     else:
         # ---------------- régime ordinaire : un jet contre une difficulté
@@ -456,7 +548,7 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
                     {"libelle": "forcé", "valeur": int(arb.forcer["bonus"])}]
             session.add(pj)
 
-            check = rs.check(pj.stats, arb.stat, arb.difficulte, bonus)
+            check = rs.check(pj.stats, arb.stat, arb.dc, bonus)
             if force and not check.reussi and check.issue != "echec_critique":
                 check.issue = "echec_critique"
             resolution["check"] = check.to_dict()
@@ -544,13 +636,15 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
 
 def preparer(session: Session, camp: Campaign, pj: Character, action: str,
              rs: Ruleset, pack: LorePack, posture: str = "",
-             levier: str = "", entrainement: str = "") -> Preparation:
+             levier: str = "", entrainement: str = "",
+             choix: dict | None = None) -> Preparation:
     """Étapes 1bis à 3 d'un trait : l'annonce, puis le dé sans attendre.
 
     C'est le chemin « lancer tout seul », et celui de tous les appels qui
     n'ont pas de joueur à qui demander (tests, scripts, tour d'un bloc).
     """
-    arb = arbitrer(session, camp, pj, action, rs, pack, posture, levier, entrainement)
+    arb = arbitrer(session, camp, pj, action, rs, pack, posture, levier, entrainement,
+                   choix=choix)
     return resoudre(session, camp, pj, arb, rs, pack)
 
 

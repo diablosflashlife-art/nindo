@@ -360,6 +360,15 @@ class Encounter(SQLModel, table=True):
     butin: list = Field(default_factory=list, sa_column=Column(JSON))
     cree_le: datetime = Field(default_factory=_now)
 
+    # LE ROUND (Nindō 2.0, chantier B). L'initiative de chaque combattant,
+    # tirée à l'ouverture, et l'ordre qui en découle : qui frappe avant le
+    # joueur frappe AVANT son action. `effets_actifs` porte ce que les
+    # techniques posent sur un combattant — garde, esquive, doublures — par
+    # identifiant de personnage.
+    initiative: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    ordre: list = Field(default_factory=list, sa_column=Column(JSON))
+    effets_actifs: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
 
 # ==========================================================================
 # DESTINÉE — un secret dont le sujet est le personnage du joueur

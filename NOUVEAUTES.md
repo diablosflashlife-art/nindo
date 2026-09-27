@@ -3,6 +3,19 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.3.0 — Le combat en rounds
+
+Deuxième chantier de Nindō 2.0 : l'affrontement devient un vrai combat de jeu de rôle, lisible et tactique.
+
+- **L'initiative** : un d20 et la vitesse pour chaque combattant, tirés à l'ouverture. Le plateau montre l'ordre, et qui **frappe avant toi**. Une embuscade subie donne l'avance à ceux qui l'ont tendue.
+- **Le plateau de combat** : ton camp en chiffres (PV, chakra), le camp adverse en état apparent, les gardes, doublures et conditions de chacun. Le levier *renseignement* dévoile le rang et la manière de se battre de l'ennemi.
+- **Des cartes d'action** au lieu d'une posture à deviner : *Attaquer*, *Assaut*, *Technique*, *Défendre*, *Manœuvre*, *Objet*, *Se désengager*, avec la cible. Le round se prépare sans appel au conteur : instantané.
+- **Chaque technique a un effet réel** : dégâts (parfois sur tout le camp adverse : Gôkakyû, Daitoppa), **contrôle** (Kanashibari, Kagemane, genjutsu : la cible perd son tour), **garde** (Kawarimi esquive le prochain coup, Doryûheki, Shishienjin), **doublures** (Kage Bunshin encaisse les coups), **soin** (Shôsen), **affaiblissement** (Kikaichû, Dokugiri). Le cycle des éléments s'applique.
+- **Les objets agissent** : parchemin explosif (zone), fumigène, bombe aveuglante, pilule du soldat, pilule de sang, trousse, kunai et shuriken lancés, makibishi, senbon. Les consommables se consomment.
+- **À plusieurs, un seul round** : chaque joueur agit à son rang, les adversaires ripostent une fois, une scène raconte tout. (Avant, chaque joueur déclenchait son propre round.)
+- **Duel entre joueurs** : une attaque sur un coéquipier se joue contre sa garde (10 + défense + 2), annoncée comme telle.
+- **Corrigé** : un round qui mettait le dernier adversaire hors de combat était rejoué comme un jet ordinaire ; l'annonce de combat affichait un faux jet à 0 %.
+
 ## 1.2.0 — Le maître du jeu annonce, tu lances
 
 Premier chantier de Nindō 2.0 (voir `docs/NINDO-2.md`) : le tour de jeu se joue comme à une vraie table.
