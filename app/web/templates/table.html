@@ -170,7 +170,7 @@
             hx-on::after-request="if(event.detail.successful){
                                     document.querySelectorAll('.table-action').forEach(function(t){t.value='';});
                                   }
-                                  window.scrollTo(0, document.body.scrollHeight)">
+                                  if (window.suivreLeRecit) suivreLeRecit()">
         {# En combat, les cartes de chaque joueur (renvoyées après chaque round). #}
         {% include "_cartes_groupe.html" %}
         {% for p in equipe_scene %}
@@ -211,7 +211,7 @@
             hx-on::after-request="if(event.detail.successful){
                                     document.getElementById('action').value='';
                                   }
-                                  window.scrollTo(0, document.body.scrollHeight)">
+                                  if (window.suivreLeRecit) suivreLeRecit()">
         <input type="hidden" name="character_id" value="{{ pj.id }}">
         {# La séance d'entraînement en cours de préparation, s'il y en a une. #}
         <input type="hidden" name="entrainement" id="entrainement" value="{{ entrainement_prepare or '' }}">
@@ -587,6 +587,21 @@ window.remplir = remplir;
    hors ligne, et quarante lignes valent mieux qu'un fichier de plus à
    embarquer.
    ========================================================================== */
+/* SUIVRE LE RÉCIT. La page sautait au bas du document à chaque mot : sur un
+   grand écran, le bas du document est celui de la colonne (la carte), pas
+   celui de la scène. On amène le bas du tour en cours dans la fenêtre, et
+   seulement s'il en sort — un lecteur qui remonte n'est pas ramené de force. */
+window.suivreLeRecit = function (coquille) {
+  var recit = document.getElementById('recit');
+  var cible = coquille || (recit && recit.lastElementChild);
+  if (!cible) return;
+  var bas = cible.getBoundingClientRect().bottom;
+  if (bas > window.innerHeight - 24 || bas < 0) {
+    /* Sans animation : un défilement « doux » relancé à chaque mot du flux
+       n'aboutit jamais, et la fenêtre reste en haut. */
+    cible.scrollIntoView({ block: 'end' });
+  }
+};
 (function () {
   var recit = document.getElementById('recit');
   var form = document.querySelector('form[hx-post*="/jouer"]');
@@ -691,7 +706,7 @@ window.remplir = remplir;
       var bloc = coquille.querySelector('.bloc-arbitrage:not(.jouee)');
       if (etapeTexte) etapeTexte.textContent = 'À toi de lancer.';
       if (bloc) brancherAnnonce(coquille, bloc);
-      window.scrollTo(0, document.body.scrollHeight);
+      suivreLeRecit(coquille);
     });
 
     /* Le résultat du dé arrive AVANT la première phrase : le joueur voit de
@@ -719,7 +734,7 @@ window.remplir = remplir;
          le texte enregistré, lui, est épuré côté serveur. */
       narration.textContent += e.data.replace(/\*/g, '');
       coquille.classList.add('ecrit');
-      window.scrollTo(0, document.body.scrollHeight);
+      suivreLeRecit(coquille);
     });
 
     source.addEventListener('fin', function (e) {
@@ -733,7 +748,7 @@ window.remplir = remplir;
       /* `htmx.swap` ne remonte pas jusqu'à #recit : la lecture à voix haute
          ne saurait pas qu'un tour vient d'arriver sans ce signal. */
       document.dispatchEvent(new CustomEvent('chroniques:tour'));
-      window.scrollTo(0, document.body.scrollHeight);
+      suivreLeRecit();
     });
 
     source.addEventListener('echec', function (e) {

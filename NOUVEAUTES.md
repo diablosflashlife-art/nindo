@@ -3,16 +3,21 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 2.0.2 — La page suit le récit
+
+- **Le défilement suit la scène** pendant qu'elle s'écrit, au lieu de sauter au bas de la colonne (la carte) à chaque mot. Un lecteur qui remonte n'est plus ramené de force.
+- Les notes de version s'affichent proprement dans le lanceur.
+
 ## 2.0.1 — Un français de table
 
-- **Plus aucun code brut à l'écran** : « réussite critique », « oui, mais… », « échec », « gagnée », « touché net », « risque élevé », « coéquipier », « ninjutsu médical » — à la place de `reussite critique`, `gagnee`, `eleve`, `coequipier`, `iryo`.
+- **Plus aucun code brut à l'écran** : « réussite critique », « oui, mais… », « échec », « gagnée », « touché net », « risque élevé », « coéquipier », « ninjutsu médical » — à la place de « reussite critique », « gagnee », « eleve », « coequipier », « iryo ».
 - **Les effets d'un tour se lisent** : « Chakra −3 (reste 7) », « Maîtrise de Konoha Senpû : assurée » (plus d'identifiant technique), « Ryô +1200 pour chacun », « Réputation +2 ».
 - **La typographie du récit** : guillemets « », espaces insécables avant ? ! ; :, apostrophes typographiques, points de suspension — quel que soit le conteur, y compris Ollama.
 - **Le conteur écrit en français soigné** : aucun anglicisme, aucun mot japonais hors du vocabulaire du monde, pas de clins d'œil ni de comparaisons déplacées.
 
 ## 2.0.0 — Nindō, le jeu de rôle
 
-La 2.0 clôt la refonte du cœur (voir `docs/NINDO-2.md`) : Nindō se joue maintenant comme à une vraie table. Ce que les cinq chantiers ont apporté depuis la 1.1 :
+La 2.0 clôt la refonte du cœur (voir le document de conception NINDO-2.md du dépôt) : Nindō se joue maintenant comme à une vraie table. Ce que les cinq chantiers ont apporté depuis la 1.1 :
 
 - **L'épreuve des clochettes**, nouvelle première mission : ton instructeur porte deux clochettes, prenez-en une avant midi. À l'acte 2 il attaque — hors de portée, et le plateau le dit. Ce qu'il regarde, c'est si vous faites équipe. Elle apprend la boucle du tour, le combat, la règle du fossé et les leviers, sans manuel.
 - **L'en-tête de scène** dit la mission engagée, son acte et le temps qui reste ; **des sons de table** : un tambour quand un affrontement s'ouvre, un carillon quand une mission réussit ou qu'on est promu.
@@ -57,7 +62,7 @@ Deuxième chantier de Nindō 2.0 : l'affrontement devient un vrai combat de jeu 
 
 ## 1.2.0 — Le maître du jeu annonce, tu lances
 
-Premier chantier de Nindō 2.0 (voir `docs/NINDO-2.md`) : le tour de jeu se joue comme à une vraie table.
+Premier chantier de Nindō 2.0 (voir le document de conception NINDO-2.md du dépôt) : le tour de jeu se joue comme à une vraie table.
 
 - **L'annonce du jet** : avant que le dé roule, le maître du jeu te dit la caractéristique, la difficulté, tes chances de réussite et de « oui, mais », le détail de ton bonus — et **ce que coûte un échec**. Les actions sans enjeu (parler, marcher) s'écrivent directement, sans clic de plus.
 - **Tu lances toi-même** : *Lancer le dé*, ou *Reformuler* si tu te ravises (rien n'est dépensé). Le dé roule à l'écran, avec un son, puis la scène s'écrit.
