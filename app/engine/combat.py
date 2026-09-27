@@ -218,10 +218,29 @@ def pv_max(session: Session, rs: Ruleset, perso: Character) -> int:
     return max(1, memorise)
 
 
+SEUIL_EPUISEMENT = 0.2      # sous un cinquième de son chakra, on est épuisé
+MALUS_EPUISEMENT = -2
+
+
+def epuise(rs: Ruleset, perso: Character) -> bool:
+    """Le chakra bas se paie sur tous les jets (chantier D) : un ninja vidé
+    ne lance plus rien correctement, et le joueur le voit annoncé."""
+    maximum = int(rs.ressources_pour_tier(perso.tier).get("chakra", 30)) or 1
+    return int(perso.ressources.get("chakra", 0)) < maximum * SEUIL_EPUISEMENT
+
+
 def _malus_blessures(session: Session, rs: Ruleset, perso: Character) -> int:
-    codes = [c.code for c in session.exec(select(Condition).where(
-        Condition.character_id == perso.id)).all()]
-    return rs.malus_etats(codes)
+    conditions = session.exec(select(Condition).where(
+        Condition.character_id == perso.id)).all()
+    codes = [c.code for c in conditions]
+    # Les conditions posées par le combat portent leur propre malus au jet
+    # (affaibli, contrecoup) ; celles du ruleset (blessures) ont le leur.
+    malus = rs.malus_etats(codes) + sum(int((c.effets or {}).get("jet", 0))
+                                        for c in conditions if c.code not in
+                                        {e.get("code") for e in rs.etats_combat()})
+    if epuise(rs, perso):
+        malus += MALUS_EPUISEMENT
+    return malus
 
 
 # Lu aussi par le tour ordinaire : un personnage chancelant lance ses jets

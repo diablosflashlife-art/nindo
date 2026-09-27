@@ -35,7 +35,9 @@
     </form>
     {% endif %}
   </div>
-  {% if not temps_mort.offres %}
+  {% if temps_mort.examen %}
+  <p class="examen-ouvert"><b>L'examen chûnin vous est ouvert.</b> Le bureau vous y inscrira si vous le demandez : trois épreuves, et la promotion au bout.</p>
+  {% elif not temps_mort.offres %}
   <p class="petit muted" style="margin:8px 0 0">Quand vous êtes prêts : <em>Demander une mission au bureau</em>, ci-dessous.</p>
   {% endif %}
 </div>

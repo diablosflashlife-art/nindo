@@ -156,6 +156,8 @@ def changer_statut(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
         xp = XP_PAR_RANG.get(quete.rang, 40)
         effets.append(f"Mission réussie ! {progression.gagner_xp(session, camp, rs, pj, xp)}")
         effets += debriefer(session, camp, rs, quete, pj)
+        if quete.archetype == EXAMEN:
+            effets += promouvoir(session, camp, rs, quete)
         if quete.donneur_id:
             from app.models import Relation
             rel = session.exec(select(Relation).where(
@@ -198,19 +200,80 @@ ACTES = [
 ]
 NOTES = ["S", "A", "B", "C", "D"]
 
+# L'EXAMEN CHÛNIN a ses propres actes : les trois épreuves. Voir le ruleset
+# (`examen_chunin`) pour les conditions d'accès et la promotion.
+EXAMEN = "examen_chunin"
+ACTES_EXAMEN = [
+    {"numero": 1, "nom": "Épreuve écrite", "depuis": 0,
+     "consigne": "PREMIÈRE ÉPREUVE : l'écrit, dans une salle surveillée. Les "
+                 "questions sont impossibles ; ce qu'on teste, c'est la collecte "
+                 "d'information sans se faire prendre, et le sang-froid devant "
+                 "une dernière question piège. Des équipes étrangères sont là."},
+    {"numero": 2, "nom": "Forêt de la mort", "depuis": 4,
+     "consigne": "DEUXIÈME ÉPREUVE : la survie en forêt. Chaque équipe porte un "
+                 "rouleau et doit en prendre un second à une autre équipe, puis "
+                 "rejoindre la tour au centre. Embuscades, bêtes, faim, et "
+                 "{complication}"},
+    {"numero": 3, "nom": "Tournoi", "depuis": 9,
+     "consigne": "TROISIÈME ÉPREUVE : le tournoi, en duels devant les Kage et "
+                 "les daimyô. Ce qu'on juge n'est pas la victoire mais ce que "
+                 "chacun montre : jugement, sang-froid, capacité à commander. "
+                 "La mission se conclut sur le verdict des examinateurs."},
+]
+
 
 def acte(quete: Quest, tour: int) -> dict | None:
-    """L'acte courant d'une mission engagée, avec son nom et sa consigne."""
+    """L'acte courant d'une mission engagée, avec son nom, sa consigne, et
+    la liste des noms d'actes (l'examen a les siens)."""
     if quete.statut not in ("acceptée", "en cours") or quete.debut_tour is None:
         return None
+    actes = ACTES_EXAMEN if quete.archetype == EXAMEN else ACTES
     age = tour - quete.debut_tour
-    courant = ACTES[0]
-    for a in ACTES:
+    courant = actes[0]
+    for a in actes:
         if age >= a["depuis"]:
             courant = a
-    return {**courant, "age": age,
+    return {**courant, "age": age, "noms": [a["nom"] for a in actes],
             "consigne": courant["consigne"].format(
                 complication=quete.complication or "un imprévu que personne n'avait annoncé")}
+
+
+def examen_ouvert(session: Session, camp: Campaign, rs: Ruleset,
+                  pj: Character) -> bool:
+    """L'équipe a-t-elle mérité l'examen chûnin ? Un genin d'un niveau
+    suffisant, assez de missions réussies, et pas d'examen déjà en cours ou
+    passé."""
+    cfg = rs.data.get("examen_chunin", {}) or {}
+    if pj.grade != "genin" or pj.niveau < int(cfg.get("niveau_min", 3)):
+        return False
+    quetes = session.exec(select(Quest).where(Quest.campaign_id == camp.id)).all()
+    if any(q.archetype == EXAMEN for q in quetes):
+        return False
+    reussies = sum(1 for q in quetes if q.statut == "réussie")
+    return reussies >= int(cfg.get("missions_reussies_min", 2))
+
+
+def promouvoir(session: Session, camp: Campaign, rs: Ruleset,
+               quete: Quest) -> list[str]:
+    """L'examen réussi promeut tous les genin de l'équipe : les missions de
+    rang B et les techniques de rang B s'ouvrent (droits du ruleset)."""
+    cfg = rs.data.get("examen_chunin", {}) or {}
+    grade = cfg.get("grade_promu", "chunin")
+    effets: list[str] = []
+    for p in session.exec(select(Character).where(
+            Character.campaign_id == camp.id, Character.is_pc == True)).all():  # noqa: E712
+        if p.grade == "genin":
+            p.grade = grade
+            session.add(p)
+            effets.append(f"{p.nom} est promu {rs.titre_grade(grade)} !")
+            session.add(MemoryFact(
+                campaign_id=camp.id, tour=camp.tour, nature="fait", importance=5,
+                texte=f"{p.nom} a été promu {rs.titre_grade(grade)} à l'issue de "
+                      f"l'examen, au tour {camp.tour}."))
+    if effets:
+        session.add(Event(campaign_id=camp.id, tour=camp.tour, type="promotion",
+                          resume=" ".join(effets), importance=5))
+    return effets
 
 
 def noter(session: Session, camp: Campaign, quete: Quest, statut: str) -> str:
@@ -291,11 +354,12 @@ def _poids_rang(rang: str) -> float:
 
 def ossature(pack: LorePack, rs: Ruleset, camp: Campaign, pj: Character,
              lieux: list[Location], *, rang: str | None = None,
-             graine: int | None = None) -> dict | None:
+             graine: int | None = None, archetype: str = "") -> dict | None:
     """Tire l'ossature d'une mission. Aucun appel au modèle ici.
 
     Retourne None si le lore ne permet rien de cohérent — mieux vaut pas de
     mission qu'une mission qui parle d'un endroit inexistant.
+    `archetype` impose un archétype (l'examen chûnin, sur demande).
     """
     rng = random.Random(graine if graine is not None
                         else camp.graine + camp.tour * 7919)
@@ -307,10 +371,16 @@ def ossature(pack: LorePack, rs: Ruleset, camp: Campaign, pj: Character,
         rangs = dispo
     rang_choisi = rng.choices(rangs, weights=[_poids_rang(r) for r in rangs])[0]
 
-    archetypes = pack.archetypes_mission(rang_choisi)
-    if not archetypes:
-        return None
-    arch = rng.choice(archetypes)
+    if archetype:
+        arch = next((a for a in pack.liste("archetypes_mission") if a["id"] == archetype), None)
+        if arch is None:
+            return None
+        rang_choisi = (arch.get("rangs") or [rang_choisi])[0]
+    else:
+        archetypes = pack.archetypes_mission(rang_choisi)
+        if not archetypes:
+            return None
+        arch = rng.choice(archetypes)
 
     pays = pack.pays_du_village(pj.village_ref or "") or {}
     pays_ref = pays.get("id", "")
@@ -414,11 +484,11 @@ def _brief(pack: LorePack, camp: Campaign, pj: Character, oss: dict) -> str:
 
 def generer(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
             pj: Character, *, rang: str | None = None,
-            statut: str = "proposée") -> Quest | None:
+            statut: str = "proposée", archetype: str = "") -> Quest | None:
     """Ossature tirée du lore, habillage par le modèle, écriture en base."""
     lieux = session.exec(select(Location).where(
         Location.campaign_id == camp.id)).all()
-    oss = ossature(pack, rs, camp, pj, list(lieux), rang=rang)
+    oss = ossature(pack, rs, camp, pj, list(lieux), rang=rang, archetype=archetype)
     if oss is None:
         return None
 
@@ -457,6 +527,7 @@ def generer(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
         # Gardée pour l'acte 2 : c'est ce que le commanditaire ignorait.
         complication=" ".join(filter(None, [oss.get("complication", ""),
                                             oss.get("revers", "")]))[:400],
+        archetype=oss.get("archetype", ""),
     )
     session.add(quete)
 

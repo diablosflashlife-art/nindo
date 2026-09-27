@@ -115,6 +115,13 @@ def valider_consequences(session: Session, camp: Campaign, brut: dict) -> tuple[
 
     net["xp"] = max(0, min(XP_PAR_TOUR_MAX, int(brut.get("xp") or 0)))
 
+    # Le jeu de rôle récompensé (chantier D) : un booléen, et un lien qui
+    # doit exister. Le moteur vérifie ensuite que c'en est bien un.
+    net["nindo_joue"] = bool(brut.get("nindo_joue"))
+    lien = resoudre_personnage(session, camp, (brut.get("lien_joue") or "").strip()) \
+        if brut.get("lien_joue") else None
+    net["lien_joue"] = lien.id if lien is not None and not lien.is_pc else None
+
     # Rencontres : une seule par tour, et jamais quelqu'un qui existe déjà —
     # sinon la cristallisation créerait un doublon de personnage connu.
     for r in (brut.get("rencontres") or [])[:2]:

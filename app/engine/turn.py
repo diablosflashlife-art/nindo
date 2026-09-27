@@ -419,7 +419,9 @@ def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
         arb.bonus.append({"libelle": "maîtrise de " + ", ".join(noms), "valeur": bonus_technique})
     blessures = combat.malus_blessures(session, rs, pj)
     if blessures:
-        arb.bonus.append({"libelle": "blessures", "valeur": blessures})
+        arb.bonus.append({"libelle": "épuisé" if combat.epuise(rs, pj) and
+                          blessures == combat.MALUS_EPUISEMENT else "blessures et états",
+                          "valeur": blessures})
 
     # Les techniques que le joueur peut engager sur CE jet : celles de son
     # répertoire qui se jouent avec la même caractéristique. Chacune avec son
@@ -928,12 +930,52 @@ def _appliquer(session: Session, camp: Campaign, pj: Character, net: dict,
 
         effets.append(progression.gagner_xp(session, camp, rs, pj, net["xp"]))
 
+    # LE JEU DE RÔLE RAPPORTE (chantier D). Tenir son nindō, faire avancer
+    # un lien : c'est ce qu'un bon MJ récompense en fin de séance. Ici c'est
+    # au tour, plafonné pour que ça reste un accent, pas une ferme à XP.
+    effets += _recompenser_le_jeu(session, camp, pj, net, rs)
+
     if net["graine_intrigue"]:
         session.add(MemoryFact(campaign_id=camp.id, texte=net["graine_intrigue"],
                                nature="secret", importance=4, tour=camp.tour))
         effets.append("Une intrigue latente a été semée.")
 
     session.add(pj)
+    return effets
+
+
+def _recompenser_le_jeu(session: Session, camp: Campaign, pj: Character,
+                        net: dict, rs: Ruleset) -> list[str]:
+    """Nindō tenu, lien avancé : de l'expérience et un lien plus serré."""
+    from app.engine import progression
+    effets: list[str] = []
+    cfg_n = rs.data.get("nindo", {}) or {}
+    cfg_l = rs.data.get("liens", {}) or {}
+
+    if net.get("nindo_joue") and (pj.nindo or "").strip():
+        recent = [e for e in session.exec(select(Event).where(
+            Event.campaign_id == camp.id, Event.type == "nindo",
+            Event.tour > camp.tour - int(cfg_n.get("tours_entre_deux", 3)))).all()
+            if pj.id in (e.entites or [])]
+        if not recent:
+            xp = int(cfg_n.get("xp_par_scene", 5))
+            effets.append(f"Nindō tenu — {progression.gagner_xp(session, camp, rs, pj, xp)}")
+            session.add(Event(campaign_id=camp.id, tour=camp.tour, type="nindo",
+                              resume=f"{pj.nom} a tenu son nindō : « {pj.nindo} »",
+                              importance=2, entites=[pj.id]))
+
+    if net.get("lien_joue"):
+        rel = session.exec(select(Relation).where(
+            Relation.campaign_id == camp.id, Relation.source_id == net["lien_joue"],
+            Relation.cible_id == pj.id, Relation.lien == True)).first()  # noqa: E712
+        autre = session.get(Character, net["lien_joue"])
+        if rel is not None and autre is not None:
+            plus = int(cfg_l.get("relation_par_scene", 3))
+            rel.valeur = max(-100, min(100, rel.valeur + plus))
+            session.add(rel)
+            xp = int(cfg_l.get("xp_par_scene", 5))
+            effets.append(f"Lien avec {autre.nom} approfondi ({plus:+d}) — "
+                          f"{progression.gagner_xp(session, camp, rs, pj, xp)}")
     return effets
 
 

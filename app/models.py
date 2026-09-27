@@ -162,6 +162,10 @@ class Character(SQLModel, table=True):
     # après mission au débrief.
     ryo: int = 0
     reputation: int = 0
+    # LE NINDŌ (chantier D) : la règle que ce ninja s'est donnée, en une
+    # phrase. Le narrateur la connaît ; la tenir en scène rapporte de
+    # l'expérience. Les liens, eux, vivent sur les relations (`Relation.lien`).
+    nindo: str = ""
     stats: dict = Field(default_factory=dict, sa_column=Column(JSON))
     ressources: dict = Field(default_factory=dict, sa_column=Column(JSON))
     inventaire: list = Field(default_factory=list, sa_column=Column(JSON))
@@ -203,6 +207,10 @@ class Relation(SQLModel, table=True):
     # Voir app/engine/liens.py.
     palier_vu: int = 0                 # -2..+2
     palier_tour: int = 0
+    # Un LIEN (chantier D) : une relation qui compte pour le joueur — son
+    # instructeur, un coéquipier, son rival. Le narrateur les met en scène,
+    # et une scène qui les fait avancer rapporte de l'expérience.
+    lien: bool = False
 
 
 class Quest(SQLModel, table=True):
@@ -224,6 +232,7 @@ class Quest(SQLModel, table=True):
     # du lore à la création et se révèle à l'acte 2 ; le débrief note la
     # mission (S à D), verse des ryô à l'équipe et fait bouger la réputation.
     complication: str = Field(default="", sa_column=Column(Text))
+    archetype: str = ""                # l'archétype du lore ; « examen_chunin » a ses propres actes
     note: str = ""                     # S | A | B | C | D, vide tant qu'elle n'est pas close
     ryo: int = 0                       # ce qu'elle a rapporté
     rapport: str = Field(default="", sa_column=Column(Text))

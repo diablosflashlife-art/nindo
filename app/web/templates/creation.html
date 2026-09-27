@@ -218,6 +218,22 @@
         placeholder="Cheveux noirs en bataille, cicatrice fine sur l'avant-bras gauche.">{{ saisie.get('apparence','') }}</textarea>
     </div>
 
+    {# LE NINDŌ : la règle qu'on se donne. Le maître du jeu la connaît, et la
+       tenir en scène rapporte de l'expérience. Des exemples cliquables, pour
+       qu'un joueur pressé ait quand même le sien. #}
+    <div class="champ">
+      <label for="nindo">Ton nindō — la règle que tu ne trahiras pas</label>
+      <input id="nindo" name="nindo" maxlength="160"
+             placeholder="Je ne reviens jamais sur ma parole."
+             value="{{ saisie.get('nindo','') }}">
+      <div class="nindo-exemples">
+        {% for n in nindos_exemples %}
+        <button type="button" class="discret nindo-ex" data-texte="{{ n }}">{{ n }}</button>
+        {% endfor %}
+      </div>
+      <p class="petit muted" style="margin:6px 0 0">Vide : le destin t'en donnera un.</p>
+    </div>
+
     <div class="nav-etapes">
       <span></span>
       <button type="button" class="suivant">Continuer →</button>
@@ -514,6 +530,16 @@ et tu n'en sauras qu'une partie.</div>
 </form>
 
 <script>
+(function () {
+  /* Un exemple de nindō cliqué devient le sien — modifiable ensuite. */
+  document.querySelectorAll('.nindo-ex').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var champ = document.getElementById('nindo');
+      champ.value = b.dataset.texte;
+      champ.focus();
+    });
+  });
+})();
 (function () {
   var BUDGETS = {{ origines|tojson }};
   var KANJIS = {

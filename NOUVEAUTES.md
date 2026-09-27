@@ -3,6 +3,15 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.5.0 — Nindō, liens, examen chûnin
+
+Quatrième chantier de Nindō 2.0 : la fiche pèse, et le jeu de rôle rapporte.
+
+- **Le nindō** : à la création, la règle que ton ninja ne trahira pas (ou le destin t'en donne une). Le conteur la connaît et la met en tension. **La tenir dans une scène rapporte de l'expérience** (au plus une fois tous les trois tours).
+- **Les liens** : ton instructeur, tes coéquipiers, ton rival. Le conteur les fait revenir, et **une scène qui fait avancer un lien** resserre la relation et rapporte de l'expérience.
+- **L'épuisement** : sous un cinquième de son chakra, un ninja lance tout à -2 — annoncé avant le jet, visible sur le plateau et la fiche. Les conditions posées par le combat (affaibli, contrecoup) pèsent aussi sur les jets hors combat.
+- **L'examen chûnin** : quand l'équipe l'a mérité (niveau 3, deux missions réussies), le bureau l'inscrit. Trois épreuves comme trois actes — **l'écrit, la forêt de la mort, le tournoi** — et la réussite **promeut toute l'équipe chûnin** : missions de rang B, techniques de rang B.
+
 ## 1.4.0 — Missions en actes, temps mort, ryô
 
 Troisième chantier de Nindō 2.0 : la campagne prend la forme d'une vraie campagne.

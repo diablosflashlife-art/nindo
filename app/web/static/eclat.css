@@ -738,3 +738,13 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 .art-corps small{font-size:11px;color:var(--texte-3)}
 .art-effet{font-family:var(--mono);font-size:10.5px!important;color:var(--jade)!important}
 .article button.ligne{flex:0 0 auto;font-family:var(--mono);font-size:11px;white-space:nowrap}
+
+/* ==========================================================================
+   NINDŌ, LIENS, EXAMEN — chantier D de Nindō 2.0
+   ========================================================================== */
+.nindo{font-family:var(--display);font-style:italic;font-size:14px;line-height:1.45;color:var(--or);margin:12px 0 0}
+.nindo-exemples{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.nindo-ex{font-size:12px;padding:5px 10px;text-align:left}
+.examen-ouvert{margin:10px 0 0;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.45;
+  border:1px solid rgba(201,162,39,.55);background:var(--or-voile);color:var(--texte)}
+.examen-ouvert b{color:var(--or)}

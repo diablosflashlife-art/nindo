@@ -37,10 +37,14 @@
     <span class="valeur {{ 'ok' if pj.reputation > 0 else ('ko' if pj.reputation < 0 else '') }}">{{ '%+d'|format(pj.reputation) }}</span>
   </div>
 
-  {% if pj.etats %}
+  {% set chakra_max = res_cfg.get('chakra', {}).get('default', 30) %}
+  {% set epuise = pj.ressources.get('chakra', 0) < chakra_max * 0.2 %}
+  {% if pj.etats or epuise %}
   <div class="tags" style="margin-top:12px">
-    {% for e in pj.etats %}<span class="tag vermillon">{{ e }}</span>{% endfor %}</div>
+    {% for e in pj.etats %}<span class="tag vermillon">{{ e }}</span>{% endfor %}
+    {% if epuise %}<span class="tag vermillon" title="Chakra sous un cinquième : -2 à tous les jets">épuisé</span>{% endif %}</div>
   {% endif %}
+  {% if pj.nindo %}<p class="nindo" title="Ton nindō — le tenir en scène rapporte de l'expérience">« {{ pj.nindo }} »</p>{% endif %}
 
   {# Hors modèle et hors narration : cette soupape doit marcher même quand
      Ollama ne répond plus. Sans elle, une rencontre perdue condamne la

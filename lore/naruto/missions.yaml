@@ -17,6 +17,26 @@
 
 archetypes_mission:
 
+  # ------------------------------------------------------- l'examen chûnin
+  # Jamais tiré au hasard (`sur_demande`) : le bureau le propose quand
+  # l'équipe l'a mérité. Ses trois actes sont les trois épreuves.
+  - id: examen_chunin
+    nom: "Examen chûnin"
+    rangs: [C]
+    sur_demande: true
+    categorie: examen
+    commanditaire: [village]
+    lieu_type: [village]
+    ancre: []
+    objectif: "Passer les trois épreuves de l'examen chûnin : l'épreuve écrite, la survie en forêt, le tournoi devant les Kage."
+    enjeu: "La promotion au grade de chûnin — et le regard de tout le village, et des villages invités."
+    complications:
+      - "Une équipe étrangère triche avec l'aide d'un examinateur."
+      - "Un candidat n'est pas celui qu'il prétend être."
+      - "Quelqu'un veut que l'examen tourne mal, et a préparé la forêt."
+      - "Un coéquipier est blessé avant le tournoi et ne peut pas le cacher."
+    duree_tours: [14, 16]
+
   # ------------------------------------------------------------- rang D
   - id: nuisible
     nom: "Nuisible"

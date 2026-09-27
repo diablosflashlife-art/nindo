@@ -47,9 +47,10 @@
     </div>
     {% endif %}
 
-    {% if pj.apparence or pj.origine %}
+    {% if pj.apparence or pj.origine or pj.nindo %}
     <div class="panneau">
       <p class="legende">{{ icone('identite', 13) }} Portrait</p>
+      {% if pj.nindo %}<p class="nindo" style="margin:0 0 10px">« {{ pj.nindo }} »</p>{% endif %}
       {% if pj.apparence %}<p style="margin:0 0 10px">{{ pj.apparence }}</p>{% endif %}
       {% if pj.origine %}<p class="muted" style="margin:0">{{ pj.origine }}</p>{% endif %}
     </div>

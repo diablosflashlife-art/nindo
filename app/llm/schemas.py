@@ -114,6 +114,10 @@ CONSEQUENCES = {
                 "risque": {"type": "string", "enum": ["faible", "moyen", "eleve"]},
             },
             "required": ["texte", "risque"]}},
+        # Le jeu de rôle lui-même se récompense (chantier D) : le joueur a-t-il
+        # tenu son nindō dans cette scène ? Un lien a-t-il avancé ?
+        "nindo_joue": {"type": "boolean"},
+        "lien_joue": {"type": "string"},
     },
     "required": ["faits", "relations", "quetes", "ressources", "xp",
                  "propositions"],

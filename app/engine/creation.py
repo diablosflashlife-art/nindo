@@ -47,6 +47,7 @@ class Fiche:
     mode_destinee: str = "proposee"
     graine_destinee: int | None = None
     archetype: str = ""                 # tiré par « je m'en remets au destin »
+    nindo: str = ""                     # la règle qu'on se donne, en une phrase
 
 
 def traits_de_l_archetype(pack: LorePack, rs: Ruleset, fiche: Fiche,
@@ -102,6 +103,12 @@ def tirer_fiche(pack: LorePack, rs: Ruleset, fiche: Fiche, annee: int,
     arch = rng.choices(archetypes, weights=[a.get("poids", 10) for a in archetypes])[0] \
         if archetypes else {}
     fiche.archetype = arch.get("id", "")
+    if not fiche.nindo.strip():
+        # Son propre générateur : tirer le nindō dans la même séquence que la
+        # destinée décalait tous les tirages qui suivent.
+        exemples = list(rs.data.get("nindos_exemples") or [])
+        if exemples:
+            fiche.nindo = random.Random((graine or 0) * 3 + 1).choice(exemples)
 
     villages = [v for v in pack.liste("villages") if pack.actif_a(v, annee)] \
         or pack.liste("villages")
@@ -352,6 +359,7 @@ def creer_personnage(session: Session, camp: Campaign, pack: LorePack, rs: Rules
         stats=stats, ressources=rs.ressources_defaut(),
         inventaire=list(rs.data.get("inventaire_depart", [])),
         ryo=int(rs.data.get("ryo_depart", 500)),
+        nindo=" ".join((fiche.nindo or "").split())[:160],
         location_id=depart.id if depart else None,
         source="partie", role_campagne="joueur",
     )

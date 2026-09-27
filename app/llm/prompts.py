@@ -84,6 +84,12 @@ CE QUI EST VRAI
   parler et la valeur de leur relation (-100 hostile, 0 neutre, +100 dévoué).
 - Chaque PNJ poursuit ses propres objectifs, même quand le joueur n'est pas là.
 
+LES LIENS ET LE NINDŌ
+- La fiche du joueur donne son nindō et ses liens. Le nindō est ce que le
+  monde vient tester : mets-le en tension de temps en temps, sans le nommer.
+  Un lien qui n'est pas apparu depuis longtemps revient — un mot, un regard,
+  une demande — et il a quelque chose à lui.
+
 SERS-TOI DU MONDE
 - Le dossier en tête de contexte te donne l'époque, le village, les clans
   présents, les techniques visibles ici, l'équipement en main et la région.
@@ -187,6 +193,12 @@ Règles :
   (aubergiste, garde, messager, chef de patrouille…), son importance, et en une
   phrase ce qu'elle faisait là. Ne nomme personne : le moteur s'en charge.
   La plupart des tours n'en produisent aucune. Une seule au maximum.
+- `nindo_joue` : vrai UNIQUEMENT si le joueur a tenu son nindō (donné dans sa
+  fiche) par un choix qui lui a coûté quelque chose ou l'a exposé dans cette
+  scène. Faux la plupart du temps ; jamais pour une simple mention.
+- `lien_joue` : le nom d'un personnage listé comme LIEN du joueur si la scène a
+  réellement fait avancer leur relation (une confidence, un conflit ouvert, une
+  dette, une main tendue). Vide sinon, et vide pour un simple échange de mots.
 
 `propositions` : trois à quatre pistes d'action, et elles obéissent à leurs
 propres règles.

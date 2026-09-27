@@ -411,6 +411,38 @@ rangs_mission:
 # Ce qu'un genin a en poche en sortant de l'Académie, et ce que vaut une
 # note au débrief : la paie se multiplie, la réputation bouge.
 ryo_depart: 500
+
+# ==========================================================================
+# NINDŌ ET LIENS — ce qu'on joue rapporte
+# Le nindō est la règle qu'un ninja se donne. Le tenir dans une scène, ou
+# faire avancer un lien, rapporte de l'expérience : c'est ce qui récompense
+# le jeu de rôle lui-même, pas seulement les jets réussis.
+# ==========================================================================
+nindos_exemples:
+  - "Je ne reviens jamais sur ma parole."
+  - "Personne ne reste derrière, jamais."
+  - "Je prouverai que le sang ne fait pas le ninja."
+  - "Je protège ceux qui ne peuvent pas se protéger."
+  - "Je ne frappe jamais le premier."
+  - "Je saurai la vérité, quel qu'en soit le prix."
+  - "Un jour, ils me reconnaîtront tous."
+  - "Je ne dois rien à personne — et je rembourse tout."
+nindo:
+  xp_par_scene: 5          # tenir son nindō dans une scène
+  tours_entre_deux: 3      # pas plus d'une fois tous les trois tours
+liens:
+  xp_par_scene: 5          # faire avancer un lien
+  relation_par_scene: 3    # et le lien se resserre
+
+# ==========================================================================
+# L'EXAMEN CHÛNIN — l'arc qui promeut
+# Proposé par le bureau quand l'équipe l'a mérité. Trois épreuves, qui sont
+# les trois actes de la mission ; la réussite promeut tous les genin.
+# ==========================================================================
+examen_chunin:
+  niveau_min: 3
+  missions_reussies_min: 2
+  grade_promu: chunin
 debrief:
   paie_par_note: {S: 1.5, A: 1.25, B: 1.0, C: 0.75, D: 0.5}
   reputation_par_note: {S: 4, A: 3, B: 2, C: 1, D: -1}

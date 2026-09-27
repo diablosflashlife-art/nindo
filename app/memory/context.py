@@ -198,6 +198,19 @@ def _s_fiche(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
                  f"{', '.join(pj.inventaire) if pj.inventaire else 'vide'}")
     if pj.etats:
         fiche.append(f"États : {', '.join(pj.etats)}")
+    if (pj.nindo or "").strip():
+        fiche.append(f"Nindō (sa règle) : « {pj.nindo.strip()} »")
+    liens = session.exec(select(Relation).where(
+        Relation.campaign_id == camp.id, Relation.cible_id == pj.id,
+        Relation.lien == True)).all()  # noqa: E712
+    if liens:
+        noms = []
+        for r in liens:
+            c = session.get(Character, r.source_id)
+            if c is not None and c.vivant:
+                noms.append(f"{c.nom} ({role_de(c) or r.nature}, {r.valeur:+d})")
+        if noms:
+            fiche.append("Liens : " + ", ".join(noms))
     return "### PERSONNAGE QUI AGIT CE TOUR-CI\n" + "\n".join(fiche)
 
 

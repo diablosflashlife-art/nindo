@@ -343,7 +343,7 @@ class LorePack:
     # -- missions ----------------------------------------------------------
     def archetypes_mission(self, rang: str | None = None,
                            categorie: str | None = None) -> list[dict]:
-        out = self.liste("archetypes_mission")
+        out = [a for a in self.liste("archetypes_mission") if not a.get("sur_demande")]
         if rang:
             out = [a for a in out if rang in (a.get("rangs") or [])]
         if categorie:

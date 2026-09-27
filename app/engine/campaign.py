@@ -178,8 +178,12 @@ def generer_distribution(session: Session, camp: Campaign, pack: LorePack,
         valeur = int(data.get("relation_valeur") or 0)
         valeur = max(-40, min(40, valeur))
         nature = (data.get("relation_nature") or role).strip()
+        # L'entourage de départ, ce sont les LIENS du joueur : instructeur,
+        # coéquipiers, rival. Le narrateur les met en scène, et les faire
+        # avancer rapporte de l'expérience (chantier D).
         session.add(Relation(campaign_id=camp.id, source_id=pnj.id, cible_id=pj.id,
-                             nature=nature, valeur=valeur, note="Relation initiale."))
+                             nature=nature, valeur=valeur, note="Relation initiale.",
+                             lien=True))
         session.add(Relation(campaign_id=camp.id, source_id=pj.id, cible_id=pnj.id,
                              nature=nature, valeur=max(0, valeur // 2),
                              note="Relation initiale."))

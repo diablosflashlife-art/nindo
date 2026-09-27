@@ -384,8 +384,8 @@
           {% if a %}
           {# LES TROIS ACTES : où en est la mission, et ce qui vient. #}
           <span class="actes" title="Acte {{ a.numero }} — {{ a.nom }}">
-            {% for n, nom in [(1, 'Approche'), (2, 'Complication'), (3, 'Dénouement')] %}
-            <i class="{{ 'fait' if n < a.numero else ('courant' if n == a.numero else '') }}">{{ nom }}</i>
+            {% for nom in a.noms %}
+            <i class="{{ 'fait' if loop.index < a.numero else ('courant' if loop.index == a.numero else '') }}">{{ nom }}</i>
             {% endfor %}
           </span>
           {% endif %}

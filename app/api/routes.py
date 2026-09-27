@@ -242,6 +242,7 @@ def _ctx_creation(request: Request, camp: Campaign, rs: Ruleset, erreur: str = "
         "origines": rs.origines, "specialisations": rs.specialisations,
         "stats_cfg": rs.stats, "groupes": rs.data.get("groupes_stats", {}),
         "erreur": erreur, "saisie": saisie or {},
+        "nindos_exemples": list(rs.data.get("nindos_exemples") or [])[:6],
     }
 
 
@@ -274,6 +275,7 @@ async def soumettre_creation(cid: int, request: Request,
         nom=form.get("nom", ""), sexe=form.get("sexe", ""),
         age=int(age_brut) if age_brut.isdigit() else None,
         apparence=form.get("apparence", ""), joueur=form.get("joueur", ""),
+        nindo=form.get("nindo", ""),
         village_id=form.get("village", "konoha"),
         origine=origine, clan_id=clan_id,
         clan_invente={
@@ -365,6 +367,7 @@ async def choisir_destinee(cid: int, request: Request,
         nom=form.get("nom", ""), sexe=form.get("sexe", ""),
         age=int(age_brut) if age_brut.isdigit() else None,
         apparence=form.get("apparence", ""), joueur=form.get("joueur", ""),
+        nindo=form.get("nindo", ""),
         village_id=form.get("village", "konoha"), origine=origine,
         clan_id=form.get(f"clan_{origine}", "") or form.get("clan", ""),
         clan_invente={"nom": form.get("clan_nom", "")},
@@ -571,6 +574,8 @@ def _ctx_rencontre(session: Session, camp: Campaign, rs: Ruleset,
             conditions.append(f"garde +{actif['garde']}")
         if int(actif.get("clones", 0)) > 0:
             conditions.append(f"{actif['clones']} doublure(s)")
+        if cbt.epuise(rs, c):
+            conditions.append("épuisé")
         plateau.append({
             "id": c.id, "nom": c.nom, "camp": camp_, "is_pc": c.is_pc,
             "initiative": int(init.get(str(cid), 0)),
@@ -1034,7 +1039,7 @@ def flux_sceau(cid: int, request: Request, jeton: str):
                                 campaign_id=camp.id, source_id=c.id, cible_id=a.id,
                                 nature=rel.nature if rel else c.role_campagne,
                                 valeur=rel.valeur if rel else 0,
-                                note="Relation initiale."))
+                                note="Relation initiale.", lien=True))
                     session.commit()
                 gabarit = templates.get_template("_equipier.html")
                 for c in distribution:
@@ -1225,6 +1230,7 @@ def _temps_mort(session: Session, camp: Campaign, pj: Character,
         "liens": liens,
         "fils": [f.question for f in fils_du_recit.ouverts(session, camp)][:3],
         "offres": [q for q in quetes if q.statut == "proposée"],
+        "examen": gen_missions.examen_ouvert(session, camp, _regles(camp), pj),
     }
 
 
@@ -1285,7 +1291,11 @@ def demander_mission(cid: int, character_id: int | None = Form(None),
     if not pj:
         raise HTTPException(400, "Aucun personnage joueur")
     rs, pack = _regles(camp), charger_pack(camp.lore_pack)
-    gen_missions.generer(session, camp, pack, rs, pj)
+    # L'examen chûnin passe avant toute autre offre, quand il est mérité.
+    if gen_missions.examen_ouvert(session, camp, rs, pj):
+        gen_missions.generer(session, camp, pack, rs, pj, archetype=gen_missions.EXAMEN)
+    else:
+        gen_missions.generer(session, camp, pack, rs, pj)
     return RedirectResponse(f"/campagnes/{cid}?pj={pj.id}", status_code=303)
 
 
