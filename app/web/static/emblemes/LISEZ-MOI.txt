@@ -1,0 +1,55 @@
+EMBLÈMES — comment mettre les tiens
+===================================
+
+Par défaut, le jeu dessine lui-même chaque sceau sous la forme d'une PLAQUE DE
+BANDEAU FRONTAL : une plaque de métal frappé, gravée, cousue sur une étoffe
+teinte à la couleur du village ou du clan. Le dessin est dans
+app/web/templates/_emblemes.html, et ce sont des compositions originales — pas
+des reproductions des emblèmes de la série.
+
+Si tu préfères tes propres images (celles d'un wiki, les tiennes, celles d'un
+artiste), c'est ce dossier qui sert à ça.
+
+COMMENT FAIRE
+-------------
+Dépose ici une image portant le nom de l'identifiant, et l'interface l'affiche
+partout à la place de la plaque dessinée : cartes de village, cartes de clan,
+médaillon de la fiche, colonne de la table, cartes de campagne. Aucun code à
+modifier.
+
+  konoha.svg    suna.svg    kiri.svg    kumo.svg    iwa.svg
+  ame.svg       kusa.svg    taki.svg    oto.svg
+
+  uchiha.svg    hyuga.svg     senju.svg    uzumaki.svg   nara.svg
+  akimichi.svg  yamanaka.svg  aburame.svg  inuzuka.svg   kaguya.svg
+  sarutobi.svg  shimura.svg   hatake.svg   mori.svg      kurosawa.svg
+  tanaka.svg    kamizuru.svg  hoshigaki.svg
+
+Formats acceptés : .svg, .png, .webp, .jpg, .gif — le .svg reste net à toutes
+les tailles, c'est le meilleur choix.
+
+CONSEILS DE RENDU
+-----------------
+Image carrée, sujet centré, marge d'environ 10 % sur les bords. Les sceaux sont
+affichés entre 36 et 96 px : une forme pleine et contrastée passe mieux qu'un
+dessin fin. Sur fond sombre, un aplat clair (blanc cassé) fonctionne bien.
+
+Attention : ton image REMPLACE toute la plaque, étoffe comprise. Si tu ne
+fournis qu'un symbole nu, tu perds l'effet de bandeau et la couleur
+d'appartenance. Pour garder les deux, le plus simple est de modifier la marque
+dans _emblemes.html (macro `marque`) plutôt que de déposer une image : la
+plaque, les rivets et le liseré restent, seule la gravure change.
+
+Remplacer une image suffit : le lien porte la date du fichier, le navigateur
+recharge tout seul. Retire l'image et la plaque dessinée revient.
+
+Les identifiants sont ceux de lore/naruto/monde.yaml (villages) et
+lore/naruto/clans.yaml (clans) : si tu ajoutes un clan, nomme son image d'après
+son `id`.
+
+DROITS
+------
+Le projet n'embarque aucune image tierce, volontairement : tout ce qu'il
+affiche est dessiné ici. Les images que tu déposes dans ce dossier restent ton
+affaire — c'est à toi de t'assurer que tu as le droit de les utiliser, surtout
+si tu partages la partie ou le dépôt.

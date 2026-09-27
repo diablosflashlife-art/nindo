@@ -1,0 +1,98 @@
+{# ==========================================================================
+   LA CARTE DU PAYS.
+
+   Les lieux portaient une région, un danger et un terrain, et rien ne disait
+   où ils se trouvaient les uns par rapport aux autres. Le joueur changeait
+   d'endroit quand la narration le décidait, sans que cela coûte jamais rien.
+
+   DEUX MOITIÉS, ET C'EST VOULU. La carte donne le SENS SPATIAL — qui est loin,
+   qui est au nord, ce qui est dangereux — avec des points seuls. Les noms
+   complets vivent dans la liste en dessous, avec leur coût. Tenter de poser
+   « Terrain d'entraînement 3 » sur une carte de trois cents pixels donnait
+   « Terrain d'en… », c'est-à-dire ni la carte ni le nom.
+   ========================================================================== #}
+{% from "_plan.html" import plan, plan_defs %}
+{% if carte %}
+{{ plan_defs() }}
+<div class="panneau serre">
+  <p class="legende">{{ icone('lieu', 13) }} Le pays</p>
+
+  {# Le fond était un PAYSAGE flouté — une colline vue de face, utilisée comme
+     s'il s'agissait d'un plan. Les coordonnées des lieux ne voulaient donc
+     rien dire : « au nord-est » tombait sur un morceau de ciel. C'est
+     maintenant un vrai plan vu de dessus, et les positions sont accordées au
+     dessin. Voir _plan.html. #}
+  <div class="carte">
+    <div class="carte-fond">{{ plan(pj.village_ref or 'konoha') }}</div>
+
+    {# Les routes partent du lieu courant : la distance se voit avant d'être
+       lue. #}
+    {% set ici = (carte | selectattr('ici') | list | first) %}
+    {% if ici %}
+    <svg class="carte-routes" viewBox="0 0 100 100" preserveAspectRatio="none"
+         aria-hidden="true">
+      {% for e in carte if not e.ici %}
+      <line x1="{{ ici.lieu.x }}" y1="{{ ici.lieu.y }}"
+            x2="{{ e.lieu.x }}" y2="{{ e.lieu.y }}"/>
+      {% endfor %}
+    </svg>
+    {% endif %}
+
+    {% for e in carte %}
+    <span class="carte-point {{ 'ici' if e.ici }}"
+          style="left:{{ e.lieu.x }}%;top:{{ e.lieu.y }}%"
+          data-lieu="{{ e.lieu.id }}"
+          title="{{ e.lieu.nom }} — danger {{ e.lieu.danger }}">
+      <span class="carte-pastille" data-danger="{{ e.lieu.danger }}"></span>
+    </span>
+    {% endfor %}
+  </div>
+
+  {# Les destinations, en clair. Survoler une ligne allume son point. #}
+  <div class="carte-liste">
+    {% for e in carte %}
+    <form method="post" action="/campagnes/{{ camp.id }}/voyager"
+          class="carte-ligne {{ 'ici' if e.ici }}" data-lieu="{{ e.lieu.id }}">
+      <input type="hidden" name="character_id" value="{{ pj.id }}">
+      <input type="hidden" name="destination" value="{{ e.lieu.id }}">
+      <button type="submit" class="ligne" {% if e.ici or rencontre %}disabled{% endif %}>
+        <span class="carte-pastille" data-danger="{{ e.lieu.danger }}"></span>
+        <span class="carte-ligne-nom">{{ e.lieu.nom }}</span>
+        <span class="carte-ligne-cout">
+          {%- if e.ici %}tu y es{% else %}{{ e.cout }} tour{{ 's' if e.cout > 1 }}{% endif -%}
+        </span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+
+  <p class="petit muted" style="margin:10px 0 0">
+    {% if rencontre %}
+      On ne quitte pas un affrontement en marchant.
+    {% else %}
+      Voyager coûte des tours — et les échéances de mission courent pendant
+      que tu marches.
+    {% endif %}
+  </p>
+</div>
+
+<script>
+/* Relier la liste à la carte : survoler une destination allume son point.
+   Délégué sur le panneau, parce que la colonne est rechargée à chaque tour. */
+(function () {
+  var panneau = document.currentScript.parentElement;
+  function viser(id, actif) {
+    var p = panneau.querySelector('.carte-point[data-lieu="' + id + '"]');
+    if (p) p.classList.toggle('vise', actif);
+  }
+  panneau.addEventListener('mouseover', function (e) {
+    var l = e.target.closest && e.target.closest('.carte-ligne');
+    if (l) viser(l.dataset.lieu, true);
+  });
+  panneau.addEventListener('mouseout', function (e) {
+    var l = e.target.closest && e.target.closest('.carte-ligne');
+    if (l) viser(l.dataset.lieu, false);
+  });
+})();
+</script>
+{% endif %}

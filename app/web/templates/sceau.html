@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% from "_paysages.html" import paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% block cle_page %}{{ fiche.village_id or 'konoha' }}{% endblock %}
+{% block titre %}Le sceau — {{ camp.nom }}{% endblock %}
+{% block barre %}<span class="petit muted">{{ camp.nom }}</span>{% endblock %}
+{% block contenu %}
+
+{# ==========================================================================
+   LE SCELLÉ.
+
+   C'est le moment le plus chargé de toute la campagne : le monde s'instancie,
+   l'entourage naît avec ses secrets, la première scène s'écrit. Une à trois
+   minutes de modèle. Jusqu'ici, le joueur les passait sur une page figée qui
+   ressemblait à un plantage.
+
+   Cette page ne raccourcit rien. Elle montre. Chaque étape est annoncée avant
+   d'être lancée, le présage s'écrit dès qu'il tombe, et l'entourage se
+   retourne un visage après l'autre. La seule chose qu'on ne montre jamais,
+   ce sont les secrets — ils viennent d'être figés en base, et c'est tout
+   l'enjeu des cent tours qui suivent.
+   ========================================================================== #}
+{{ paysage_defs([fiche.village_id or 'konoha']) }}
+
+<section class="heros bandeau cadre-paysage" data-parallaxe>
+  {{ estampe(fiche.village_id or 'konoha', 'heros') }}
+  <div class="heros-voile"></div>
+  <span class="heros-kanji" aria-hidden="true">印</span>
+  <div class="heros-contenu">
+    <p class="eyebrow">Le sceau</p>
+    <h1>{{ fiche.nom }}</h1>
+    <p class="chapeau">Ce qui va s'écrire maintenant ne se réécrira plus.</p>
+  </div>
+</section>
+
+<div class="scelle" data-flux="/campagnes/{{ camp.id }}/sceau/{{ jeton }}">
+
+  <div class="panneau scelle-etat">
+    <span class="scelle-marque" aria-hidden="true">
+      <span class="scelle-anneau"></span>
+      <span class="scelle-kanji">印</span>
+    </span>
+    <div>
+      <p class="legende" style="margin-bottom:8px">En cours</p>
+      <p class="scelle-etape" data-role="etape">Le sceau se prépare…</p>
+      <p class="petit muted" style="margin:6px 0 0">Compte une à trois minutes.
+        Ne ferme pas cette page : c'est ici que ta campagne naît.</p>
+    </div>
+  </div>
+
+  {# Le destin a tranché. Quand le joueur s'en est remis au sort, c'est ici
+     qu'il apprend ce que le sort a fait de lui — le nom de l'archétype et
+     son accroche. Le reste (le trait, ses paliers, sa dette) reste scellé. #}
+  <div class="panneau scelle-archetype" data-role="bloc-archetype" hidden>
+    <p class="legende">Le destin a tranché</p>
+    <p class="archetype-nom" data-role="archetype-nom"></p>
+    <p class="archetype-accroche" data-role="archetype-accroche"></p>
+    <p class="petit muted archetype-fiche" data-role="archetype-fiche" style="margin:0"></p>
+  </div>
+
+  {# Le présage : le premier texte que le joueur lit de sa propre histoire. #}
+  <div class="panneau scene scelle-presage" data-role="bloc-presage" hidden>
+    <p class="legende">Ce que tu sais de toi</p>
+    <div class="presage" data-role="presage"></div>
+  </div>
+
+  <div class="scelle-equipe" data-role="equipe" hidden>
+    <p class="legende">Celles et ceux qui t'entourent</p>
+    <div class="equipiers" data-role="equipiers"></div>
+  </div>
+
+  <div class="panneau alerte" data-role="echec" hidden>
+    <p class="eyebrow">Le scellé n'a pas abouti</p>
+    <p class="petit" data-role="echec-texte" style="margin:0"></p>
+  </div>
+</div>
+
+<script>
+/* Le flux du scellé. Même mécanique que la narration en flux — un EventSource
+   sur une adresse à usage unique — mais les événements portent ici du contenu
+   plutôt que du texte au fil de l'eau. */
+(function () {
+  var zone = document.querySelector('.scelle');
+  if (!zone) return;
+  var url = zone.getAttribute('data-flux');
+  var etape = zone.querySelector('[data-role="etape"]');
+  var blocPresage = zone.querySelector('[data-role="bloc-presage"]');
+  var presage = zone.querySelector('[data-role="presage"]');
+  var equipe = zone.querySelector('[data-role="equipe"]');
+  var equipiers = zone.querySelector('[data-role="equipiers"]');
+  var echec = zone.querySelector('[data-role="echec"]');
+  var echecTexte = zone.querySelector('[data-role="echec-texte"]');
+
+  var source = new EventSource(url);
+
+  source.addEventListener('etape', function (e) { etape.textContent = e.data; });
+
+  source.addEventListener('archetype', function (e) {
+    var d; try { d = JSON.parse(e.data); } catch (err) { return; }
+    var bloc = zone.querySelector('[data-role="bloc-archetype"]');
+    bloc.hidden = false;
+    zone.querySelector('[data-role="archetype-nom"]').textContent = d.nom || '';
+    zone.querySelector('[data-role="archetype-accroche"]').textContent = d.accroche || '';
+    zone.querySelector('[data-role="archetype-fiche"]').textContent =
+      [d.village, d.clan, d.voie].filter(Boolean).join(' · ');
+    bloc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  source.addEventListener('presage', function (e) {
+    blocPresage.hidden = false;
+    /* Le serveur a échappé les sauts de ligne pour tenir dans un événement. */
+    presage.textContent = e.data.split('\\n').join('\n');
+    blocPresage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  source.addEventListener('equipier', function (e) {
+    equipe.hidden = false;
+    var boite = document.createElement('div');
+    boite.innerHTML = e.data;
+    var carte = boite.firstElementChild;
+    if (!carte) return;
+    equipiers.appendChild(carte);
+    /* Décalé d'un souffle : quatre fiches qui apparaissent en même temps ne
+       se regardent pas, elles s'encombrent. */
+    requestAnimationFrame(function () { carte.classList.add('parue'); });
+  });
+
+  source.addEventListener('fin', function (e) {
+    source.close();
+    etape.textContent = 'Ta campagne est ouverte.';
+    zone.classList.add('acheve');
+    setTimeout(function () { location.href = e.data; }, 1400);
+  });
+
+  function tomber(message) {
+    source.close();
+    zone.classList.add('echoue');
+    echec.hidden = false;
+    echecTexte.textContent = message;
+    etape.textContent = 'Interrompu.';
+  }
+  source.addEventListener('echec', function (e) { tomber(e.data); });
+  source.onerror = function () {
+    if (source.readyState === EventSource.CLOSED) return;
+    tomber('La liaison a été interrompue. Recharge la page de création et '
+           + 'recommence : rien n\'a été écrit à moitié.');
+  };
+})();
+</script>
+{% endblock %}

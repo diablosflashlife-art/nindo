@@ -1,0 +1,187 @@
+# ==========================================================================
+# PACK LORE — NIVEAU N1 : EXISTENCE
+# Une ligne par entité. Le monde entier existe ici ; la profondeur se
+# cristallise en jeu (voir app/engine/crystallize.py).
+# ==========================================================================
+pack: naruto
+version: 1
+pivot: 0            # an 0 = début de la série ; toutes les dates sont relatives
+
+epoques:
+  - {id: fondation,  nom: "Fondation de Konoha",       annee: -60, duree: 20}
+  - {id: tobirama,   nom: "Deuxième Hokage",           annee: -45, duree: 15}
+  - {id: hiruzen,    nom: "Ère Hiruzen",               annee: -30, duree: 18}
+  - {id: minato,     nom: "Ère Minato",                annee: -13, duree: 13}
+  - {id: naruto_p1,  nom: "Naruto — première partie",  annee: 0,   duree: 3}
+  - {id: shippuden,  nom: "Shippûden",                 annee: 3,   duree: 12}
+  - {id: boruto,     nom: "Nouvelle génération",       annee: 27,  duree: 15}
+
+# --------------------------------------------------------------------------
+# PAYS ET VILLAGES
+# --------------------------------------------------------------------------
+pays:
+  - {id: feu,    nom: "Pays du Feu",    village: konoha, note: "Le plus vaste et le plus prospère des grands pays."}
+  - {id: vent,   nom: "Pays du Vent",   village: suna,   note: "Désert aride, ressources rares, budget militaire réduit."}
+  - {id: eau,    nom: "Pays de l'Eau",  village: kiri,   note: "Archipel brumeux, isolationniste, sorti d'une purge sanglante."}
+  - {id: foudre, nom: "Pays de la Foudre", village: kumo, note: "Montagnes escarpées, militarisme assumé."}
+  - {id: terre,  nom: "Pays de la Terre", village: iwa,  note: "Plateaux rocheux, rancunes tenaces des guerres passées."}
+  - {id: vagues, nom: "Pays des Vagues", village: null,  note: "Petit pays insulaire sans village caché, sous coupe marchande."}
+  - {id: pluie,  nom: "Pays de la Pluie", village: ame,  note: "Terrain de bataille des grandes guerres. Pluie perpétuelle."}
+  - {id: herbe,  nom: "Pays de l'Herbe", village: kusa,  note: "Tampon entre le Feu et la Terre."}
+  - {id: neige,  nom: "Pays de la Neige", village: null, note: "Technologie avancée, isolé."}
+  - {id: son,    nom: "Pays du Son",     village: oto,   note: "Jeune nation née entre les Rizières et le Fer, bâtie sur ceux que les autres avaient rejetés."}
+
+villages:
+  - id: konoha
+    nom: "Konohagakure"
+    nom_fr: "Village Caché de la Feuille"
+    pays: feu
+    dirigeant: "Hokage"
+    rang: majeur
+    fonde: -60
+    prononciation: "Ko-no-ha-ga-kou-ré"
+    culture: |
+      La Volonté du Feu : on se sacrifie pour le village et pour la génération suivante.
+      Chaleureux en surface, cloisonné en profondeur — les clans y gardent leurs secrets.
+      On y respecte l'effort visible plus que le talent discret. Le mépris s'y exprime
+      par la politesse excessive, jamais par l'insulte.
+    parler: "Direct, chaleureux, beaucoup de formules d'encouragement. On dit « dattebayo » dans les faubourgs, jamais chez les clans."
+    effectifs: {genin: 90, chunin: 210, jonin: 60, anbu: 40}
+  - id: suna
+    nom: "Sunagakure"
+    nom_fr: "Village Caché du Sable"
+    pays: vent
+    dirigeant: "Kazekage"
+    rang: majeur
+    fonde: -58
+    prononciation: "Sou-na-ga-kou-ré"
+    culture: |
+      L'économie de l'effort : dans le désert, on ne gaspille rien — ni l'eau, ni les mots,
+      ni les vies. Pragmatisme dur, loyauté au Kazekage plus qu'au village.
+      Les marionnettistes y ont un statut d'artisans autant que de guerriers.
+    parler: "Économe, phrases courtes, peu de politesses. Le silence n'y est pas gênant."
+    effectifs: {genin: 50, chunin: 120, jonin: 35, anbu: 20}
+  - id: kiri
+    nom: "Kirigakure"
+    nom_fr: "Village Caché de la Brume"
+    pays: eau
+    dirigeant: "Mizukage"
+    rang: majeur
+    fonde: -57
+    prononciation: "Ki-ri-ga-kou-ré"
+    culture: |
+      Le Village Sanglant : pendant des années, on y obtenait son grade en tuant.
+      Méfiance institutionnelle, lignées héréditaires persécutées puis tolérées.
+      On y juge quelqu'un sur ce qu'il est prêt à faire, pas sur ce qu'il dit.
+    parler: "Froid, allusif, beaucoup de sous-entendus. On menace sans élever la voix."
+    effectifs: {genin: 45, chunin: 110, jonin: 40, anbu: 25}
+  - id: kumo
+    nom: "Kumogakure"
+    nom_fr: "Village Caché des Nuages"
+    pays: foudre
+    dirigeant: "Raikage"
+    rang: majeur
+    fonde: -56
+    prononciation: "Kou-mo-ga-kou-ré"
+    culture: |
+      La force comme vertu cardinale. Militarisme assumé, hiérarchie visible, fierté
+      collective. Le Raikage décide et on exécute. On y admire la puissance brute
+      et on s'y méfie des subtilités.
+    parler: "Fort, franc, un peu vantard. On rit bruyamment et on conteste ouvertement."
+    effectifs: {genin: 55, chunin: 130, jonin: 45, anbu: 22}
+  - id: iwa
+    nom: "Iwagakure"
+    nom_fr: "Village Caché de la Roche"
+    pays: terre
+    dirigeant: "Tsuchikage"
+    rang: majeur
+    fonde: -59
+    prononciation: "I-wa-ga-kou-ré"
+    culture: |
+      La mémoire longue. Les guerres passées ne sont pas closes, elles sont en pause.
+      Discipline rigide, respect des anciens, hostilité héritée envers Konoha.
+      On n'oublie ni une dette ni une humiliation.
+    parler: "Rugueux, sentencieux, beaucoup de références au passé et aux anciens."
+    effectifs: {genin: 48, chunin: 125, jonin: 42, anbu: 18}
+  - {id: ame,  nom: "Amegakure",  nom_fr: "Village Caché de la Pluie",  pays: pluie, rang: mineur, prononciation: "A-mé-ga-kou-ré"}
+  - {id: kusa, nom: "Kusagakure", nom_fr: "Village Caché de l'Herbe",   pays: herbe, rang: mineur, prononciation: "Kou-sa-ga-kou-ré"}
+  - {id: taki, nom: "Takigakure", nom_fr: "Village Caché de la Cascade", pays: feu,  rang: mineur, prononciation: "Ta-ki-ga-kou-ré"}
+  # Oto devient un village JOUABLE, d'après le wiki Solve : une jeune nation
+  # née entre les Rizières et le Fer, dirigée par le Tetsukage, et refuge de
+  # ceux que le reste du monde shinobi avait rejetés.
+  - id: oto
+    nom: "Otogakure"
+    nom_fr: "Village Caché du Son"
+    pays: son
+    rang: majeur
+    fonde: -45
+    dirigeant: "Tetsukage"
+    prononciation: "O-to-ga-kou-ré"
+    culture: |
+      Un refuge pour les rejetés : orphelins, parias, monstres, hérétiques, déserteurs.
+      On y a fait de l'exclusion une identité commune, sans renoncer à ses différences.
+      On y valorise l'expérimentation et la liberté de se réinventer — et les savoirs
+      qu'on y développe sont aussi dangereux que novateurs.
+    parler: "Sec, méfiant, souvent ironique. On ne demande pas d'où quelqu'un vient ; on regarde ce qu'il sait faire."
+    effectifs: {genin: 40, chunin: 95, jonin: 30, anbu: 15}
+
+# --------------------------------------------------------------------------
+# ORGANISATIONS
+# --------------------------------------------------------------------------
+organisations:
+  - {id: anbu,     nom: "ANBU",     village: konoha, puissance: 80, objectifs: ["Protéger le village", "Étouffer ce qui doit l'être"]}
+  - {id: racine,   nom: "La Racine", village: konoha, puissance: 55, objectifs: ["Contrôler la succession", "Recruter dans l'ombre"], secrete: true}
+  - {id: akatsuki, nom: "Akatsuki", village: null,   puissance: 85, objectifs: ["Rassembler les bijû"], secrete: true}
+  - {id: conseil_konoha, nom: "Conseil de Konoha", village: konoha, puissance: 70, objectifs: ["Encadrer le Hokage", "Préserver l'équilibre des clans"]}
+  - {id: police_uchiha,  nom: "Police militaire d'Uchiha", village: konoha, puissance: 60, objectifs: ["Maintenir l'ordre", "Restaurer l'influence du clan"]}
+  - {id: sept_epeistes,  nom: "Sept Épéistes de Kiri", village: kiri, puissance: 75, objectifs: ["Servir le Mizukage", "Transmettre les lames"]}
+  # Chaque village a SES institutions. Il n'y en avait que pour Konoha : une
+  # campagne à Suna ou à Oto naissait sans aucune faction locale, et l'horloge
+  # du monde n'avait personne à faire agir autour du joueur.
+  - {id: chasseurs_kiri, nom: "Chasseurs de déserteurs", village: kiri, puissance: 65, objectifs: ["Traquer ceux qui ont quitté la Brume", "Effacer ce que leurs corps savent"]}
+  - {id: cour_hozuki,    nom: "La Cour des Abysses", village: kiri, puissance: 70, objectifs: ["Tenir le Mizukage par les dettes", "Garder le secret des Yokushin"], secrete: true}
+  - {id: conseil_suna,   nom: "Conseil des Anciens de Suna", village: suna, puissance: 70, objectifs: ["Économiser les vies et l'eau", "Surveiller le clan du Kazekage"]}
+  - {id: guilde_vents,   nom: "Guilde des Quatre Vents", village: suna, puissance: 55, objectifs: ["Tenir les routes des caravanes", "Garder les Raimei hors du commerce"]}
+  - {id: secte_mugen,    nom: "La Secte des Ombres", village: suna, puissance: 50, objectifs: ["Préserver les rites du Sôryugan", "Laver la mort de Hoshino Mugen"], secrete: true}
+  - {id: garde_raikage,  nom: "Garde du Raikage", village: kumo, puissance: 75, objectifs: ["Protéger le Raikage", "Prouver la force de Kumo à chaque traité"]}
+  - {id: sang_chinoike,  nom: "Le Serment du Sang", village: kumo, puissance: 45, objectifs: ["Venger les dettes anciennes du clan", "Garder le Ketsuryûgan hors des mains étrangères"], secrete: true}
+  - {id: corps_explosion,nom: "Corps d'Explosion", village: iwa, puissance: 70, objectifs: ["Garder les frontières de la Terre", "Recruter le sang Bakuton"]}
+  - {id: conseil_iwa,    nom: "Conseil de la Roche", village: iwa, puissance: 65, objectifs: ["Ne rien oublier des guerres", "Faire tenir chaque famille à sa place"]}
+  - {id: ruche_royale,   nom: "La Ruche Royale", village: iwa, puissance: 50, objectifs: ["Servir la Reine des Abeilles", "Finir la Guerre des Essaims"], secrete: true}
+  - {id: conseil_son,    nom: "Cercle du Tetsukage", village: oto, puissance: 60, objectifs: ["Tenir ensemble des clans qui se méfient", "Faire reconnaître le Pays du Son"]}
+  - {id: ombres_fuma,    nom: "Les Ombres Fûma", village: oto, puissance: 55, objectifs: ["Frapper là où Oto ne peut pas frapper de front", "Garder le Sceau du Kaimon"], secrete: true}
+  - {id: laboratoires,   nom: "Les Laboratoires", village: oto, puissance: 45, objectifs: ["Poursuivre les expériences abandonnées", "Dépasser les limites du corps"], secrete: true}
+
+# --------------------------------------------------------------------------
+# HISTOIRE — événements datés qui pèsent sur les conversations
+# --------------------------------------------------------------------------
+histoire:
+  - {id: fondation_konoha, annee: -60, portee: mondiale, titre: "Fondation de Konoha", note: "Alliance des Senju et des Uchiha. Le pacte tient mal depuis."}
+  - {id: guerre_1, annee: -48, portee: mondiale, titre: "Première Guerre Ninja", note: "Les cinq villages se découvrent rivaux."}
+  - {id: guerre_2, annee: -32, portee: mondiale, titre: "Deuxième Guerre Ninja", note: "Le Pays de la Pluie devient un champ de bataille permanent."}
+  - {id: guerre_3, annee: -16, portee: mondiale, titre: "Troisième Guerre Ninja", note: "Génération entière décimée. Iwa n'a rien oublié."}
+  - {id: destruction_uzu, annee: -40, portee: regionale, titre: "Destruction d'Uzushiogakure", note: "Le clan Uzumaki est dispersé. Les survivants se cachent."}
+  - {id: attaque_kyubi, annee: -13, portee: mondiale, titre: "Attaque du Démon-Renard", note: "Konoha dévasté. Le Quatrième Hokage y laisse la vie. Beaucoup d'orphelins."}
+  - {id: purge_kiri, annee: -20, portee: regionale, titre: "Purges de Kiri", note: "Les lignées héréditaires y sont traquées. Certaines ont survécu ailleurs."}
+  - {id: traite_feu_vent, annee: -8, portee: regionale, titre: "Traité du Feu et du Vent", note: "Alliance fragile, renégociée tous les cinq ans."}
+
+# --------------------------------------------------------------------------
+# TENSIONS — l'état politique au début de l'époque naruto_p1
+# --------------------------------------------------------------------------
+tensions:
+  - {entre: [konoha, iwa],  valeur: -55, note: "Rancune héritée de la Troisième Guerre."}
+  - {entre: [konoha, suna], valeur: 25,  note: "Alliance commerciale, méfiance militaire."}
+  - {entre: [konoha, kiri], valeur: -30, note: "Kiri sort de ses purges et ne fait confiance à personne."}
+  - {entre: [konoha, kumo], valeur: -20, note: "Incident diplomatique jamais soldé."}
+  - {entre: [kumo, kiri],   valeur: -15, note: "Rivalité maritime."}
+  # Vues depuis les autres villages : chacun a ses alliés et ses rancunes.
+  - {entre: [suna, iwa],    valeur: -25, note: "Les routes du Vent traversent des terres que la Terre réclame."}
+  - {entre: [suna, oto],    valeur: -40, note: "Les Raimei ont quitté Suna pour fonder Oto ; les Ensho ne l'ont pas regretté, les autres si."}
+  - {entre: [suna, kiri],   valeur: -10, note: "Peu de contacts, peu de confiance."}
+  - {entre: [kiri, iwa],    valeur: -20, note: "Des pêcheurs de l'archipel disparaissent près des côtes de la Terre."}
+  - {entre: [kumo, iwa],    valeur: -35, note: "Deux militarismes qui se jaugent par-dessus les montagnes."}
+  - {entre: [kumo, suna],   valeur: 10,  note: "Commerce de métaux et de sel, sans amitié."}
+  - {entre: [oto, konoha],  valeur: -45, note: "Le Pays du Son a accueilli des déserteurs de la Feuille, et le sait."}
+  - {entre: [oto, kiri],    valeur: -20, note: "Oto recrute parmi ceux que les purges de Kiri ont chassés."}
+  - {entre: [oto, iwa],     valeur: 5,   note: "Un voisinage prudent : chacun a mieux à faire."}
+  - {entre: [anbu, racine], valeur: -60, note: "Guerre froide institutionnelle."}

@@ -1,0 +1,231 @@
+# ==========================================================================
+# ADVERSAIRES — ce qui se met en travers du chemin
+# ==========================================================================
+# Pourquoi ce fichier existe : le bestiaire fournit des bêtes, jamais des
+# gens. Or l'essentiel des affrontements d'une campagne shinobi oppose des
+# humains, et un « bandit » sans tactique, sans moral et sans butin n'est
+# qu'un sac de points de vie.
+#
+# Le moteur ne lit RIEN d'autre que ce fichier pour fabriquer un adversaire :
+# aucun appel au modèle, aucune attente, et deux embuscades ne se ressemblent
+# pas parce que les données diffèrent, pas parce qu'un modèle a improvisé.
+#
+#   tier         puissance visée, même échelle que rulesets/naruto.yaml.
+#                Le moteur monte les caractéristiques JUSQU'À l'atteindre :
+#                rééquilibrer `seuils_tier` rééquilibre aussi les adversaires.
+#   accents      les caractéristiques qu'il monte en priorité
+#   tactique     ce que le MJ lit vraiment. Comment il se bat, ce qu'il évite.
+#   ia           `agressif` frappe, `prudent` alterne, `piegeur` manœuvre
+#                d'abord, `bete_enragee` ne rompt jamais le contact
+#   moral        `fanatique` et `bete_enragee` ne fuient jamais (ruleset)
+#   groupe       combien on en rencontre à la fois [min, max]
+#   armes        identifiants réels de lore/naruto/armes.yaml
+#   techniques   identifiants réels de lore/naruto/techniques.yaml
+#   butin        ce qu'on trouve sur lui — c'est ce qui rend une fouille utile
+#   pays         où on le croise, ou [toutes]
+# ==========================================================================
+
+adversaires:
+
+  # --------------------------------------------------------------- tier 1-2
+  - id: detrousseur_route
+    nom: "Détrousseur de route"
+    pays: [toutes]
+    tier: 1
+    accents: [taijutsu, endurance]
+    groupe: [2, 4]
+    ia: prudent
+    milieu: [route, foret, village]
+    comportement: "Civil armé, mal nourri, qui compte sur le nombre et sur la peur."
+    tactique: "Il encercle et menace avant de frapper. Montre-lui une lame de ninja et il hésite ; blesse-en un et les autres calculent aussitôt ce qu'ils ont à gagner. Un détrousseur qui voit un bandeau frontal cherche d'abord à négocier."
+    armes: [tanto]
+    techniques: []
+    butin: ["une bourse maigre (20 à 60 ryô)", "un couteau ébréché"]
+    accroche: "Trois familles de marchands ont renoncé à la route de l'est ce mois-ci."
+
+  - id: chien_garde_dresse
+    nom: "Chien de garde dressé"
+    pays: [toutes]
+    tier: 1
+    accents: [vitesse, perception]
+    groupe: [1, 3]
+    ia: agressif
+    moral: bete_enragee
+    milieu: [village, ferme, entrepot]
+    comportement: "Dressé à mordre les chevilles et à aboyer sur le chakra."
+    tactique: "Il attaque les jambes et ne lâche pas. Le neutraliser sans le tuer est une contrainte réelle : son maître le verra."
+    armes: []
+    techniques: []
+    butin: []
+    accroche: "Les chiens du dépôt aboient toute la nuit sur quelque chose que personne ne voit."
+
+  - id: genin_village_rival
+    nom: "Genin d'un village rival"
+    pays: [toutes]
+    tier: 2
+    accents: [taijutsu, vitesse, ninjutsu]
+    groupe: [1, 3]
+    ia: prudent
+    milieu: [foret, frontiere, tournoi]
+    comportement: "Même âge, même entraînement, un bandeau différent."
+    tactique: "Il ouvre par une arme de jet pour créer la distance, puis substitue. Il cherche à mesurer avant de s'engager, et il rompt dès qu'il a de quoi faire un rapport : ce qu'il vient chercher, c'est une information, pas une victoire."
+    armes: [kunai, shuriken]
+    techniques: [kawarimi, bunshin, taijutsu_base, lancer_arme]
+    butin: ["un rouleau de mission adverse", "un bandeau frontal étranger"]
+    accroche: "Une patrouille a relevé des empreintes fraîches à trois cents mètres à l'intérieur de la frontière."
+
+  - id: contrebandier
+    nom: "Contrebandier"
+    pays: [toutes]
+    tier: 2
+    accents: [perception, vitesse, social]
+    groupe: [2, 3]
+    ia: piegeur
+    milieu: [route, port, entrepot, marais]
+    comportement: "Connaît la région mieux que les patrouilles et paie pour le rester."
+    tactique: "Il ne cherche pas le combat mais la fuite : fumigène, makibishi dans le dos, et une deuxième sortie prévue. Il tente d'acheter avant de se battre, et son offre est souvent sincère."
+    armes: [kunai, bombe_fumigene, makibishi]
+    techniques: [nawanuke]
+    butin: ["une marchandise non déclarée", "un carnet de comptes chiffré"]
+    accroche: "Les taxes du poste nord ont chuté d'un tiers sans que le trafic diminue."
+
+  # ----------------------------------------------------------------- tier 3
+  - id: mercenaire_sans_village
+    nom: "Mercenaire sans village"
+    pays: [toutes]
+    tier: 3
+    accents: [taijutsu, endurance, vitesse]
+    groupe: [1, 2]
+    ia: agressif
+    milieu: [route, foret, frontiere, ruines]
+    comportement: "A porté un bandeau, ne le porte plus, et sait encore s'en servir."
+    tactique: "Il frappe le plus faible d'abord pour désorganiser le groupe. Il connaît la valeur d'un genin vivant sur le marché aux otages, et cela oriente tous ses choix : il blesse plutôt qu'il ne tue."
+    armes: [ninjato, kunai]
+    techniques: [taijutsu_base, kawarimi, shunshin]
+    butin: ["une prime sur sa tête (300 ryô)", "un contrat signé d'un sceau inconnu"]
+    accroche: "Un homme au bandeau rayé a été vu trois fois en dix jours, jamais au même endroit."
+
+  - id: chunin_deserteur
+    nom: "Chûnin déserteur"
+    pays: [toutes]
+    tier: 3
+    accents: [ninjutsu, controle_chakra, intelligence]
+    groupe: [1, 1]
+    ia: piegeur
+    milieu: [foret, ruines, montagne]
+    comportement: "A emporté en partant ce qu'il savait, et le monnaie depuis."
+    tactique: "Il prépare le terrain avant d'être vu : fil d'acier, parchemin explosif, un angle de fuite repéré. Il refuse l'échange frontal et frappe quand l'adversaire s'est engagé. Il parle pendant qu'il combat, pour apprendre qui l'envoie."
+    armes: [kunai, parchemin_explosif, fil_acier]
+    techniques: [kawarimi, henge, katon_goukakyuu, shunshin]
+    butin: ["un rouleau volé aux archives", "un nom, s'il se met à parler"]
+    accroche: "Les archives ont constaté un manque et n'ont pas fait de rapport."
+
+  - id: ours_des_brumes
+    nom: "Ours des brumes"
+    pays: [toutes]
+    tier: 3
+    accents: [endurance, taijutsu]
+    groupe: [1, 1]
+    ia: bete_enragee
+    moral: bete_enragee
+    milieu: [foret, montagne]
+    comportement: "Territorial, myope, insensible aux cris."
+    tactique: "Il encaisse une technique de rang D sans ralentir. Le combattre de face est une erreur de débutant : il faut le déséquilibrer, l'aveugler, ou l'attirer où le sol cède."
+    armes: []
+    techniques: []
+    butin: ["une fourrure d'hiver (180 ryô)", "de la graisse pour l'entretien des lames"]
+    accroche: "Deux bûcherons n'ont pas reparu de la coupe haute."
+
+  # ----------------------------------------------------------------- tier 4
+  - id: nukenin_confirme
+    nom: "Nukenin confirmé"
+    pays: [toutes]
+    tier: 4
+    accents: [ninjutsu, vitesse, controle_chakra, taijutsu]
+    groupe: [1, 1]
+    ia: agressif
+    milieu: [foret, ruines, frontiere, montagne]
+    comportement: "Inscrit au bingo book. Sait exactement ce qu'il vaut, et ce que vaut ce qu'il affronte."
+    tactique: "Il jauge l'équipe en un échange puis attaque la charnière : le soigneur, ou celui qui donne les ordres. Contre des genin, il n'utilise pas son répertoire complet — et c'est la seule raison pour laquelle ils survivent. Le retarder est une victoire ; le vaincre n'est pas au programme."
+    armes: [ninjato, kunai, parchemin_explosif]
+    techniques: [katon_goukakyuu, kage_bunshin, shunshin, kawarimi, genjutsu_brume]
+    butin: ["un carnet de contacts", "une prime de 4 000 ryô"]
+    accroche: "Un nom du bingo book a été aperçu à deux jours de marche du village."
+
+  - id: garde_corps_daimyo
+    nom: "Garde du corps de daimyô"
+    pays: [toutes]
+    tier: 4
+    accents: [taijutsu, perception, endurance]
+    groupe: [2, 2]
+    ia: prudent
+    moral: fanatique
+    milieu: [route, palais, convoi]
+    comportement: "Payé pour interposer son corps, et formé à ne jamais quitter sa charge des yeux."
+    tactique: "Il ne poursuit pas : il reste entre l'adversaire et ce qu'il protège. L'écarter de sa charge est impossible ; le contourner est tout le problème. Il annonce une seule sommation."
+    armes: [katana]
+    techniques: [taijutsu_base, kenjutsu_ecole]
+    butin: ["un sceau de la maison qu'il sert"]
+    accroche: "Le convoi du daimyô passera par la route basse, et quelqu'un le sait déjà."
+
+  # ----------------------------------------------------------------- tier 5+
+  - id: chasseur_anbu
+    nom: "Traqueur ANBU"
+    pays: [toutes]
+    tier: 5
+    accents: [vitesse, perception, ninjutsu, intelligence]
+    groupe: [1, 2]
+    ia: piegeur
+    moral: fanatique
+    milieu: [foret, village, ruines]
+    comportement: "Masque sans nom. Chargé de récupérer ce qui ne doit pas circuler."
+    tactique: "Il observe plusieurs échanges avant d'agir, et frappe une seule fois. Il n'explique rien, il ne négocie pas, et il ne laisse pas de témoin de ce qu'il emporte. Face à lui, la question n'est jamais de gagner : c'est de comprendre ce qu'il est venu chercher."
+    armes: [tanto, senbon, kunai]
+    techniques: [shunshin, kawarimi, genjutsu_brume, kage_bunshin]
+    butin: []
+    accroche: "Un masque a été vu sur un toit, et personne n'a signalé d'opération en cours."
+
+# --------------------------------------------------------------------------
+# Comment on les nomme
+# --------------------------------------------------------------------------
+# Le moteur fabrique les adversaires sans modèle de langage : il lui faut donc
+# de quoi les nommer. Un adversaire nommé « Bandit 2 » n'est pas un adversaire.
+# Les épithètes viennent en premier : elles décrivent ce que le joueur VOIT,
+# ce qui est exactement ce qu'un combattant apprend d'un inconnu.
+epithetes_adversaire:
+  - "au bandeau rayé"
+  - "au manteau de pluie"
+  - "à la joue barrée"
+  - "qui boite"
+  - "aux mains bandées"
+  - "au sourire absent"
+  - "qui ne parle pas"
+  - "au masque de bois"
+  - "aux cheveux coupés court"
+  - "à l'œil fermé"
+  - "qui tient sa lame à l'envers"
+  - "au rire bref"
+  - "au bras tatoué"
+  - "qui mâche une racine"
+  - "aux sandales neuves"
+  - "à la voix éraillée"
+
+# Prénoms sans clan, utilisables partout. Volontairement ordinaires : un
+# adversaire au nom remarquable promet une importance qu'il n'a pas.
+prenoms_adversaire:
+  - Goro
+  - Tetsu
+  - Jiro
+  - Kenta
+  - Saburo
+  - Hana
+  - Miyo
+  - Rokuro
+  - Take
+  - Shin
+  - Ume
+  - Kazu
+  - Noboru
+  - Sayo
+  - Heihachi
+  - Tomo

@@ -1,0 +1,610 @@
+name: "Naruto — Nindō"
+version: 2
+
+# ==========================================================================
+# CARACTÉRISTIQUES — le moteur ne connaît QUE ces clés
+# ==========================================================================
+stats:
+  # `groupe` sert à la fiche de personnage : les caractéristiques se lisent par
+  # famille, pas en liste plate.
+  chakra:          {label: "Chakra", default: 12, groupe: chakra}
+  controle_chakra: {label: "Contrôle du chakra", default: 10, groupe: chakra}
+  ninjutsu:        {label: "Ninjutsu", default: 10, groupe: chakra}
+  taijutsu:        {label: "Taijutsu", default: 10, groupe: corps}
+  vitesse:         {label: "Vitesse", default: 10, groupe: corps}
+  endurance:       {label: "Endurance", default: 10, groupe: corps}
+  genjutsu:        {label: "Genjutsu", default: 8,  groupe: esprit}
+  intelligence:    {label: "Intelligence", default: 10, groupe: esprit}
+  perception:      {label: "Perception", default: 10, groupe: esprit}
+  social:          {label: "Influence", default: 8,  groupe: esprit}
+
+groupes_stats:
+  corps:  {label: "Corps", note: "Ce que le corps encaisse et délivre"}
+  chakra: {label: "Chakra", note: "L'énergie, sa réserve et sa maîtrise"}
+  esprit: {label: "Esprit", note: "Lire, tromper, convaincre"}
+
+resources:
+  # 40 points de vie contre des coups qui en coûtent 3 à 11 : un affrontement
+  # entre pairs tient six à huit échanges. À 30, il s'en jouait trois, et les
+  # postures n'avaient pas le temps de compter.
+  pv:     {label: "Points de vie", default: 40}
+  chakra: {label: "Chakra courant", default: 30}
+
+# ==========================================================================
+# RÉSOLUTION DES ACTIONS
+# ==========================================================================
+check:
+  dice: "1d20"
+  formula: "roll + (stat_value - 10) // 2 + bonus"
+  crit_fail_on: 1
+  crit_success_on: 20
+  partial_margin: 3        # échec de 1 à 3 => « oui, mais… »
+
+difficulties:
+  triviale: 5
+  facile: 8
+  normal: 12
+  difficile: 16
+  ardue: 20
+  legendaire: 25
+
+combat:
+  attack_stat: taijutsu
+  defense_stat: endurance
+  initiative_stat: vitesse
+
+  # Avec quelle caractéristique on frappe selon la nature de la technique
+  # employée. Sans cette table, un genjutsu se résolvait au taijutsu.
+  stat_par_categorie:
+    ninjutsu: ninjutsu
+    taijutsu: taijutsu
+    genjutsu: genjutsu
+    kenjutsu: vitesse
+    kugutsu: controle_chakra
+    fuinjutsu: controle_chakra
+    iryo: controle_chakra
+    arme: vitesse
+
+  # ------------------------------------------------------------ les échanges
+  # Un affrontement est une RENCONTRE qui dure plusieurs tours de jeu. Chaque
+  # tour joué pendant une rencontre est un ÉCHANGE : le joueur déclare, le
+  # moteur oppose les jets, les ressources descendent. Sans plafond, un combat
+  # mal engagé dure éternellement ; à 12 échanges, la rencontre se dénoue
+  # d'elle-même (repli, arrivée de renforts, nuit qui tombe).
+  # 8 et non 12 : mesuré en simulation, un combat de douze échanges se lit en
+  # vingt minutes de stream, et plus personne ne se souvient de son début.
+  echanges_max: 8
+
+  # Une bande de sbires encaisse moins qu'un duelliste (voir combat.ouvrir).
+  sbires:
+    pv_facteur: 0.45
+
+  # Jet opposé : les deux camps lancent, c'est la MARGE qui compte. Un jet
+  # contre une difficulté fixe ne sait pas dire « il a paré de justesse ».
+  oppose:
+    dice: "1d20"
+    formule: "roll + (stat_value - 10) // 2 + bonus"
+
+  degats:
+    dice: "1d6"
+    # `marge` vient du jet opposé, `arme` de l'inventaire, `posture` de la table
+    # ci-dessous.
+    formule: "max(1, roll + marge // 4 + arme + posture)"
+    # Une réussite de justesse égratigne, une réussite franche ouvre. Sans ce
+    # facteur, toucher de justesse coûtait presque aussi cher qu'une ouverture
+    # franche, et un duel entre pairs se terminait en deux échanges.
+    par_issue:
+      touche_net: 1.0
+      touche: 0.7
+      effleure: 0.45
+
+  # On ne repart pas d'une rencontre perdue à un point de vie. Sans ce chemin,
+  # le premier combat raté condamne la campagne — et un joueur qui n'a aucun
+  # moyen de se soigner ne prend plus jamais de risque.
+  recuperation:
+    pv_par_tour: 1            # hors combat, à chaque tour
+    chakra_par_tour: 2
+    repos_pv: 0.45            # fraction du maximum rendue par une action de repos
+    repos_chakra: 0.6
+    # En combien de tours chaque blessure se referme d'elle-même, par sévérité
+    # (index = sévérité - 1). Une égratignure passe toute seule ; un état
+    # chancelant demande un vrai repos, d'où le 0 qui veut dire « jamais ».
+    guerison_par_severite: [6, 14, 0]
+
+  # Les alliés présents se battent. C'est la donnée qui manquait le plus :
+  # trois brigands contre un genin seul est une exécution, contre une équipe de
+  # quatre c'est un combat. Ils frappent moins fort que le joueur — la scène
+  # reste la sienne.
+  allies:
+    posture: mesuree
+    facteur_degats: 0.75
+    max_agissants: 3
+  # Part des attaques adverses qui visent le personnage qui joue, le reste se
+  # répartissant sur ses alliés. En dessous de la moitié, le joueur regarde son
+  # équipe se battre ; au-dessus, ses alliés ne servent à rien.
+  part_attaques_sur_joueur: 0.55
+
+  # Six intentions, chacune un compromis. C'est là que se trouve le jeu :
+  # personne ne doit pouvoir rester en offensive douze échanges de suite.
+  postures:
+    offensive:
+      label: "Offensive"
+      aide: "Tu frappes fort et tu t'ouvres."
+      attaque: 3
+      defense: -3
+      degats: 2
+      chakra: 0
+    mesuree:
+      label: "Mesurée"
+      aide: "Ni risque pris, ni avantage gagné."
+      attaque: 0
+      defense: 0
+      degats: 0
+      chakra: 0
+    defensive:
+      label: "Défensive"
+      aide: "Tu encaisses et tu attends l'ouverture."
+      attaque: -4
+      defense: 5
+      degats: -2
+      chakra: 0
+    technique:
+      label: "Technique"
+      aide: "Tu engages du chakra pour faire la différence."
+      attaque: 2
+      defense: -1
+      degats: 4
+      chakra: 5
+    manoeuvre:
+      label: "Manœuvre"
+      aide: "Terrain, matériel, ruse : tu prépares au lieu de frapper."
+      attaque: 0
+      defense: 1
+      sans_degats: true
+      chakra: 0
+      ouvre_levier: true
+    desengagement:
+      label: "Désengagement"
+      aide: "Tu cherches à rompre le contact."
+      attaque: -2
+      defense: 3
+      sans_degats: true
+      chakra: 0
+
+  # Blessures : appliquées AU FRANCHISSEMENT d'un seuil, en pourcentage de PV
+  # restants. Elles entrent dans le calcul de puissance — un combattant
+  # chancelant n'est plus le même adversaire qu'au premier échange.
+  etats:
+    - {sous: 65, code: entaille,   libelle: "Entaillé",   severite: 1, jet: -1, effets: {puissance: -1}}
+    - {sous: 40, code: blesse,     libelle: "Blessé",     severite: 2, jet: -2, effets: {puissance: -4}}
+    - {sous: 18, code: chancelant, libelle: "Chancelant", severite: 3, jet: -4, effets: {puissance: -9}}
+
+  # Le moral d'un PNJ. Personne ne se bat jusqu'à la mort par défaut : un
+  # adversaire qui rompt le contact vaut mieux qu'un adversaire qui meurt, et
+  # il peut revenir.
+  moral:
+    seuil_pv: 45              # % de PV sous lequel la rupture devient possible
+    base: 35                  # % de chances de rompre à ce moment-là
+    par_tier_inferieur: 25    # + par tier d'écart en sa défaveur
+    chute_compagnon: 50       # % de rompre, par compagnon tombé ou enfui
+    jamais_si: [bete_enragee, fanatique]
+
+  desengagement:
+    stat: vitesse
+    difficulte: difficile
+
+  # Le monde a des dents. Sans ça, seul le joueur déclenche des combats, et
+  # traverser une forêt frontalière ne coûte jamais rien.
+  embuscade:
+    danger_min: 4
+    chance_par_danger: 0.030   # 0,030 × danger 6 = 18 % par tour
+    cooldown_tours: 8
+
+  # Règle du fossé : quand vaincre est hors de portée, on ne lance pas les dés
+  # pour vaincre. Il faut ce nombre de succès au service de l'objectif choisi
+  # pour dénouer la scène.
+  objectif_progres_requis: 3
+
+  # Récompense d'une rencontre remportée, par tier d'adversaire mis hors combat
+  xp_par_tier: 35
+  # Mettre un adversaire en fuite est une victoire, simplement moins complète
+  # qu'une mise hors de combat. À zéro, le joueur apprenait qu'il fallait
+  # achever tout le monde.
+  xp_fuite_facteur: 0.5
+
+# Fabrication des adversaires. Leur puissance n'est pas écrite à la main :
+# on vise le tier demandé par le lore, et le moteur monte les caractéristiques
+# jusqu'à l'atteindre. Rééquilibrer `seuils_tier` rééquilibre donc aussi les
+# adversaires, automatiquement.
+adversaires:
+  pas_montee: 2               # points ajoutés par itération
+  # Assez d'itérations pour atteindre RÉELLEMENT le tier 7. À 40, la montée
+  # s'arrêtait en silence au tier 4 : tous les adversaires d'élite étaient des
+  # jônin déguisés, et la règle du fossé ne se déclenchait jamais pour eux.
+  iterations_max: 160
+  # Niveau d'expérience attribué selon le tier (index = tier - 1). Il entre
+  # dans le calcul de puissance, donc il doit être fixé AVANT de monter les
+  # caractéristiques, sinon la cible se déplace pendant qu'on la vise.
+  niveau_par_tier: [1, 3, 7, 12, 18, 26, 40]
+  # Multiplicateur de PV et de chakra par tier (index = tier - 1)
+  ressources_facteur_tier: [0.7, 1.0, 1.5, 2.3, 3.4, 5.0, 9.0]
+
+# ==========================================================================
+# PUISSANCE — le grade ne décide de rien au combat
+# ==========================================================================
+puissance:
+  socle_poids:
+    ninjutsu: 1.0
+    taijutsu: 1.0
+    genjutsu: 0.8
+    controle_chakra: 1.2
+    vitesse: 1.1
+    endurance: 0.9
+    perception: 0.7
+    intelligence: 0.6
+  socle_facteur: 4.0
+  # Rendements décroissants : on se bat avec son répertoire utile, pas son catalogue
+  arsenal_rangs: {E: 1, D: 2, C: 4, B: 7, A: 12, S: 20}
+  arsenal_degressif: [1.0, 0.7, 0.5, 0.35, 0.25]
+  arsenal_maitrise_plancher: 0.4     # poids = rang × (0.4 + 0.6 × maitrise/100)
+  experience_niveau: 0.8
+  # Seuils de tier, à réancrer sur six personnages de référence après rodage
+  seuils_tier: [0, 42, 62, 88, 120, 165, 230]
+
+tiers:
+  1: {nom: "Civil",              note: "Académie, villageois, gardes ordinaires"}
+  2: {nom: "Opérationnel",       note: "Genin, bandits entraînés"}
+  3: {nom: "Confirmé",           note: "Chûnin aguerris, Genin d'exception"}
+  4: {nom: "Élite",              note: "Jônin confirmés, ANBU"}
+  5: {nom: "Élite supérieure",   note: "Commandants Jônin, Sannin"}
+  6: {nom: "Kage",               note: "Chefs de village"}
+  7: {nom: "Légendaire",         note: "Échelle bijû — hors système de combat"}
+
+# Règle du fossé : appliquée sur la puissance EN SITUATION, après leviers
+fosse:
+  0: {jet: true,  bonus_superieur: 0, note: "Combat équilibré"}
+  1: {jet: true,  bonus_superieur: 4, note: "Difficile mais possible"}
+  2: {jet: false, objectifs: ["fuir", "retarder", "protéger", "survivre", "désengager"],
+      note: "Supériorité écrasante : vaincre exige de ramener l'écart à 1"}
+  3: {jet: false, objectifs: ["sauver quelqu'un", "gagner du temps", "obtenir une réponse"],
+      note: "Ce n'est plus un combat, c'est une scène"}
+
+leviers:
+  embuscade:           {ampleur: 1, portee: premier_echange, libelle: "Tu frappes avant d'être vu"}
+  terrain_prepare:     {ampleur: 1, portee: rencontre,       libelle: "Le terrain a été préparé"}
+  renseignement:       {ampleur: 1, portee: rencontre,       libelle: "Tu connais ses faiblesses"}
+  nombre:              {ampleur: 1, portee: rencontre,       libelle: "Vous êtes plus nombreux"}
+  adversaire_diminue:  {ampleur: 1, portee: rencontre,       libelle: "Il est blessé ou épuisé"}
+  enjeu_emotionnel:    {ampleur: 1, portee: premier_echange, libelle: "Quelqu'un que tu protèges est en jeu"}
+  contre_mesure:       {ampleur: 1, portee: rencontre,       libelle: "Tu as de quoi neutraliser sa technique"}
+  sacrifice:           {ampleur: 2, portee: premier_echange, libelle: "Tu acceptes d'y laisser quelque chose"}
+leviers_cumul_max: 3
+
+# ==========================================================================
+# ÉLÉMENTS — une règle, pas un catalogue de vingt paires
+# ==========================================================================
+elements:
+  cycle: [katon, futon, raiton, doton, suiton]   # chacun domine le suivant
+  bonus_dominant: 3
+  malus_domine: -3
+  labels:
+    katon: "Katon (feu)"
+    futon: "Fûton (vent)"
+    raiton: "Raiton (foudre)"
+    doton: "Doton (terre)"
+    suiton: "Suiton (eau)"
+
+# ==========================================================================
+# MAÎTRISE DES TECHNIQUES
+# ==========================================================================
+maitrise:
+  paliers:
+    - {min: 0,  nom: "Apprise",     jet: -2, cout: 1.5,  crit_fail: 2}
+    - {min: 25, nom: "Fonctionnelle", jet: 0, cout: 1.0, crit_fail: 1}
+    - {min: 50, nom: "Assurée",     jet: 2,  cout: 0.9,  crit_fail: 1}
+    - {min: 75, nom: "Maîtrisée",   jet: 4,  cout: 0.75, crit_fail: 1}
+    - {min: 90, nom: "Instinctive", jet: 6,  cout: 0.6,  crit_fail: 1, crit_success: 19}
+  gain_par_reussite: 3
+  gain_par_echec: 1
+
+# ==========================================================================
+# GRADES — qualification (illimitée) ou poste (places comptées)
+# ==========================================================================
+grades:
+  - id: genin
+    nom: "Genin"
+    ordre: 1
+    nature: qualification
+    tier_typique: 2
+    droits: {missions_max: C, escouade_max: 0, archives: publiques, sensei: false}
+  - id: chunin
+    nom: "Chûnin"
+    ordre: 2
+    nature: qualification
+    tier_typique: 3
+    droits: {missions_max: B, escouade_max: 4, archives: publiques, sensei: false}
+  - id: jonin
+    nom: "Jônin"
+    ordre: 3
+    nature: qualification
+    tier_typique: 4
+    droits: {missions_max: S, escouade_max: 12, archives: confidentielles, sensei: true}
+  - id: commandant_jonin
+    nom: "Commandant Jônin"
+    ordre: 4
+    nature: poste
+    places_par_village: 2
+    tier_typique: 5
+    interim_de: kage
+    droits: {missions_max: S, escouade_max: 200, archives: secretes, sensei: true}
+  - id: kage
+    nom: "Kage"
+    ordre: 5
+    nature: poste
+    places_par_village: 1
+    tier_typique: 6
+    droits: {missions_max: S, escouade_max: 9999, archives: toutes, sensei: true}
+
+# ==========================================================================
+# RELATIONS — une valeur qui ne produit rien n'est pas une relation
+# ==========================================================================
+# Le graphe social était tenu à jour et n'était jamais lu comme un
+# DÉCLENCHEUR : une relation à +80 ne produisait pas plus qu'une relation à
+# +10. Franchir un palier est maintenant un événement, et le narrateur reçoit
+# une consigne — une seule fois, au franchissement, pas à chaque tour.
+#
+# `intention` est écrite À DESTINATION DU NARRATEUR. Elle dit quoi faire
+# arriver, jamais quoi raconter : c'est lui qui trouve la scène.
+relations:
+  paliers:
+    - niveau: 2
+      seuil: 60
+      nom: "dévoué"
+      intention: "{qui} est prêt à payer pour toi. Fais-le arriver dans les
+        prochaines scènes : une intervention que tu n'as pas demandée, un
+        mensonge en ta faveur, un risque pris sans te prévenir."
+    - niveau: 1
+      seuil: 25
+      nom: "proche"
+      intention: "{qui} te cherche. Fais-le venir à toi, avec quelque chose à
+        dire qu'il gardait pour lui."
+    - niveau: -1
+      seuil: -25
+      nom: "méfiant"
+      intention: "{qui} te surveille et ne s'en cache plus. Que le joueur le
+        remarque : un regard tenu trop longtemps, une question de trop, une
+        absence au moment où il aurait dû être là."
+    - niveau: -2
+      seuil: -60
+      nom: "hostile"
+      intention: "{qui} agira contre toi dès qu'il en aura l'occasion. Prépare
+        cette occasion : elle doit se présenter, et il doit la saisir."
+  # Combien de tours une consigne de franchissement reste active. Au-delà,
+  # elle a eu sa chance : une pression permanente n'est plus une pression.
+  fenetre_pression: 3
+
+# ==========================================================================
+# VOYAGE — la distance se paie en tours
+# ==========================================================================
+# Les lieux portent des coordonnées en centièmes de carte ; la distance entre
+# deux points devient un coût. Ces tours-là comptent pour les échéances de
+# mission : aller chercher une plante à l'autre bout du pays quand il reste
+# trois tours devient une décision, et non un déplacement gratuit.
+voyage:
+  tours_par_unite: 0.08     # une traversée complète (≈70 unités) ≈ 6 tours
+  tours_min: 1              # même un pas de côté coûte du temps
+  tours_max: 6              # et aucun trajet n'engloutit une échéance entière
+
+rangs_mission:
+  D: {danger: 1, xp: 40}
+  C: {danger: 3, xp: 90}
+  B: {danger: 5, xp: 180}
+  A: {danger: 7, xp: 320}
+  S: {danger: 9, xp: 600}
+
+# ==========================================================================
+# APPRENDRE UNE TECHNIQUE
+# La maîtrise montait par l'usage, et c'était tout : le répertoire d'un
+# personnage était figé à la création. Trois chemins ouvrent maintenant une
+# technique nouvelle — un maître présent, un parchemin, ou le travail dans sa
+# propre spécialité — et tous coûtent du TEMPS DE CAMPAGNE.
+# ==========================================================================
+apprentissage:
+  # Ce qu'un grade peut apprendre. Un genin ne se met pas au rang A.
+  rangs_par_grade:
+    genin: [E, D, C]
+    chunin: [E, D, C, B]
+    jonin: [E, D, C, B, A]
+    commandant_jonin: [E, D, C, B, A, S]
+    kage: [E, D, C, B, A, S]
+
+  # Tours d'entraînement. Les échéances de mission courent pendant ce
+  # temps-là : c'est ce qui fait d'un apprentissage une décision.
+  tours_par_rang: {E: 1, D: 2, C: 3, B: 5, A: 8, S: 12}
+
+  # Ce que la caractéristique porteuse doit valoir. Sans ce seuil, un genin à
+  # 8 en genjutsu apprenait un rang C et le ratait ensuite à chaque jet.
+  stat_minimale: {E: 0, D: 0, C: 12, B: 15, A: 18, S: 21}
+
+  # 40 = fonctionnelle, sans bonus. On apprend MIEUX de quelqu'un, et plus
+  # vite : c'est tout l'intérêt d'avoir un maître sous la main.
+  maitrise_initiale: 40
+  maitrise_du_maitre: 55
+  remise_du_maitre: 0.5
+
+  # Ce qu'il faut maîtriser soi-même pour transmettre. En dessous, on ne sait
+  # pas la technique : on la connaît.
+  maitrise_pour_enseigner: 60
+
+# ==========================================================================
+# LES SECRETS QUI PRESSENT
+# Un secret entamé puis laissé de côté restait entamé jusqu'au tour 200 : rien
+# ne le rappelait au joueur, et rien ne se refermait s'il l'ignorait. Une
+# question sans horloge n'est pas une intrigue, c'est un décor.
+# ==========================================================================
+secrets:
+  # Tours sans progrès avant que le monde y revienne de lui-même. Six tours,
+  # c'est assez pour qu'on ait eu le temps d'oublier, pas assez pour que la
+  # piste soit froide.
+  rappel_apres: 6
+  # Combien de fois au maximum. Les relances tombent à 6, 12 puis 18 tours
+  # d'inertie. Au-delà, ce n'est plus une intrigue qui insiste, c'est le jeu
+  # qui harcèle — et le joueur a manifestement choisi autre chose.
+  rappels_max: 3
+  # Combien de tours une relance reste une consigne active. Deux : au-delà,
+  # une pression permanente n'est plus une pression.
+  fenetre_rappel: 2
+  # Tours sans progrès avant qu'il ne soit trop tard. La réponse existe
+  # toujours en base ; elle n'est plus atteignable en jeu.
+  fenetre: 20
+  # Combien de tours la consigne « montre que le moment est passé » reste
+  # active après la fermeture.
+  fenetre_deuil: 3
+
+progression:
+  xp_curve: "100 * level ** 1.6"
+  points_par_niveau: 2
+  # Plafond par caractéristique. Sans lui, la pente optimale est de tout
+  # verser dans la même case : un genin de niveau vingt frapperait comme un
+  # Kage en étant incapable de tout le reste. 30 depuis un socle de 10
+  # demande dix niveaux entiers consacrés à une seule ligne.
+  stat_max: 30
+
+# ==========================================================================
+# CRÉATION DE PERSONNAGE
+# ==========================================================================
+origines:
+  # Les deux premières origines se lisent par la NATURE du clan, pas par son
+  # poids : un clan de sang porte un héritage héréditaire (dôjutsu, cellules,
+  # os, poison) ; un clan d'art se transmet par l'apprentissage (marionnettes,
+  # lames, vents). Les Ayatsuri pèsent lourd à Suna — et leur force a été
+  # forgée, pas héritée. Les identifiants restent ceux d'avant : les
+  # sauvegardes les connaissent.
+  clan_connu:
+    label: "Clan de sang"
+    aide: "Un héritage qui coule dans les veines. Il devient atteignable — il n'est jamais acquis, et il impose ses attentes."
+    budget_actif: 3
+    budget_latent: 10
+    stats_libres: 3
+    relations_amorcees: 4
+  clan_mineur:
+    label: "Clan d'art"
+    aide: "Une force qui se transmet par l'apprentissage, pas par le sang : une école, un savoir, une discipline de famille."
+    budget_actif: 3
+    budget_latent: 12
+    stats_libres: 4
+    relations_amorcees: 2
+  clan_invente:
+    label: "Clan inventé"
+    aide: "Le tien. Une identité sur mesure, une réputation à bâtir de zéro."
+    budget_actif: 3
+    budget_latent: 12
+    stats_libres: 4
+    relations_amorcees: 1
+  sans_clan:
+    label: "Sans clan"
+    aide: "Aucun héritage, aucune protection — et aucun plafond. Le potentiel le plus large du jeu."
+    budget_actif: 3
+    budget_latent: 16
+    stats_libres: 5
+    relations_amorcees: 0
+
+clan_invente_limites:
+  bonus_total_max: 5
+  bonus_stats_max: 2
+  lignee_rarete_max: rare
+  techniques_max: 2
+  rang_technique_max: C
+
+specialisations:
+  ninjutsu:   {label: "Ninjutsu",   bonus: {ninjutsu: 2},                       favorise: [affinite, element]}
+  taijutsu:   {label: "Taijutsu",   bonus: {taijutsu: 2},                       favorise: [physique, style]}
+  genjutsu:   {label: "Genjutsu",   bonus: {genjutsu: 2},                       favorise: [dojutsu, mental]}
+  fuinjutsu:  {label: "Fûinjutsu",  bonus: {controle_chakra: 2},                favorise: [sceau, jinchuriki]}
+  medecine:   {label: "Médecine",   bonus: {controle_chakra: 1, intelligence: 1}, favorise: [medical, senjutsu]}
+  kenjutsu:   {label: "Kenjutsu",   bonus: {vitesse: 2},                        favorise: [arme, ecole]}
+  espionnage: {label: "Espionnage", bonus: {perception: 1, vitesse: 1},         favorise: [social, secret]}
+
+inventaire_depart:
+  - "10 shuriken"
+  - "5 kunai"
+  - "rouleau vierge"
+  - "rations de campagne"
+  - "bandeau frontal"
+
+# ==========================================================================
+# DESTINÉE — rareté, coûts, pondérations
+# ==========================================================================
+destinee:
+  raretes:
+    commun:      {cout: 1,  poids: 1000, actif_possible: true}
+    peu_commun:  {cout: 2,  poids: 300,  actif_possible: true}
+    rare:        {cout: 4,  poids: 60,   actif_possible: false}
+    tres_rare:   {cout: 7,  poids: 12,   actif_possible: false}
+    legendaire:  {cout: 12, poids: 2,    actif_possible: false}
+  rerolls_max: 3
+  latent_min_consomme: 0.7      # au moins 70 % du budget latent dépensé
+  legendaire_max: 1
+  propositions: 3               # mode « destinée proposée »
+  clan_multiplicateur: 20       # un Uchiha a de vraies chances de Sharingan…
+  hors_clan_multiplicateur: 0   # …et personne d'autre n'en a aucune
+
+# ==========================================================================
+# VOIX — correspondances émotion / rendu
+# ==========================================================================
+voix:
+  emotions: [neutre, tension, combat, mystere, tristesse, surprise,
+             epique, humour, froideur, chaleur, menace, epuisement]
+
+  # LE TON D'UNE RÉPLIQUE. Le découpage distinguait narration et dialogue et
+  # attribuait le locuteur — mais une réplique criée et une réplique murmurée
+  # se lisaient exactement pareil. Ces facteurs MULTIPLIENT ceux de
+  # l'archétype : le grain de voix reste celui du personnage, seul le moment
+  # change. Voir app/engine/voix.py, où le ton est déduit de l'incise, de la
+  # ponctuation et du registre de la scène.
+  #
+  # `volume` va de 0 à 1 pour le navigateur. `pause` est un multiplicateur du
+  # silence qui suit le segment : un murmure appelle un blanc, pas un cri.
+  tons:
+    neutre:      {pitch: 1.00, vitesse: 1.00, volume: 1.00, pause: 1.0}
+    cri:         {pitch: 1.12, vitesse: 1.14, volume: 1.00, pause: 0.8}
+    colere:      {pitch: 1.05, vitesse: 1.10, volume: 1.00, pause: 0.9}
+    murmure:     {pitch: 0.94, vitesse: 0.90, volume: 0.45, pause: 1.5}
+    menace:      {pitch: 0.88, vitesse: 0.88, volume: 0.85, pause: 1.4}
+    question:    {pitch: 1.06, vitesse: 1.00, volume: 1.00, pause: 1.1}
+    hesitation:  {pitch: 0.98, vitesse: 0.86, volume: 0.80, pause: 1.6}
+    lassitude:   {pitch: 0.92, vitesse: 0.86, volume: 0.75, pause: 1.4}
+    rire:        {pitch: 1.14, vitesse: 1.06, volume: 1.00, pause: 1.0}
+    douleur:     {pitch: 1.08, vitesse: 0.92, volume: 0.85, pause: 1.3}
+    # Les tons de NARRATION, choisis d'après le registre de la scène. Le
+    # narrateur ne joue pas la comédie : les écarts restent petits.
+    urgence:     {pitch: 1.02, vitesse: 1.12, volume: 1.00, pause: 0.75}
+    gravite:     {pitch: 0.95, vitesse: 0.90, volume: 0.95, pause: 1.35}
+    calme:       {pitch: 1.00, vitesse: 0.95, volume: 0.92, pause: 1.25}
+
+  # Quel ton prend la NARRATION selon le registre du tour. Le registre est
+  # déjà choisi et stocké à chaque tour (`Turn.resolution.registre`) : il ne
+  # servait qu'à écrire la consigne du narrateur, il sert maintenant aussi à
+  # la lire.
+  ton_par_registre:
+    echange: urgence
+    revers: gravite
+    bascule: gravite
+    decouverte: calme
+    respiration: calme
+    conversation: neutre
+    ordinaire: neutre
+  # L'ORDRE FAIT LA RÈGLE : le premier archétype dont TOUTES les contraintes
+  # sont satisfaites l'emporte. Les plus spécifiques d'abord, donc — sinon un
+  # homme de soixante-huit ans tombait dans « adulte » avant d'atteindre
+  # « ancien », et tous les vieillards parlaient comme des jônin de trente ans.
+  archetypes:
+    enfant:     {age_max: 13, pitch: 1.18, vitesse: 1.08}
+    adolescent: {age_max: 18, pitch: 1.06, vitesse: 1.02}
+    ancien:     {age_min: 60, pitch: 0.90, vitesse: 0.88, pauses: 1.3}
+    autorite:   {tier_min: 5, pitch: 0.92, vitesse: 0.94, pauses: 1.2}
+    adulte_h:   {sexe: masculin, pitch: 0.98, vitesse: 1.0}
+    adulte_f:   {sexe: feminin, pitch: 1.06, vitesse: 1.0}
+    # Sans contrainte : ne se déclenche jamais tout seul. Réservé à un
+    # personnage dont la fiche porte explicitement `voix_ref: dissimule`.
+    dissimule:  {pitch: 0.88, vitesse: 0.92}

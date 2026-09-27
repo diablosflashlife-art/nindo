@@ -1,0 +1,18 @@
+# Ta clé Mistral et tes réglages : JAMAIS sur GitHub.
+.env
+
+# Tes parties (et les bases de test).
+data/
+
+# L'environnement Python et les fabrications.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+dist/
+Nindo-windows.zip
+notes.md
+
+# Réglages locaux de l'éditeur.
+.claude/

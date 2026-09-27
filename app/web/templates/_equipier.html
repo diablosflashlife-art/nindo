@@ -1,0 +1,18 @@
+{# Une fiche de l'entourage, telle qu'elle se retourne pendant le scellé.
+
+   On montre ce que le joueur a le DROIT de savoir : un nom, un rôle, un
+   tempérament, une manière de parler. Jamais le secret — il vient d'être
+   écrit et figé en base, et c'est précisément ce qu'il faudra des dizaines
+   de tours pour découvrir. #}
+<article class="equipier" data-role="{{ c.role_campagne }}">
+  <span class="equipier-role">{{
+    {'sensei': 'Ton instructeur', 'coequipier': 'Ton coéquipier',
+     'rival': 'Ton rival'}.get(c.role_campagne, 'Ton entourage') }}</span>
+  <h3>{{ c.nom }}</h3>
+  <p class="equipier-trait">{{ c.personnalite }}</p>
+  {% if c.parler %}
+  <p class="equipier-parler">« {{ c.parler }} »</p>
+  {% endif %}
+  <span class="equipier-sceau" aria-hidden="true">{{
+    {'sensei': '師', 'coequipier': '仲', 'rival': '敵'}.get(c.role_campagne, '人') }}</span>
+</article>

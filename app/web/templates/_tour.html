@@ -1,0 +1,71 @@
+{# Un tour de jeu. Quatre blocs typés, toujours dans le même ordre :
+   ce que le joueur a tenté, ce que le dé a dit, ce que le MJ raconte,
+   ce que ça change. Le joueur doit pouvoir retrouver n'importe lequel
+   des quatre sans lire les trois autres. #}
+{# `data-id` et `data-campagne` servent à la lecture à voix haute : le
+   navigateur demande le plan de lecture de CE tour. #}
+<div class="tour" data-tour="{{ tour.index }}" data-id="{{ tour.id }}"
+     data-campagne="{{ camp.id }}">
+
+  <div class="tour-tete">
+    <span class="tour-num">tour {{ tour.index }}</span>
+    <button type="button" class="tour-lire" title="Lire cette scène à voix haute"
+            aria-label="Lire cette scène à voix haute">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4z"/>
+        <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+      </svg>
+    </button>
+  </div>
+
+  {% if tour.action and not tour.action.startswith('[') %}
+  <div class="bloc-action">
+    <span class="tour-acteur">{{ noms.get(tour.character_id, 'Le joueur') }}</span>
+    <p class="tour-action">{{ tour.action }}</p>
+  </div>
+  {% endif %}
+
+  {% with resolution = tour.resolution %}{% include "_jet.html" %}{% endwith %}
+
+  <div class="bloc-narration">
+    <div class="tour-narration">{{ tour.narration }}</div>
+  </div>
+
+  {% if tour.effets or tour.resolution.get('rejets') %}
+  <div class="bloc-consequences">
+    {% for e in tour.effets %}<span class="consequence">{{ e }}</span>{% endfor %}
+    {% for r in tour.resolution.get('rejets', []) %}
+    <span class="consequence refus">refusé — {{ r }}</span>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{# Le panneau d'affrontement et le choix de posture sont renvoyés avec le tour,
+   hors cible (hx-swap-oob) : sans ça, il fallait recharger la page pour voir
+   l'état des adversaires changer après un échange. #}
+{% if oob %}
+  {% include "_rencontre.html" %}
+  {% include "_postures.html" %}
+  {% include "_ressources.html" %}
+  {# Un niveau peut tomber au milieu d'un échange : le panneau de progression
+     doit apparaître dans la foulée, sans recharger la page. #}
+  {% include "_progression.html" %}
+{% endif %}
+
+{# Les propositions n'apparaissent QUE dans la réponse HTMX du dernier tour :
+   dans l'historique, elles sont déjà consommées et feraient du bruit. #}
+{% if tour.propositions and not historique %}
+<div class="propositions" id="propositions" hx-swap-oob="true">
+  {% for p in tour.propositions %}
+  <button type="button" class="proposition"
+          onclick="remplir(this.getAttribute('data-texte'))"
+          data-texte="{{ p.texte }}">
+    {{ p.texte }}
+    <span class="risque {{ p.risque }}">risque {{ p.risque }}</span>
+  </button>
+  {% endfor %}
+</div>
+{% endif %}

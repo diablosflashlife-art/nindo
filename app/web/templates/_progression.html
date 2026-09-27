@@ -1,0 +1,58 @@
+{# ==========================================================================
+   « Tu as progressé. » — le panneau qui apparaît quand des points attendent.
+
+   POURQUOI IL EXISTE. `progression.points_par_niveau: 2` était écrit dans le
+   ruleset et personne ne les distribuait : monter de niveau incrémentait un
+   compteur et le joueur n'avait rien à décider. C'est pourtant la seule
+   boucle du jeu où il choisit ce que son personnage devient — tout le reste
+   lui arrive.
+
+   Il ne s'affiche que s'il y a quelque chose à faire, et il s'affiche EN HAUT
+   de la colonne : un point non placé est un point qui manque au prochain jet,
+   et on ne veut pas que le joueur le découvre trois tours plus tard.
+
+   Renvoyé en hx-swap-oob après chaque tour, comme les ressources : le niveau
+   peut tomber au milieu d'un affrontement.
+
+   L'import des macros est local : ce fragment est aussi renvoyé depuis
+   `_tour.html`, qui n'hérite d'aucune page et n'a donc pas `icone`.
+   ========================================================================== #}
+{% from "_emblemes.html" import icone as icone_progression %}
+<div id="progression" {% if oob %}hx-swap-oob="true"{% endif %}>
+{% if pj.points_libres and offres_progression %}
+<div class="panneau serre progression">
+  <p class="legende">{{ icone_progression('montee', 13) }} Tu as progressé</p>
+  <p class="petit muted" style="margin:.1rem 0 .7rem">
+    {{ pj.points_libres }} point{{ 's' if pj.points_libres > 1 }} à placer.
+    Ce que tu renforces maintenant est ce sur quoi tu compteras plus tard.
+  </p>
+
+  {% for groupe in offres_progression %}
+  <p class="petit" style="margin:.5rem 0 .3rem;letter-spacing:.06em;
+     text-transform:uppercase;opacity:.65">{{ groupe.label }}</p>
+  <div class="progression-grille">
+    {% for o in groupe.stats %}
+    {% if o.plein %}
+    <span class="gain plein" title="Déjà au maximum ({{ o.maxi }})">
+      {{ o.label }} <b>{{ o.valeur }}</b></span>
+    {% else %}
+    {# `retour` ramène le joueur là où il a cliqué : ce panneau vit sur la table
+       ET sur la fiche, et renvoyer un lecteur de fiche à la table lui faisait
+       perdre sa place à chaque point placé. #}
+    <form method="post" action="/campagnes/{{ camp.id }}/progresser">
+      <input type="hidden" name="character_id" value="{{ pj.id }}">
+      <input type="hidden" name="retour" value="{{ request.url.path }}">
+      <input type="hidden" name="stat" value="{{ o.cle }}">
+      <button type="submit" class="gain"
+              title="{{ o.label }} : {{ o.valeur }} → {{ o.valeur + 1 }} (maximum {{ o.maxi }})">
+        {{ o.label }} <b>{{ o.valeur }}</b>
+        <span class="fleche">→ {{ o.valeur + 1 }}</span>
+      </button>
+    </form>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+</div>

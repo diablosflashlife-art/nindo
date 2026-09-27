@@ -1,0 +1,790 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import embleme, icone, kanji %}
+{% from "_paysages.html" import paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% block titre %}Création — {{ camp.nom }}{% endblock %}
+{% block largeur %}etroite{% endblock %}
+{% block cle_page %}{{ villages[0].id if villages else 'konoha' }}{% endblock %}
+{% block barre %}<span class="petit muted">{{ camp.nom }}</span>{% endblock %}
+{% block contenu %}
+
+{# Tous les décors de la page, déclarés une fois et en un seul endroit : le
+   bandeau d'en-tête et les cartes de village n'en tiennent que des
+   références. Deux appels séparés produiraient deux fois `pay-konoha`. #}
+{{ paysage_defs(['konoha'] + villages|map(attribute='id')|list) }}
+
+{# Un bandeau plus court que celui de l'accueil : ici le joueur vient pour
+   remplir quelque chose, et le formulaire ne doit pas être repoussé hors de
+   l'écran. Assez d'image pour donner le ton, pas plus. #}
+{# Le bandeau SUIT le village choisi : les six estampes sont là, une seule
+   est visible, et le caractère au pinceau change avec elle. Choisir Kiri
+   doit se voir avant même d'avoir lu le nom. Le premier village de la liste
+   est celui qui est coché d'office. #}
+{% set premier_village = villages[0].id if villages else 'konoha' %}
+<section class="heros bandeau cadre-paysage" data-parallaxe id="heros-creation">
+  {% for v in villages %}
+  <div class="heros-estampe {{ 'actif' if v.id == premier_village }}" data-village="{{ v.id }}">
+    {{ estampe(v.id, 'hc-' ~ v.id) }}</div>
+  {% endfor %}
+  <div class="heros-voile"></div>
+  <span class="heros-kanji" aria-hidden="true" id="kanji-creation">{{ kanji(premier_village) }}</span>
+  <div class="heros-contenu">
+    <p class="eyebrow">Nouvelle destinée</p>
+    <h1>Deviens un shinobi</h1>
+    <p class="chapeau">Tu choisis ton nom, ta maison et ta voie. Ce qui
+      sommeille en toi sera écrit ailleurs — et tu ne le découvriras qu'en
+      jouant.</p>
+  </div>
+</section>
+
+{% if erreur %}
+<div class="panneau alerte">
+  <p class="eyebrow">Impossible de continuer</p>
+  <p class="petit" style="margin:0">{{ erreur }}</p>
+</div>
+{% endif %}
+
+{# ------------------------------------------------------------- rail --- #}
+<div class="rail" id="rail">
+  {% for n, lib, ic in [(1,'Destinée','destinee'), (2,'Identité','identite'),
+                        (3,'Origine','origine'), (4,'Voie','voie'),
+                        (5,'Sceau','sceau')] %}
+    {% if not loop.first %}<span class="rail-lien" data-lien="{{ n }}"></span>{% endif %}
+    <span class="etape-pastille {% if loop.first %}active{% endif %}" data-pastille="{{ n }}">
+      <span class="rond">{{ icone(ic, 15) }}</span>
+      <span class="nom">{{ lib }}</span>
+    </span>
+  {% endfor %}
+</div>
+
+<form method="post" action="/campagnes/{{ camp.id }}/creation" id="formulaire">
+
+<!-- ====================================================== 1 · DESTINÉE -->
+<section class="etape visible" data-etape="1">
+  <div class="panneau">
+    <h2 class="etape-titre">Ton avenir n'est pas encore écrit</h2>
+    <p class="etape-intro">Avant de savoir qui tu es, décide de qui décide.
+      Tu peux tracer ta route toi-même, ou t'en remettre entièrement au destin —
+      et découvrir ton village, ta maison et ta voie en même temps que ton
+      instructeur les découvrira.</p>
+
+    <div class="destin-cartes deux">
+      <label class="destin choisie" data-groupe="chemin" data-cle="trace">
+        <input type="radio" name="chemin" value="trace" checked>
+        <span class="rune">道</span>
+        <span class="destin-nom">Je trace ma route</span>
+        <span class="destin-texte">Tu choisis ton village, ta maison et ta voie.
+          Ce qui sommeille en toi restera caché — mais il suivra tes choix.</span>
+        <span class="destin-pied">tu gardes la main</span>
+      </label>
+
+      <label class="destin" data-groupe="chemin" data-cle="remets">
+        <input type="radio" name="chemin" value="remets">
+        <span class="rune">運</span>
+        <span class="destin-nom">Je m'en remets au destin</span>
+        <span class="destin-texte">Le destin tire ton village, ta maison, ta voie —
+          et ce que tu es vraiment : orphelin, enfant de clan, réceptacle,
+          marqué, ermite, porteur de sceau… Tu n'écris que ton nom et ton
+          visage. Le reste, tu l'apprends au sceau.</span>
+        <span class="destin-pied">surprise totale</span>
+      </label>
+    </div>
+
+    <!-- réglage fin, seulement pour qui garde la main -->
+    <div id="reglage-destin">
+      <p class="legende espace">Et ce qui sommeille en toi ?</p>
+      <div class="destin-cartes">
+        <label class="destin mini choisie" data-groupe="destinee" data-cle="proposee">
+          <input type="radio" name="mode_destinee" value="proposee" checked>
+          <span class="rune">三</span>
+          <span class="destin-nom">Trois chemins</span>
+          <span class="destin-texte">Le destin t'en présente trois. Tu en choisis
+            un sans savoir où il mène.</span>
+          <span class="destin-pied">conseillé</span>
+        </label>
+        <label class="destin mini" data-groupe="destinee" data-cle="choisie">
+          <input type="radio" name="mode_destinee" value="choisie">
+          <span class="rune">意</span>
+          <span class="destin-nom">Oriente-le</span>
+          <span class="destin-texte">Il suit ton origine et ta voie de près —
+            mais garde ses propres secrets.</span>
+          <span class="destin-pied">direction assumée</span>
+        </label>
+        <label class="destin mini" data-groupe="destinee" data-cle="aleatoire">
+          <input type="radio" name="mode_destinee" value="aleatoire">
+          <span class="rune">運</span>
+          <span class="destin-nom">Laisse faire</span>
+          <span class="destin-texte">Le destin tranche seul, comme pour tout le
+            monde.</span>
+          <span class="destin-pied">sans filet</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="nav-etapes">
+      <span></span>
+      <button type="button" class="suivant">Continuer →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== 2 · IDENTITÉ -->
+<section class="etape" data-etape="2">
+  <div class="panneau">
+    <h2 class="etape-titre">Qui es-tu ?</h2>
+    <p class="etape-intro">Le nom sous lequel on te connaîtra, et le village qui
+      t'a formé. Le reste viendra.</p>
+
+    <div class="champs">
+      <div class="champ">
+        <label for="nom">Nom du personnage</label>
+        <input id="nom" name="nom" required maxlength="60" placeholder="Kaito Arashi"
+               value="{{ saisie.get('nom','') }}"></div>
+      <div class="champ">
+        <label for="joueur">Joué par</label>
+        <input id="joueur" name="joueur" maxlength="40" placeholder="Ton prénom"
+               value="{{ saisie.get('joueur','') }}"></div>
+      <div class="champ">
+        <label for="sexe">Sexe</label>
+        <select id="sexe" name="sexe">
+          <option value="masculin">Masculin</option>
+          <option value="feminin" {% if saisie.get('sexe')=='feminin' %}selected{% endif %}>Féminin</option>
+          <option value="autre" {% if saisie.get('sexe')=='autre' %}selected{% endif %}>Autre</option>
+        </select></div>
+      <div class="champ">
+        <label for="age">Âge</label>
+        <input id="age" name="age" type="number" min="6" max="120"
+               value="{{ saisie.get('age','13') }}"></div>
+    </div>
+
+    <p id="avis-tirage" class="avis" style="display:none">
+      Village, maison et voie seront tirés au sort. Tu ne les découvriras qu'au
+      moment du sceau.</p>
+
+    <div class="champ" id="bloc-village">
+      <label>Village de départ</label>
+      <div class="cartes">
+        {% for v in villages %}
+        <label class="carte-choix {% if loop.first %}choisie{% endif %}"
+               data-groupe="village" data-cle="{{ v.id }}">
+          {# Le caractère du village, en filigrane derrière la carte. Un
+             élément à lui plutôt qu'un pseudo : les deux pseudo-éléments de
+             `.carte-choix` servent déjà au filet d'accent et au halo de
+             sélection. Purement décoratif, donc masqué aux lecteurs d'écran :
+             personne ne perd d'information à ne pas lire le japonais. #}
+          <span class="kanji-fond" aria-hidden="true">{{ kanji(v.id) }}</span>
+          {# Le pays avant le texte : on choisit un endroit où vivre, pas une
+             option dans une liste. #}
+          <span class="vue-village">{{ estampe(v.id, 'cv-' ~ v.id) }}</span>
+          <input type="radio" name="village" value="{{ v.id }}" {% if loop.first %}checked{% endif %}>
+          <span class="coche">✓</span>
+          <span class="carte-tete">
+            <span class="embleme">{{ embleme(v.id, 56) }}</span>
+            <span>
+              <span class="carte-nom">{{ v.nom_fr or v.nom }}</span>
+              <span class="carte-sous">{{ v.nom }}</span>
+            </span>
+          </span>
+          <p class="carte-texte">{{ (v.culture or '')|trim|truncate(150, true, '…') }}</p>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="champ">
+      <label for="apparence">Apparence — optionnel</label>
+      <textarea id="apparence" name="apparence" rows="2"
+        placeholder="Cheveux noirs en bataille, cicatrice fine sur l'avant-bras gauche.">{{ saisie.get('apparence','') }}</textarea>
+    </div>
+
+    <div class="nav-etapes">
+      <span></span>
+      <button type="button" class="suivant">Continuer →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= 3 · ORIGINE -->
+<section class="etape" data-etape="3">
+  <div class="panneau">
+    <h2 class="etape-titre">D'où viens-tu ?</h2>
+    <p class="etape-intro">Appartenir à un clan est une identité, pas un pouvoir.
+      Choisir Uchiha ne donne pas le Sharingan : cela donne un nom, une famille,
+      des attentes — et la possibilité qu'un jour, sous le bon choc, quelque chose s'éveille.</p>
+
+    <div class="cartes large">
+      {% for oid, o in origines.items() %}
+      <label class="carte-choix {% if oid == 'sans_clan' %}choisie{% endif %}"
+             data-groupe="origine" data-cle="{{ oid }}">
+        <span class="kanji-fond" aria-hidden="true">{{ kanji(oid) }}</span>
+        <input type="radio" name="origine" value="{{ oid }}" class="origine"
+               {% if oid == 'sans_clan' %}checked{% endif %}>
+        <span class="coche">✓</span>
+        <span class="carte-tete">
+          <span class="embleme">{{ embleme(
+            'invente' if oid == 'clan_invente' else oid, 42) }}</span>
+          <span>
+            <span class="carte-nom">{{ o.label }}</span>
+            <span class="carte-sous">{{ o.budget_latent }} points de destinée</span>
+          </span>
+        </span>
+        <p class="carte-texte">{{ o.aide }}</p>
+        <span class="tags">
+          <span class="tag or">{{ o.stats_libres }} pts libres</span>
+          {% if o.relations_amorcees %}<span class="tag jade">{{ o.relations_amorcees }} lien{{ "s" if o.relations_amorcees > 1 }}</span>
+          {% else %}<span class="tag">aucun lien</span>{% endif %}
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <!-- ---- clans majeurs -->
+    <div class="bloc-origine" data-pour="clan_connu" style="display:none">
+      <p class="legende espace">Un clan de sang</p>
+      <p class="petit muted" style="margin:-6px 0 14px">
+        Les clans de <strong class="nom-village">ton village</strong>.</p>
+      <p class="vide-clans petit muted" data-vide="clan_connu" style="display:none;margin:0 0 10px">
+        Aucun clan de sang dans ce village. Choisis un clan d'art, fonde ta
+        lignée, ou pars sans clan.</p>
+      <div class="cartes clans" data-propres="clan_connu">
+        {% for c in clans_majeurs %}
+        <label class="carte-choix {% if loop.first %}choisie{% endif %}"
+               data-groupe="clan_connu" data-cle="{{ c.id }}"
+               data-village="{{ c.village or '' }}"
+               data-disperse="{{ 1 if c.disperse else 0 }}">
+          <input type="radio" name="clan_clan_connu" value="{{ c.id }}"
+                 {% if loop.first %}checked{% endif %}>
+          <span class="coche">✓</span>
+          <span class="carte-tete">
+            <span class="embleme">{{ embleme(c.id, 92) }}</span>
+            <span>
+              <span class="carte-nom">{{ c.nom }}</span>
+              <span class="carte-sous">{{ c.epithete or 'clan de sang' }}</span>
+            </span>
+          </span>
+          {% if c.histoire %}<p class="carte-texte">{{ c.histoire }}</p>{% endif %}
+          <span class="puces">
+            {% for k, v in (c.bonus or {}).items() %}
+            <span class="puce atout"><span class="marque-puce">▲</span>
+              {{ stats_cfg.get(k, {}).get('label', k) }} +{{ v }}</span>
+            {% endfor %}
+            {% if c.lignee %}
+            <span class="puce potentiel"><span class="marque-puce">◈</span>
+              <span>Lignée <strong>{{ lignees.get(c.lignee, {}).get('nom', c.lignee) }}</strong> —
+              atteignable, jamais acquise</span></span>
+            {% endif %}
+            {% if c.tension %}
+            <span class="puce risque"><span class="marque-puce">▼</span> {{ c.tension }}</span>
+            {% elif c.obligations %}
+            <span class="puce risque"><span class="marque-puce">▼</span> {{ c.obligations[0] }}</span>
+            {% endif %}
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      {# Les clans dispersés — Uzumaki après Uzushio, survivants Kaguya — se
+         rencontrent partout, mais ce n'est pas ce qu'on propose EN PREMIER à
+         un ninja de Suna. Ils vivent repliés, à part, jamais présélectionnés. #}
+      <details class="clans-disperses" data-disperses="clan_connu">
+        <summary>Clans dispersés — sans village, on les rencontre partout</summary>
+        <div class="cartes clans"></div>
+      </details>
+    </div>
+
+    <!-- ---- clans mineurs -->
+    <div class="bloc-origine" data-pour="clan_mineur" style="display:none">
+      <p class="legende espace">Un clan d'art</p>
+      <p class="petit muted" style="margin:-6px 0 14px">
+        Les familles de <strong class="nom-village">ton village</strong>.</p>
+      <p class="vide-clans petit muted" data-vide="clan_mineur" style="display:none;margin:0 0 10px">
+        Aucun clan d'art dans ce village : ses maisons se transmettent par le
+        sang. Choisis un clan de sang, fonde ta lignée, ou pars sans clan.</p>
+      <div class="cartes clans" data-propres="clan_mineur">
+        {% for c in clans_mineurs %}
+        <label class="carte-choix {% if loop.first %}choisie{% endif %}"
+               data-groupe="clan_mineur" data-cle="{{ c.id }}"
+               data-village="{{ c.village or '' }}"
+               data-disperse="{{ 1 if c.disperse else 0 }}">
+          <input type="radio" name="clan_clan_mineur" value="{{ c.id }}"
+                 {% if loop.first %}checked{% endif %}>
+          <span class="coche">✓</span>
+          <span class="carte-tete">
+            <span class="embleme">{{ embleme(c.id, 92) }}</span>
+            <span>
+              <span class="carte-nom">{{ c.nom }}</span>
+              <span class="carte-sous">{{ c.epithete or "clan d'art" }}</span>
+            </span>
+          </span>
+          {% if c.histoire %}<p class="carte-texte">{{ c.histoire }}</p>{% endif %}
+          <span class="puces">
+            {% for k, v in (c.bonus or {}).items() %}
+            <span class="puce atout"><span class="marque-puce">▲</span>
+              {{ stats_cfg.get(k, {}).get('label', k) }} +{{ v }}</span>
+            {% endfor %}
+            {% if c.traditions %}
+            <span class="puce potentiel"><span class="marque-puce">◈</span> {{ c.traditions[0] }}</span>
+            {% endif %}
+            {% if c.tension %}
+            <span class="puce risque"><span class="marque-puce">▼</span> {{ c.tension }}</span>
+            {% endif %}
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      <details class="clans-disperses" data-disperses="clan_mineur">
+        <summary>Familles dispersées — sans village, on les rencontre partout</summary>
+        <div class="cartes"></div>
+      </details>
+    </div>
+
+    <!-- ---- clan inventé -->
+    <div class="bloc-origine" data-pour="clan_invente" style="display:none">
+      <p class="legende espace">Fonde ta lignée</p>
+      <div class="champs">
+        <div class="champ">
+          <label for="clan_nom">Nom du clan</label>
+          <input id="clan_nom" name="clan_nom" maxlength="40" placeholder="Arashi"></div>
+        <div class="champ">
+          <label for="clan_tradition">Tradition</label>
+          <input id="clan_tradition" name="clan_tradition" maxlength="80"
+                 placeholder="Forgerons de lames rituelles"></div>
+      </div>
+      <div class="champs">
+        <div class="champ">
+          <label for="clan_bonus1">Force principale</label>
+          <select id="clan_bonus1" name="clan_bonus1">
+            <option value="">—</option>
+            {% for k, v in stats_cfg.items() %}<option value="{{ k }}">{{ v.label }}</option>{% endfor %}
+          </select></div>
+        <div class="champ">
+          <label for="clan_bonus1_val">Intensité</label>
+          <select id="clan_bonus1_val" name="clan_bonus1_val">
+            <option value="1">+1</option><option value="2">+2</option>
+            <option value="3" selected>+3</option>
+          </select></div>
+        <div class="champ">
+          <label for="clan_bonus2">Force secondaire</label>
+          <select id="clan_bonus2" name="clan_bonus2">
+            <option value="">—</option>
+            {% for k, v in stats_cfg.items() %}<option value="{{ k }}">{{ v.label }}</option>{% endfor %}
+          </select></div>
+        <div class="champ">
+          <label for="clan_bonus2_val">Intensité</label>
+          <select id="clan_bonus2_val" name="clan_bonus2_val">
+            <option value="1">+1</option><option value="2" selected>+2</option>
+          </select></div>
+      </div>
+      <p class="petit muted" style="margin:0">Total plafonné à +5, sur deux
+        caractéristiques au plus — un clan inventé ne naît pas plus fort que les anciens.</p>
+    </div>
+
+    <div class="nav-etapes">
+      <button type="button" class="discret precedent">← Retour</button>
+      <button type="button" class="suivant">Continuer →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== 4 · VOIE -->
+<section class="etape" data-etape="4">
+  <div class="panneau">
+    <h2 class="etape-titre">Qu'as-tu travaillé ?</h2>
+    <p class="etape-intro">Ta spécialisation décide de tes premières techniques et
+      de la direction de ton entraînement. Elle n'enferme rien : elle oriente.</p>
+
+    <div class="cartes">
+      {% for sid, s in specialisations.items() %}
+      <label class="carte-choix {% if loop.first %}choisie{% endif %}"
+             data-groupe="spec" data-cle="{{ sid }}">
+        <input type="radio" name="specialisation" value="{{ sid }}"
+               {% if loop.first %}checked{% endif %}>
+        <span class="coche">✓</span>
+        <span class="carte-tete">
+          <span class="embleme spec">{{ icone(sid, 30) }}</span>
+          <span><span class="carte-nom">{{ s.label }}</span></span>
+        </span>
+        <span class="puces">
+          {% for k, v in (s.bonus or {}).items() %}
+          <span class="puce atout"><span class="marque-puce">▲</span>
+            {{ stats_cfg.get(k, {}).get('label', k) }} +{{ v }}</span>
+          {% endfor %}
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="espace">
+      <div class="rangee" style="justify-content:space-between;margin-bottom:14px">
+        <p class="legende" style="margin:0;flex:1">Répartis tes points libres</p>
+        <span class="compteur" id="compteur"><b id="restants">4</b> à placer</span>
+      </div>
+
+      {% for gid, g in groupes.items() %}
+      <div class="groupe-stat" data-cle="{{ gid }}">
+        <div class="groupe-tete">
+          <span class="titre rangee" style="gap:8px">
+            <span class="marque-groupe">{{ icone(gid, 15) }}</span>
+            {{ g.label }}</span>
+          <span class="note">{{ g.note }}</span>
+        </div>
+        <div class="stats-grille">
+        {% for k, v in stats_cfg.items() %}{% if v.get('groupe') == gid %}
+        <div class="stat-rpg" data-stat="{{ k }}">
+          <span class="nom">{{ v.label }}</span>
+          <span class="chiffre"><span class="total">{{ v.default }}</span></span>
+          <span class="pas">
+            <button type="button" class="moins" aria-label="retirer">−</button>
+            <span class="pts zero">0</span>
+            <button type="button" class="plus" aria-label="ajouter">+</button>
+          </span>
+          <span class="jauge crans"><i style="width:{{ (v.default * 100 / 24)|round|int }}%"></i></span>
+          <input type="hidden" name="pt_{{ k }}" value="0" data-base="{{ v.default }}">
+        </div>
+        {% endif %}{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="nav-etapes">
+      <button type="button" class="discret precedent">← Retour</button>
+      <button type="button" class="suivant">Continuer →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================= 5 · SCEAU -->
+<section class="etape" data-etape="5">
+  <div class="panneau">
+    <h2 class="etape-titre">Appose ton sceau</h2>
+    <p class="etape-intro">Relis ce que tu as choisi. Dès que tu valides, le monde
+      s'ouvre — et l'IA fera naître ton instructeur, tes coéquipiers et ton rival.</p>
+
+    <div class="duo" style="grid-template-columns:1fr 1fr;gap:18px">
+      <div>
+        <p class="legende">Identité</p>
+        <div class="ligne"><span>Nom</span><span class="val" id="r-nom">—</span></div>
+        <div class="ligne"><span>Âge</span><span class="val" id="r-age">—</span></div>
+        <div class="ligne"><span>Village</span><span class="val" id="r-village">—</span></div>
+        <p class="legende espace">Origine</p>
+        <div class="ligne"><span>Appartenance</span><span class="val" id="r-origine">—</span></div>
+        <div class="ligne"><span>Clan</span><span class="val" id="r-clan">—</span></div>
+      </div>
+      <div>
+        <p class="legende">Voie</p>
+        <div class="ligne"><span>Spécialisation</span><span class="val" id="r-spec">—</span></div>
+        <div class="ligne"><span>Points placés</span><span class="val" id="r-pts">—</span></div>
+        <p class="legende espace">Destinée</p>
+        <div class="ligne"><span>Mode</span><span class="val" id="r-destinee">—</span></div>
+        <div class="ligne"><span>Potentiel</span><span class="val" id="r-latent">—</span></div>
+      </div>
+    </div>
+
+    <div class="presage espace">Rien n'est encore écrit. Dans un instant, tout le sera —
+et tu n'en sauras qu'une partie.</div>
+
+    <div class="nav-etapes">
+      <button type="button" class="discret precedent">← Retour</button>
+      <button type="submit">Sceller ma destinée</button>
+    </div>
+  </div>
+</section>
+
+</form>
+
+<script>
+(function () {
+  var BUDGETS = {{ origines|tojson }};
+  var KANJIS = {
+    {% for v in villages %}"{{ v.id }}": "{{ kanji(v.id) }}"{% if not loop.last %},{% endif %}{% endfor %}
+  };
+  /* Le bandeau, le caractère et la teinte de la page suivent le village. */
+  function majHeros(village) {
+    document.querySelectorAll('#heros-creation .heros-estampe').forEach(function (e) {
+      e.classList.toggle('actif', e.getAttribute('data-village') === village);
+    });
+    var k = document.getElementById('kanji-creation');
+    if (k && KANJIS[village]) k.textContent = KANJIS[village];
+    if (village) document.body.setAttribute('data-cle', village);
+  }
+  var NOMS_VILLAGE = {
+    {% for v in villages %}"{{ v.id }}": "{{ v.nom_fr or v.nom }}"{% if not loop.last %},{% endif %}{% endfor %}
+  };
+  var LABELS_ORIGINE = {
+    {% for oid, o in origines.items() %}"{{ oid }}": "{{ o.label }}"{% if not loop.last %},{% endif %}{% endfor %}
+  };
+
+  var form = document.getElementById('formulaire');
+  var etapes = Array.prototype.slice.call(document.querySelectorAll('.etape'));
+  var pastilles = Array.prototype.slice.call(document.querySelectorAll('[data-pastille]'));
+  var liens = Array.prototype.slice.call(document.querySelectorAll('[data-lien]'));
+  var courante = 1;
+
+  /* ------------------------------------------------ navigation par étape
+
+     Deux parcours dans le même formulaire. « Je trace ma route » les déroule
+     toutes ; « je m'en remets au destin » saute Origine et Voie, que le
+     serveur tirera. Les étapes sautées sont marquées sur le rail plutôt que
+     retirées : le joueur voit ce qu'il a délégué. */
+  var SAUTEES = [3, 4];          // Origine et Voie
+
+  function chemin() {
+    var r = document.querySelector('input[name="chemin"]:checked');
+    return r ? r.value : 'trace';
+  }
+  function sautee(n) {
+    return chemin() === 'remets' && SAUTEES.indexOf(n) !== -1;
+  }
+
+  function montrer(n) {
+    // on ne s'arrête jamais sur une étape déléguée : on la traverse
+    var sens = n >= courante ? 1 : -1;
+    while (n >= 1 && n <= etapes.length && sautee(n)) n += sens;
+
+    courante = Math.max(1, Math.min(etapes.length, n));
+    etapes.forEach(function (e) {
+      e.classList.toggle('visible', +e.getAttribute('data-etape') === courante);
+    });
+    pastilles.forEach(function (p) {
+      var i = +p.getAttribute('data-pastille');
+      p.classList.toggle('active', i === courante);
+      p.classList.toggle('faite', i < courante && !sautee(i));
+      p.classList.toggle('deleguee', sautee(i));
+    });
+    liens.forEach(function (l) {
+      l.classList.toggle('faite', +l.getAttribute('data-lien') <= courante);
+    });
+    if (courante === 5) recapituler();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function valide(n) {
+    if (n !== 2) return true;      // le nom se saisit à l'étape Identité
+    var nom = document.getElementById('nom');
+    if (!nom.value.trim() || nom.value.trim().length < 2) {
+      nom.focus();
+      nom.style.borderColor = 'var(--vermillon)';
+      return false;
+    }
+    nom.style.borderColor = '';
+    return true;
+  }
+
+  /* Ce que le joueur délègue disparaît de l'écran : réglage fin de la
+     destinée, choix du village, et les deux étapes intermédiaires. */
+  function majChemin() {
+    var remets = chemin() === 'remets';
+    var reglage = document.getElementById('reglage-destin');
+    if (reglage) reglage.style.display = remets ? 'none' : '';
+    var bloc = document.getElementById('bloc-village');
+    if (bloc) bloc.style.display = remets ? 'none' : '';
+    var avis = document.getElementById('avis-tirage');
+    if (avis) avis.style.display = remets ? '' : 'none';
+    montrer(courante);
+  }
+
+  document.querySelectorAll('.suivant').forEach(function (b) {
+    b.addEventListener('click', function () { if (valide(courante)) montrer(courante + 1); });
+  });
+  document.querySelectorAll('.precedent').forEach(function (b) {
+    b.addEventListener('click', function () { montrer(courante - 1); });
+  });
+  pastilles.forEach(function (p) {
+    p.addEventListener('click', function () {
+      var i = +p.getAttribute('data-pastille');
+      if (sautee(i)) return;
+      if (i < courante || valide(courante)) montrer(i);
+    });
+    p.style.cursor = 'pointer';
+  });
+
+  /* ------------------------------------------------- cartes exclusives */
+  function brancherCartes(selecteur) {
+    document.querySelectorAll(selecteur).forEach(function (carte) {
+      carte.addEventListener('click', function () {
+        var groupe = carte.getAttribute('data-groupe');
+        document.querySelectorAll('[data-groupe="' + groupe + '"]').forEach(function (c) {
+          c.classList.remove('choisie');
+        });
+        carte.classList.add('choisie');
+        if (groupe === 'origine') majOrigine();
+        if (groupe === 'village') { majClans(); majHeros(carte.getAttribute('data-cle')); }
+        if (groupe === 'chemin') majChemin();
+      });
+    });
+  }
+  brancherCartes('.carte-choix');
+  brancherCartes('.destin');
+  majChemin();
+
+  /* --------------------------------------------------------- origine */
+  function origineActive() {
+    var r = document.querySelector('.origine:checked');
+    return r ? r.value : 'sans_clan';
+  }
+  function villageActif() {
+    var r = document.querySelector('input[name="village"]:checked');
+    return r ? r.value : '';
+  }
+
+  /* Un ninja de Kiri ne choisit pas Uchiha : les clans appartiennent à un
+     village. Seuls les clans dispersés (Uzumaki après Uzushio, survivants
+     Kaguya) se rencontrent partout. Si le village choisi n'a aucun clan du
+     rang demandé, on le dit au lieu d'afficher une liste vide. */
+  function majClans() {
+    var village = villageActif();
+    document.querySelectorAll('.nom-village').forEach(function (n) {
+      n.textContent = NOMS_VILLAGE[village] || 'ton village';
+    });
+
+    ['clan_connu', 'clan_mineur'].forEach(function (groupe) {
+      var cartes = Array.prototype.slice.call(
+        document.querySelectorAll('[data-groupe="' + groupe + '"]'));
+      var propres = document.querySelector('[data-propres="' + groupe + '"]');
+      var repli = document.querySelector('[data-disperses="' + groupe + '"]');
+      var bac = repli ? repli.querySelector('.cartes') : null;
+      var duVillage = [], disperses = [];
+
+      /* Trois cas, et ils ne se mélangent pas : les clans DU village, en
+         clair ; les clans dispersés d'ailleurs, repliés à part ; les autres,
+         cachés. Un ninja de Suna ne doit pas se voir proposer « Uzumaki » en
+         premier — c'est une bizarrerie, pas une surprise. */
+      cartes.forEach(function (c) {
+        var dIci = c.getAttribute('data-village') === village;
+        var dispersé = c.getAttribute('data-disperse') === '1';
+        if (dIci) {
+          c.style.display = '';
+          if (propres && c.parentElement !== propres) propres.appendChild(c);
+          duVillage.push(c);
+        } else if (dispersé && bac) {
+          c.style.display = '';
+          if (c.parentElement !== bac) bac.appendChild(c);
+          disperses.push(c);
+        } else {
+          c.style.display = 'none';
+        }
+      });
+      if (repli) {
+        repli.style.display = disperses.length ? '' : 'none';
+        repli.open = !duVillage.length && !!disperses.length;
+      }
+
+      // la sélection courante peut avoir disparu : on retombe sur le premier
+      // clan du village — jamais sur un dispersé s'il en existe un d'ici
+      var visibles = duVillage.concat(disperses);
+      var choisie = visibles.filter(function (c) {
+        return c.classList.contains('choisie');
+      })[0];
+      if ((!choisie || (disperses.indexOf(choisie) !== -1 && duVillage.length))
+          && visibles.length) {
+        cartes.forEach(function (c) {
+          c.classList.remove('choisie');
+          var i = c.querySelector('input'); if (i) i.checked = false;
+        });
+        visibles[0].classList.add('choisie');
+        var i0 = visibles[0].querySelector('input'); if (i0) i0.checked = true;
+      }
+
+      var vide = document.querySelector('[data-vide="' + groupe + '"]');
+      if (vide) vide.style.display = duVillage.length ? 'none' : '';
+    });
+  }
+
+  function majOrigine() {
+    var actif = origineActive();
+    document.querySelectorAll('.bloc-origine').forEach(function (b) {
+      b.style.display = (b.getAttribute('data-pour') === actif) ? '' : 'none';
+    });
+    majClans();
+    majPoints();
+  }
+
+  /* ------------------------------------------------- points libres */
+  var lignes = Array.prototype.slice.call(document.querySelectorAll('[data-stat]'));
+  var restants = document.getElementById('restants');
+  var compteur = document.getElementById('compteur');
+
+  function budget() {
+    return (BUDGETS[origineActive()] || {}).stats_libres || 4;
+  }
+  function depense() {
+    return lignes.reduce(function (s, l) {
+      return s + (parseInt(l.querySelector('input').value, 10) || 0);
+    }, 0);
+  }
+  function majPoints() {
+    var reste = budget() - depense();
+    restants.textContent = reste;
+    compteur.classList.toggle('vide', reste === 0);
+    compteur.classList.toggle('trop', reste < 0);
+    lignes.forEach(function (l) {
+      var champ = l.querySelector('input');
+      var pts = parseInt(champ.value, 10) || 0;
+      var base = parseInt(champ.getAttribute('data-base'), 10);
+      var total = base + pts;
+      l.querySelector('.total').textContent = total;
+      var aff = l.querySelector('.pts');
+      aff.textContent = pts ? '+' + pts : '0';
+      aff.classList.toggle('zero', pts === 0);
+      l.querySelector('.jauge i').style.width = Math.min(100, total * 100 / 24) + '%';
+      l.querySelector('.plus').disabled = (pts >= 3 || reste <= 0);
+      l.querySelector('.moins').disabled = (pts <= 0);
+    });
+  }
+  lignes.forEach(function (l) {
+    var champ = l.querySelector('input');
+    l.querySelector('.plus').addEventListener('click', function () {
+      var pts = parseInt(champ.value, 10) || 0;
+      if (pts < 3 && budget() - depense() > 0) { champ.value = pts + 1; majPoints(); }
+    });
+    l.querySelector('.moins').addEventListener('click', function () {
+      var pts = parseInt(champ.value, 10) || 0;
+      if (pts > 0) { champ.value = pts - 1; majPoints(); }
+    });
+  });
+
+  /* ------------------------------------------------------ récapitulatif */
+  function texteCarte(groupe) {
+    var c = document.querySelector('[data-groupe="' + groupe + '"].choisie');
+    return c ? (c.querySelector('.carte-nom') || c.querySelector('.destin-nom')).textContent.trim() : '—';
+  }
+  function recapituler() {
+    var remets = chemin() === 'remets';
+    var SCELLE = 'tiré au sceau';   // ce que le joueur a délégué reste caché
+
+    document.getElementById('r-nom').textContent = document.getElementById('nom').value || '—';
+    document.getElementById('r-age').textContent = document.getElementById('age').value || '—';
+
+    if (remets) {
+      ['r-village', 'r-origine', 'r-clan', 'r-spec', 'r-pts', 'r-latent']
+        .forEach(function (id) {
+          var e = document.getElementById(id);
+          e.textContent = SCELLE;
+          e.classList.add('scelle');
+        });
+      document.getElementById('r-destinee').textContent = 'Le destin décide de tout';
+      return;
+    }
+
+    document.getElementById('r-village').textContent = texteCarte('village');
+    var o = origineActive();
+    document.getElementById('r-origine').textContent = LABELS_ORIGINE[o] || o;
+    var clan = '—';
+    if (o === 'clan_connu') clan = texteCarte('clan_connu');
+    else if (o === 'clan_mineur') clan = texteCarte('clan_mineur');
+    else if (o === 'clan_invente') clan = document.getElementById('clan_nom').value || 'sans nom';
+    document.getElementById('r-clan').textContent = clan;
+    document.getElementById('r-spec').textContent = texteCarte('spec');
+    document.getElementById('r-pts').textContent = depense() + ' / ' + budget();
+    document.getElementById('r-destinee').textContent = texteCarte('destinee');
+    document.getElementById('r-latent').textContent =
+      ((BUDGETS[o] || {}).budget_latent || 12) + ' points latents';
+    ['r-village', 'r-origine', 'r-clan', 'r-spec', 'r-pts', 'r-latent']
+      .forEach(function (id) { document.getElementById(id).classList.remove('scelle'); });
+  }
+
+  majOrigine();
+  majChemin();
+})();
+</script>
+{% endblock %}

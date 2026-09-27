@@ -1,0 +1,731 @@
+# ==========================================================================
+# DESTINÉE
+# Un trait est une PROMESSE de capacité : son coût, ses conditions, sa dette.
+# `revelation_initiale` est ce que le joueur croit ; `verite` est ce qui est.
+# La vérité n'entre JAMAIS dans le contexte du narrateur.
+# ==========================================================================
+
+# --------------------------------------------------------------------------
+# PROFILS — tirés avant les traits. C'est la silhouette qu'on remarque en jeu,
+# pas la liste des traits.
+# --------------------------------------------------------------------------
+profils:
+  - id: sans_lignee
+    nom: "Sans lignée, fort potentiel"
+    poids: 300
+    origines: [sans_clan, clan_mineur, clan_invente]
+    familles: [affinite, specialisation, physique, social]
+    note: "Aucun trait rare. Le budget latent est réinvesti en largeur et en progression."
+  - id: enfant_de_clan
+    nom: "Enfant de clan"
+    poids: 250
+    origines: [clan_connu, clan_mineur, clan_invente]
+    familles: [clan_technique, affinite, lignee_clan]
+    note: "L'héritage du clan est atteignable, avec ses obligations."
+  - id: specialiste
+    nom: "Spécialiste"
+    poids: 180
+    origines: [sans_clan, clan_mineur, clan_connu, clan_invente]
+    familles: [specialisation, affinite, ecole]
+    note: "Une voie poussée très loin, peu de largeur."
+  - id: heritier_rare
+    nom: "Héritier d'une capacité rare"
+    poids: 90
+    origines: [clan_connu, clan_invente, sans_clan]
+    familles: [lignee_clan, kekkei_genkai, affinite]
+    note: "Une lignée latente, et souvent une fausse piste au départ."
+  - id: clan_disparu
+    nom: "Descendant d'un clan disparu"
+    poids: 45
+    origines: [sans_clan, clan_invente]
+    familles: [heritage, kekkei_genkai, secret]
+    note: "Héritage latent, faction hostile, secret d'origine."
+  - id: porteur_secret
+    nom: "Porteur d'un secret"
+    poids: 40
+    origines: [sans_clan, clan_mineur, clan_invente]
+    familles: [secret, sceau, affinite]
+    note: "Pas de puissance particulière, mais une mémoire manquante et un sceau."
+  - id: destinee_exceptionnelle
+    nom: "Destinée exceptionnelle"
+    poids: 8
+    origines: [sans_clan, clan_connu]
+    familles: [bijuu, dojutsu_avance, heritage]
+    note: "Un trait légendaire latent, une chaîne de conditions longue, une dette lourde."
+
+# --------------------------------------------------------------------------
+# ARCHÉTYPES — ce que tire « je m'en remets au destin ».
+#
+# Avant eux, le tirage au sort donnait ce que la loi des grands nombres donne :
+# un sans-clan de Konoha en ninjutsu, huit fois sur dix. Un joueur qui remet
+# tout au destin veut qu'il se passe quelque chose. Chaque archétype impose
+# un ou plusieurs traits latents — SANS regarder leur coût, c'est tout
+# l'intérêt — et borne l'origine pour rester cohérent avec le canon.
+#
+# `accroche` est la seule chose qu'on dit au joueur. La vérité du trait, ses
+# paliers et sa dette restent scellés, comme pour tout le monde.
+# --------------------------------------------------------------------------
+archetypes:
+  - id: orphelin
+    nom: "L'orphelin"
+    poids: 22
+    accroche: "Personne ne t'attend nulle part. Tu n'as que ce que tu sauras devenir."
+    origines: [sans_clan]
+    profil: sans_lignee
+    # Un orphelin tiré au sort doit emporter quelque chose : ce qu'on ne lui a
+    # jamais dit. Sans ceci, trois orphelins sur quatre n'avaient rien de rare.
+    traits_parmi: [sceau_ancien, heritage_uzumaki, heritage_kaguya, aptitude_senjutsu,
+                   marque_maudite_trait]
+  - id: sang_de_clan
+    nom: "L'enfant de clan"
+    poids: 20
+    accroche: "Un nom qui pèse, une famille qui regarde. On attend quelque chose de toi."
+    origines: [clan_connu]
+    profil: enfant_de_clan
+    lignee_du_clan: true          # le trait de lignée du clan tiré, s'il en a un
+  - id: heritier_disparu
+    nom: "Le dernier d'une lignée"
+    poids: 10
+    accroche: "Tu ne sais rien de tes parents. Ton sang, lui, se souvient."
+    origines: [sans_clan]
+    profil: clan_disparu
+    traits_parmi: [heritage_uzumaki, heritage_kaguya, hyoton_heritage]
+  - id: receptacle
+    nom: "Le réceptacle"
+    poids: 9
+    accroche: "Tu dors mal. Tu as toujours mal dormi. Le village le sait, et se tait."
+    origines: [sans_clan, clan_mineur]
+    profil: destinee_exceptionnelle
+    traits: [jinchuriki_latent]
+  - id: marque
+    nom: "Le marqué"
+    poids: 8
+    accroche: "Quelqu'un t'a remarqué. Tu ne sais pas encore que c'est une mauvaise nouvelle."
+    origines: [sans_clan, clan_mineur, clan_connu]
+    profil: porteur_secret
+    traits: [marque_maudite_trait]
+  - id: ermite
+    nom: "L'ermite en devenir"
+    poids: 9
+    accroche: "Les lieux anciens te mettent mal à l'aise. Un jour, tu comprendras pourquoi."
+    origines: [sans_clan, clan_mineur]
+    profil: specialiste
+    traits: [aptitude_senjutsu]
+  - id: scelle
+    nom: "Le porteur de sceau"
+    poids: 11
+    accroche: "Une cicatrice que tu as toujours eue. Ce n'en est pas une."
+    origines: [sans_clan, clan_mineur]
+    profil: porteur_secret
+    traits: [sceau_ancien]
+  - id: contractant
+    nom: "Le contractant"
+    poids: 9
+    accroche: "Un animal t'a suivi du regard, une fois. Il t'attend quelque part."
+    origines: [sans_clan, clan_mineur, clan_connu]
+    profil: specialiste
+    traits: [pacte_invocation]
+  - id: lame
+    nom: "La lame"
+    poids: 8
+    accroche: "Quelqu'un t'a appris à tenir un sabre, et tu ne sais plus qui."
+    origines: [sans_clan, clan_mineur]
+    profil: specialiste
+    traits: [ecole_sabre, lame_heritee]
+    specialisation: kenjutsu
+  - id: soignant
+    nom: "Les mains qui savent"
+    poids: 7
+    accroche: "Tes mains savent où ça fait mal avant qu'on te le dise."
+    origines: [sans_clan, clan_mineur]
+    profil: specialiste
+    traits: [lignee_medicale, sceau_byakugo]
+    specialisation: medecine
+
+# --------------------------------------------------------------------------
+# TRAITS
+# --------------------------------------------------------------------------
+traits:
+  # ===== COMMUNS — peuvent être actifs dès le départ =====
+  - {id: affinite_katon, nom: "Affinité Katon", famille: affinite, rarete: commun,
+     accorde: {element: katon}, revelation_initiale: "Le feu te répond plus vite qu'aux autres."}
+  - {id: affinite_suiton, nom: "Affinité Suiton", famille: affinite, rarete: commun,
+     accorde: {element: suiton}, revelation_initiale: "L'eau t'obéit sans que tu aies eu à l'apprendre."}
+  - {id: affinite_raiton, nom: "Affinité Raiton", famille: affinite, rarete: commun,
+     accorde: {element: raiton}, revelation_initiale: "Tes gestes portent une électricité que tu ne contrôles pas encore."}
+  - {id: affinite_doton, nom: "Affinité Doton", famille: affinite, rarete: commun,
+     accorde: {element: doton}, revelation_initiale: "Tu as toujours été plus stable que les autres, au propre comme au figuré."}
+  - {id: affinite_futon, nom: "Affinité Fûton", famille: affinite, rarete: commun,
+     accorde: {element: futon}, revelation_initiale: "Le vent se lève quand tu t'énerves. On dit que c'est une coïncidence."}
+  - {id: memoire_eidetique, nom: "Mémoire eidétique", famille: mental, rarete: commun,
+     accorde: {stats: {intelligence: 2}},
+     revelation_initiale: "Tu retiens du premier coup d'œil ce que les autres recopient dix fois."}
+  - {id: endurance_hors_norme, nom: "Endurance hors norme", famille: physique, rarete: commun,
+     accorde: {stats: {endurance: 2}},
+     revelation_initiale: "Tu t'effondres bien après tout le monde."}
+  - {id: reflexes_vifs, nom: "Réflexes vifs", famille: physique, rarete: commun,
+     accorde: {stats: {vitesse: 2}},
+     revelation_initiale: "Ton corps réagit avant ta tête."}
+  - {id: charisme, nom: "Présence naturelle", famille: social, rarete: commun,
+     accorde: {stats: {social: 2}},
+     revelation_initiale: "On t'écoute sans que tu aies à hausser la voix."}
+  - {id: reserve_profonde, nom: "Réserve de chakra profonde", famille: physique, rarete: commun,
+     accorde: {stats: {chakra: 3}},
+     revelation_initiale: "Tu n'es jamais à court quand les autres le sont."}
+
+  # ===== PEU COMMUNS =====
+  - id: seconde_affinite
+    nom: "Seconde affinité élémentaire"
+    famille: affinite
+    rarete: peu_commun
+    revelation_initiale: "Deux natures de chakra cohabitent en toi, mal."
+    conditions:
+      - {palier: 1, si: "un entraînement élémentaire poussé",
+         indice: "Une seconde nature se manifeste malgré toi."}
+
+  - id: pacte_invocation
+    nom: "Pacte d'invocation"
+    famille: pacte
+    rarete: rare
+    accorde: {technique: kuchiyose}
+    revelation_initiale: "Un animal t'a suivi du regard, une fois, et tu ne l'as pas oublié."
+    conditions:
+      - {palier: 1, si: "la rencontre d'un détenteur de contrat",
+         indice: "Un rouleau ancien réagit à ton sang."}
+      - {palier: 2, si: "l'épreuve d'acceptation du clan animal",
+         indice: "Ils acceptent de te répondre."}
+
+  - {id: lignee_medicale, nom: "Lignée de médecins", famille: medical, rarete: peu_commun,
+     accorde: {technique: iryo_base, stats: {controle_chakra: 2}},
+     revelation_initiale: "Tes mains savent où ça fait mal avant qu'on te le dise."}
+  - {id: ecole_sabre, nom: "École de sabre", famille: ecole, rarete: peu_commun,
+     accorde: {technique: kenjutsu_ecole},
+     revelation_initiale: "Quelqu'un t'a appris à tenir une lame, et tu ne sais plus qui."}
+
+  # ===== RARES — toujours latents, jamais actifs à la création =====
+  - id: lignee_sharingan
+    nom: "Éveil du Sharingan"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [uchiha]}
+    accorde: {capacite: sharingan}
+    revelation_initiale: "Ton clan attend de toi ce qu'il a attendu de tous les autres."
+    verite: "La lignée est bien présente. Elle n'attend qu'un choc suffisant."
+    conditions:
+      - {palier: 1, si: "un choc émotionnel violent vécu en jeu",
+         indice: "Ta vue s'est brouillée, puis trop nette, l'espace d'un instant."}
+      - {palier: 2, si: "un combat où la vie est réellement en jeu",
+         indice: "Tu as suivi un mouvement que personne d'autre n'a vu."}
+      - {palier: 3, si: "une maîtrise prolongée, au moins quinze tours d'usage",
+         indice: "Le monde ralentit quand tu te concentres."}
+    contraintes:
+      - {type: convoitise,
+         note: "Un œil d'Uchiha se vole. On le sait, dans le village comme au-dehors."}
+
+  - id: lignee_byakugan
+    nom: "Éveil du Byakugan"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [hyuga]}
+    accorde: {capacite: byakugan}
+    revelation_initiale: "Le clan t'a examiné les yeux à la naissance, comme tous les autres."
+    verite: "La lignée est présente ; l'éveil dépend de l'entraînement du clan."
+    conditions:
+      - {palier: 1, si: "l'éveil naturel ou un entraînement du clan",
+         indice: "Tu distingues des veines sous la peau."}
+      - {palier: 2, si: "un entraînement rigoureux mené jusqu'au bout",
+         indice: "Ton champ de vision s'ouvre derrière toi."}
+    contraintes:
+      - {type: hierarchie, note: "La branche principale décide de ton sort."}
+
+  # ----- Les lignées des clans (adaptées du wiki Solve) -----------------
+  # Une par clan de sang. Réservées au clan (`famille: lignee_clan`) et
+  # fortement pondérées pour ses membres : un Karatachi a de vraies chances
+  # d'ouvrir le Kirisôgan, personne d'autre n'en a aucune.
+  - id: lignee_mokuton
+    nom: "Éveil du Mokuton"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [senju]}
+    accorde: {capacite: mokuton}
+    revelation_initiale: "Les plantes poussent mieux autour de chez toi. On en plaisante."
+    verite: "Les cellules Senju sont denses en toi ; le bois vivant attend la fusion de l'eau et de la terre."
+    conditions:
+      - {palier: 1, si: "une fusion réussie du Suiton et du Doton",
+         indice: "Une racine a percé la pierre sous ta main."}
+      - {palier: 2, si: "un usage en situation désespérée",
+         indice: "Le bois a répondu avant que tu ne le demandes."}
+      - {palier: 3, si: "une symbiose complète avec l'énergie naturelle",
+         indice: "Tu n'entends plus la forêt : tu en fais partie."}
+    contraintes:
+      - {type: convoitise, note: "Des cellules Senju valent un village. On a déjà tué pour moins."}
+
+  - id: lignee_essaim
+    nom: "Essaim rare"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [aburame]}
+    accorde: {capacite: essaim_rare}
+    revelation_initiale: "Ton essaim ne ressemble pas tout à fait à celui de tes cousins."
+    verite: "L'essaim porte une évolution rare, et elle n'a pas encore choisi sa forme."
+    conditions:
+      - {palier: 1, si: "un essaim nourri jusqu'à l'épuisement pour protéger quelqu'un",
+         indice: "Les insectes se sont battus sans que tu le leur demandes."}
+      - {palier: 2, si: "une mutation de l'essaim en situation extrême",
+         indice: "Ils ont changé de couleur, et de faim."}
+    contraintes:
+      - {type: dependance, note: "Un essaim affamé se nourrit sur l'hôte."}
+
+  - id: lignee_liquefaction
+    nom: "Liquéfaction Hôzuki"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [hozuki]}
+    accorde: {capacite: hydrification}
+    revelation_initiale: "Tu as toujours eu soif. Plus que les autres."
+    verite: "Tes cellules gardent la mémoire de leur forme : ton corps peut devenir eau et revenir."
+    conditions:
+      - {palier: 1, si: "une lame qui aurait dû être mortelle",
+         indice: "La lame est passée. Tu ne saignes pas."}
+      - {palier: 2, si: "un entraînement du clan, en immersion",
+         indice: "Tu as oublié, un instant, où finissait ta main."}
+    contraintes:
+      - {type: politique, note: "Un Hôzuki appartient d'abord au jeu de pouvoir de son clan."}
+
+  - id: lignee_kirisogan
+    nom: "Éveil du Kirisôgan"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [karatachi]}
+    accorde: {capacite: kirisogan}
+    revelation_initiale: "Tu n'as jamais eu peur de la brume. Tu ne sais pas pourquoi les autres, si."
+    verite: "L'Œil du Récif Brumeux dort derrière ton regard."
+    conditions:
+      - {palier: 1, si: "une nuit de brume où l'on aurait dû mourir",
+         indice: "Dans la brume, tu as vu la silhouette avant qu'elle ne bouge."}
+      - {palier: 2, si: "un premier coup porté sans être vu",
+         indice: "Personne ne t'a vu. Toi, tu as tout vu."}
+      - {palier: 3, si: "la rencontre d'un basilic",
+         indice: "Il t'a parlé. Tu as compris."}
+    contraintes:
+      - {type: secret, note: "Un Karatachi qu'on remarque est un Karatachi qui a échoué."}
+
+  - id: lignee_isonade
+    nom: "Cellules d'Isonade"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [hoshigaki]}
+    accorde: {capacite: cellules_isonade}
+    revelation_initiale: "L'eau froide ne t'a jamais fait frissonner."
+    verite: "La malédiction d'Isonade est vivante dans tes cellules."
+    conditions:
+      - {palier: 1, si: "une noyade qui n'en est pas une",
+         indice: "Tu as respiré sous l'eau. Longtemps."}
+      - {palier: 2, si: "un combat gagné par l'instinct contre la raison",
+         indice: "Tu as mordu avant de décider."}
+      - {palier: 3, si: "céder entièrement à la faim",
+         indice: "Tes dents ont changé. Tu ne veux pas savoir ce que tu as mangé."}
+    contraintes:
+      - {type: convoitise, note: "Des cellules Hoshigaki se vendent cher dans l'archipel."}
+
+  - id: lignee_peche
+    nom: "Le péché"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [yokushin]}
+    accorde: {capacite: peche}
+    revelation_initiale: "Tu n'as aucun souvenir d'enfance. Personne autour de toi ne s'en étonne."
+    verite: "Un vice qui n'est pas le tien a été déposé en toi, pour qu'un Hôzuki en soit délivré."
+    conditions:
+      - {palier: 1, si: "le lien avec un maître Hôzuki",
+         indice: "Une envie qui ne t'appartient pas s'est installée, et elle ne repart pas."}
+      - {palier: 2, si: "céder au péché devant témoins",
+         indice: "Ils ont vu ce que tu es devenu. Toi aussi."}
+    contraintes:
+      - {type: maitre, note: "Un Yokushin appartient à quelqu'un."}
+      - {type: secret, note: "La vérité sur l'origine du clan est enfouie sous l'océan."}
+
+  - id: lignee_sakin
+    nom: "Éveil du Sakin"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [jishaku]}
+    accorde: {capacite: sakin}
+    revelation_initiale: "Le sable colle à tes mains plus qu'aux autres."
+    verite: "Le désert te reconnaît. Son sable d'or attend que tu l'écoutes."
+    conditions:
+      - {palier: 1, si: "un danger immédiat, en plein désert",
+         indice: "Le sable s'est levé entre toi et le coup."}
+      - {palier: 2, si: "écouter le désert au lieu de le commander",
+         indice: "Il a pris la couleur de l'or, une seconde."}
+      - {palier: 3, si: "laisser le désert te traverser",
+         indice: "Tu as cessé d'avoir soif."}
+    contraintes:
+      - {type: heritage, note: "La branche de Shinkuro n'est pas une légende pour tout le monde."}
+
+  - id: lignee_soryugan
+    nom: "Éveil du Sôryugan"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [mugen]}
+    accorde: {capacite: soryugan}
+    revelation_initiale: "Les gens détournent les yeux quand tu les regardes trop longtemps."
+    verite: "La Pupille de la Clarté Obscure voit les ténèbres que chacun porte."
+    conditions:
+      - {palier: 1, si: "voir, une fois, les ténèbres de quelqu'un",
+         indice: "Ton iris a tourné. Tu l'as senti."}
+      - {palier: 2, si: "un rite de la secte mené à son terme",
+         indice: "Le violet ne quitte plus tes yeux."}
+      - {palier: 3, si: "perdre pied entre illusion et réalité, et revenir",
+         indice: "Tu ne sais plus lequel des deux mondes était le vrai. Tu as choisi."}
+    contraintes:
+      - {type: mental, note: "Ceux qui vont trop loin dans le Sôryugan n'en reviennent pas tous."}
+
+  - id: lignee_resonance
+    nom: "Vibrations Raimei"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [raimei]}
+    accorde: {capacite: resonance}
+    revelation_initiale: "On ne dort jamais bien dans la même pièce que toi."
+    verite: "Ton corps est l'origine du son. Il résonne, et il apprendra à frapper."
+    conditions:
+      - {palier: 1, si: "un cauchemar qui réveille tout le monde autour",
+         indice: "Les vitres ont tremblé. Tu dormais."}
+      - {palier: 2, si: "un chant ou un combat où le son porte la décision",
+         indice: "Ta voix a fait reculer quelqu'un."}
+      - {palier: 3, si: "un pacte avec les Serviteurs de Kazan",
+         indice: "Trois silhouettes silencieuses. Elles t'attendaient."}
+    contraintes:
+      - {type: heritage, note: "Shindorai ou Moku no Mei : on te demandera de choisir."}
+
+  - id: lignee_os
+    nom: "Shikotsumyaku"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [kaguya]}
+    accorde: {capacite: shikotsumyaku}
+    revelation_initiale: "Tes os ont cassé deux fois, et se sont ressoudés en une nuit."
+    verite: "L'Os-Source est fort en toi : ton squelette obéira."
+    conditions:
+      - {palier: 1, si: "une blessure grave", indice: "L'os a repoussé de travers, puis s'est redressé seul."}
+      - {palier: 2, si: "un combat à mort", indice: "Ton squelette a répondu à ta volonté."}
+      - {palier: 3, si: "regarder en face la quatrième souffrance",
+         indice: "Tu sais pourquoi tu vis. Ton sternum le sait aussi."}
+    contraintes:
+      - {type: heritage, note: "La lignée Suza et la famille de Kuraichi ne voient pas le clan du même œil."}
+
+  - id: lignee_salamandre
+    nom: "Poche salamandre"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [salamandre]}
+    accorde: {capacite: poche_salamandre}
+    revelation_initiale: "Aucun poison ne t'a jamais rendu malade. Tu n'as jamais cherché à savoir pourquoi."
+    verite: "Tu es né Miraculé : la poche salamandre est en toi."
+    conditions:
+      - {palier: 1, si: "survivre à un poison qui aurait tué n'importe qui",
+         indice: "Le poison est entré. Il s'est rangé."}
+      - {palier: 2, si: "tuer par le poison, et le vouloir",
+         indice: "Ton souffle a une couleur, maintenant."}
+      - {palier: 3, si: "être choisi par Sayaka",
+         indice: "La Reine des Salamandres a prononcé ton nom."}
+    contraintes:
+      - {type: hierarchie, note: "Les Miraculés commandent, et surveillent les leurs."}
+
+  - id: lignee_foudre_yotsuki
+    nom: "Chair de foudre"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [yotsuki]}
+    accorde: {capacite: foudre_yotsuki}
+    revelation_initiale: "Les orages te réveillent, et tu aimes ça."
+    verite: "La foudre du sang des Raikage circule dans tes muscles."
+    conditions:
+      - {palier: 1, si: "un coup porté au-delà de ses forces",
+         indice: "Une étincelle a jailli au moment de l'impact."}
+      - {palier: 2, si: "un entraînement sous l'orage, avec le clan",
+         indice: "La foudre t'a enveloppé sans te brûler."}
+    contraintes:
+      - {type: hierarchie, note: "Le clan attend de toi que tu montes. Vite."}
+
+  - id: lignee_ketsuryugan
+    nom: "Éveil du Ketsuryûgan"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [chinoike]}
+    accorde: {capacite: ketsuryugan}
+    revelation_initiale: "Tes yeux sont violets, comme ceux de tous les tiens."
+    verite: "Le sang Chinoike attend seulement qu'on l'appelle."
+    conditions:
+      - {palier: 1, si: "voir couler le sang de quelqu'un qu'on aime",
+         indice: "Ton regard a rougi, et le sang s'est arrêté de couler."}
+      - {palier: 2, si: "un combat où l'on fait saigner pour survivre",
+         indice: "Le sang de l'autre t'a obéi."}
+      - {palier: 3, si: "venger une dette ancienne du clan",
+         indice: "Tu te souviens de choses que tu n'as pas vécues."}
+    contraintes:
+      - {type: faction_hostile, note: "Là d'où vient le clan, on ne l'a pas oublié."}
+
+  - id: lignee_narukami
+    nom: "Cellules foudroyantes"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [narukami]}
+    accorde: {capacite: cellules_foudroyantes}
+    revelation_initiale: "Tes muscles tremblent quand il va pleuvoir."
+    verite: "Ta chair a été faite pour porter du Raiton pur."
+    conditions:
+      - {palier: 1, si: "tenir debout quand le corps entier gronde",
+         indice: "Tu aurais dû tomber. La foudre t'a tenu."}
+      - {palier: 2, si: "vaincre à mains nues un adversaire plus fort",
+         indice: "Ton poing a laissé une brûlure."}
+    contraintes:
+      - {type: mental, note: "Un esprit qui plie est dévoré par la foudre qu'il porte."}
+
+  - id: lignee_ruche
+    nom: "Phéromones de la Ruche"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [kamizuru]}
+    accorde: {capacite: pheromones}
+    revelation_initiale: "Les abeilles ne t'ont jamais piqué."
+    verite: "Ton sang parle la langue de la ruche."
+    conditions:
+      - {palier: 1, si: "un essaim qui te suit sans qu'on l'ait appelé",
+         indice: "Elles t'ont suivi toute la journée. Personne ne les a envoyées."}
+      - {palier: 2, si: "façonner le miel vivant sous l'œil d'un ancien",
+         indice: "Le miel a pris la forme que tu pensais."}
+      - {palier: 3, si: "être reconnu par la Reine des Abeilles",
+         indice: "La Ruche Royale s'est tue à ton passage."}
+    contraintes:
+      - {type: hierarchie, note: "La ruche passe avant l'individu."}
+
+  - id: lignee_bakuton
+    nom: "Éveil du Bakuton"
+    famille: lignee_clan
+    rarete: rare
+    eligibilite: {clans: [clan_bakuton]}
+    accorde: {capacite: bakuton}
+    revelation_initiale: "Tu as fait sauter ton premier jouet à six ans. On a dit que c'était un accident."
+    verite: "Terre et Foudre se mêlent dans ton chakra : la matière détonne à ton contact."
+    conditions:
+      - {palier: 1, si: "une colère qu'on n'a pas su contenir",
+         indice: "Le mur a explosé sous ta paume."}
+      - {palier: 2, si: "un entraînement du Corps d'Explosion",
+         indice: "Tu as choisi le moment. C'est toute la différence."}
+    contraintes:
+      - {type: militaire, note: "Le Corps d'Explosion t'attend, que tu le veuilles ou non."}
+
+  - id: hyoton_heritage
+    nom: "Héritage Hyôton"
+    famille: kekkei_genkai
+    rarete: rare
+    eligibilite: {villages: [kiri, konoha], requiert_trait: affinite_suiton,
+                  incompatible: [heritage_kaguya]}
+    accorde: {capacite: hyoton}
+    revelation_initiale: "Tu sembles avoir une affinité naturelle pour le Suiton."
+    verite: "Une lignée Hyôton de Kiri, cachée depuis les purges."
+    conditions:
+      - {palier: 1, si: "un danger mortel, en présence d'eau ou de froid",
+         indice: "L'eau a gelé là où tu l'as touchée."}
+      - {palier: 2, si: "la rencontre d'un survivant du clan",
+         indice: "Un inconnu réagit à ton nom, puis se reprend."}
+    contraintes:
+      - {type: faction_hostile, cible: kiri,
+         note: "Kiri a purgé les lignées Hyôton. En rester un attire des chasseurs."}
+      - {type: secret, note: "Le révéler publiquement coûte 30 de relation au village."}
+
+  - id: sceau_ancien
+    nom: "Sceau d'origine inconnue"
+    famille: sceau
+    rarete: rare
+    revelation_initiale: "Tu portes une marque que l'on a toujours appelée une cicatrice."
+    verite: "Un sceau de contention apposé dans la petite enfance, par quelqu'un qui te connaissait."
+    conditions:
+      - {palier: 1, si: "une blessure grave ou une émotion extrême",
+         indice: "La marque a chauffé, puis s'est tue."}
+      - {palier: 2, si: "l'examen par un spécialiste du fûinjutsu",
+         indice: "Ce n'est pas une cicatrice. C'est une écriture."}
+      - {palier: 3, si: "la découverte de qui l'a apposé", indice: "Un nom, enfin."}
+    contraintes:
+      - {type: convoitise, note: "Ce que le sceau retient intéresse quelqu'un."}
+
+  - id: lame_heritee
+    nom: "Lame héritée"
+    famille: ecole
+    rarete: rare
+    accorde: {stats: {taijutsu: 2, vitesse: 2}}
+    revelation_initiale: "Tu as toujours eu la même lame. Tu ne te souviens pas de l'avoir reçue."
+    verite: "Elle a appartenu à un épéiste dont le nom fait encore baisser la voix. Ceux qui la cherchent ne t'ont pas oublié."
+    conditions:
+      - {palier: 1, si: "un duel où la lame est tirée pour tuer ou être tué",
+         indice: "La lame a vibré avant l'impact, comme si elle savait."}
+      - {palier: 2, si: "la rencontre de quelqu'un qui reconnaît la lame",
+         indice: "Un regard s'est figé sur ta garde. Il savait."}
+      - {palier: 3, si: "l'apprentissage de ce que la lame a déjà tranché",
+         indice: "Tu connais son nom, maintenant. Elle aussi connaît le tien."}
+    contraintes:
+      - {type: convoitise, note: "D'autres la veulent, et certains ont le droit de la réclamer."}
+
+  # ===== TRÈS RARES =====
+  - id: heritage_uzumaki
+    nom: "Lignée Uzumaki dissimulée"
+    famille: heritage
+    rarete: tres_rare
+    eligibilite: {clans: [sans_clan, ""]}
+    accorde: {stats: {chakra: 6, endurance: 3}, technique: fuin_base}
+    revelation_initiale: "Tes cheveux sont d'un roux qu'on remarque dans la rue."
+    verite: "Descendant direct d'un survivant d'Uzushiogakure."
+    conditions:
+      - {palier: 1, si: "une réserve de chakra anormale constatée par un tiers",
+         indice: "Le médecin du village a froncé les sourcils devant tes mesures."}
+      - {palier: 2, si: "la rencontre d'un survivant ou d'une archive",
+         indice: "Un vieux registre porte un nom proche du tien."}
+      - {palier: 3, si: "la maîtrise d'un sceau complexe",
+         indice: "Tes mains connaissent des tracés qu'on ne t'a jamais montrés."}
+    contraintes:
+      - {type: convoitise, note: "Les derniers Uzumaki valent cher, vivants."}
+
+  - id: marque_maudite_trait
+    nom: "Marque maudite"
+    famille: kekkei_genkai
+    rarete: tres_rare
+    accorde: {capacite: marque_maudite}
+    revelation_initiale: "Rien pour l'instant. Tu es en bonne santé."
+    verite: "Quelqu'un t'a choisi comme réceptacle, et viendra te marquer."
+    conditions:
+      - {palier: 1, si: "une rencontre avec celui qui pose la marque, et y survivre",
+         indice: "Une douleur dans la nuque, qui ne passe pas."}
+      - {palier: 2, si: "un abandon volontaire au pouvoir de la marque",
+         indice: "Tu as aimé la sensation. C'est le problème."}
+    contraintes:
+      - {type: maitre, note: "Celui qui a posé la marque en garde le contrôle partiel."}
+      - {type: dependance, note: "Le corps réclame."}
+
+  - id: sceau_byakugo
+    nom: "Sceau de la réserve"
+    famille: medical
+    rarete: tres_rare
+    accorde: {stats: {controle_chakra: 3, chakra: 4, endurance: 2}}
+    revelation_initiale: "Un losange pâle paraît sur ton front quand tu retiens ton souffle trop longtemps."
+    verite: "Ton corps met du chakra de côté depuis l'enfance, sans que tu le saches. Le sceau se remplit ; un jour, il rendra tout d'un coup."
+    conditions:
+      - {palier: 1, si: "des heures passées à soigner sans relâche, jusqu'à l'épuisement",
+         indice: "Tu aurais dû t'effondrer. Quelque chose a pris le relais."}
+      - {palier: 2, si: "l'enseignement d'un maître ninja médecin",
+         indice: "« Tu stockes. Depuis quand ? » Tu ne sais pas répondre."}
+      - {palier: 3, si: "une situation où tu es le dernier rempart d'un mourant",
+         indice: "Le losange s'est ouvert. Tes blessures se sont refermées avec les siennes."}
+    contraintes:
+      - {type: prix, note: "Libérer le sceau vide en un instant des années de réserve."}
+
+  - id: aptitude_senjutsu
+    nom: "Aptitude au senjutsu"
+    famille: senjutsu
+    rarete: tres_rare
+    accorde: {capacite: senjutsu}
+    revelation_initiale: "Les lieux anciens te mettent mal à l'aise, et tu ne sais pas pourquoi."
+    verite: "Une sensibilité rare à l'énergie naturelle."
+    conditions:
+      - {palier: 1, si: "l'apprentissage auprès d'un maître d'un lieu sacré",
+         indice: "Tu perçois l'énergie du lieu avant d'y entrer."}
+      - {palier: 2, si: "une méditation poussée au-delà du raisonnable",
+         indice: "Ta peau durcit par endroits. Ça recule, lentement."}
+    contraintes:
+      - {type: risque_physique, note: "L'échec pétrifie."}
+
+  - id: heritage_kaguya
+    nom: "Sang Kaguya"
+    famille: heritage
+    rarete: tres_rare
+    eligibilite: {clans: [sans_clan, ""], villages: [oto, kiri, konoha, suna],
+                  incompatible: [hyoton_heritage]}
+    accorde: {capacite: shikotsumyaku}
+    revelation_initiale: "Tu guéris vite. Trop vite, disait l'infirmerie."
+    verite: "Un enfant issu des expériences d'Otogakure, sorti avant que les Kaguya ne deviennent une famille."
+    conditions:
+      - {palier: 1, si: "une blessure grave",
+         indice: "L'os a repoussé de travers, puis s'est redressé seul."}
+      - {palier: 2, si: "un combat à mort",
+         indice: "Tu as senti ton squelette répondre à ta volonté."}
+    contraintes:
+      - {type: faction_hostile, cible: kiri, note: "Kiri achève ce qu'elle a commencé."}
+
+  # ===== LÉGENDAIRES =====
+  - id: jinchuriki_latent
+    nom: "Réceptacle"
+    famille: bijuu
+    rarete: legendaire
+    revelation_initiale: "Tu dors mal. Tu as toujours mal dormi."
+    verite: "Un fragment de chakra de bijû est scellé en toi depuis l'enfance."
+    conditions:
+      - {palier: 1, si: "une colère incontrôlée en situation de danger mortel",
+         indice: "Quelque chose a répondu à ta place, une seconde."}
+      - {palier: 2, si: "un contact avec un maître du fûinjutsu",
+         indice: "Il a blêmi en voyant ton ventre."}
+      - {palier: 3, si: "un premier dialogue intérieur",
+         indice: "Une voix. Elle connaît ton nom."}
+      - {palier: 4, si: "un accord, même partiel, avec ce qui est en toi",
+         indice: "Vous avez négocié. Ça ne veut pas dire que vous êtes alliés."}
+    contraintes:
+      - {type: faction_hostile, cible: akatsuki, note: "On collectionne les bijû."}
+      - {type: secret, note: "Un village qui l'apprend ne te traite plus jamais pareil."}
+      - {type: instabilite, note: "Le sceau se dégrade sous l'émotion."}
+
+  - id: dojutsu_ultime
+    nom: "Œil au-delà de l'œil"
+    famille: dojutsu_avance
+    rarete: legendaire
+    eligibilite: {requiert_trait: lignee_sharingan, clans: [uchiha]}
+    revelation_initiale: "Ton clan parle parfois d'un palier dont personne ne revient indemne."
+    verite: "La lignée porte le potentiel d'un dôjutsu que trois personnes ont atteint en un siècle."
+    conditions:
+      - {palier: 1, si: "avoir atteint le Mangekyô",
+         indice: "La douleur ne s'arrête plus entre les usages."}
+      - {palier: 2, si: "un sacrifice que tu regretteras",
+         indice: "Le prix était plus élevé que tu ne l'imaginais."}
+    contraintes:
+      - {type: cout_physique, note: "La vue se paie, définitivement."}
+      - {type: convoitise, note: "Tout le monde en veut."}
+
+# --------------------------------------------------------------------------
+# TABLE DE SEL — le détail distinctif imposé à chaque PNJ généré.
+# Sans elle, un modèle produit des figurants lisses et interchangeables.
+# --------------------------------------------------------------------------
+sel:
+  - "boite légèrement, séquelle d'une mission dont il ne parle pas"
+  - "ne regarde jamais son interlocuteur dans les yeux"
+  - "parle de son village natal à tout propos"
+  - "doit de l'argent à quelqu'un de dangereux"
+  - "collectionne quelque chose d'absurde et l'assume"
+  - "rit systématiquement au mauvais moment"
+  - "ne se sépare jamais d'un objet sans valeur apparente"
+  - "corrige la grammaire des autres, même en pleine crise"
+  - "a une peur irrationnelle qu'il cache mal"
+  - "mange en permanence, quelles que soient les circonstances"
+  - "répète la dernière phrase de son interlocuteur avant de répondre"
+  - "porte encore l'uniforme d'une unité dissoute"
+  - "refuse de dire son prénom et n'utilise que son nom de famille"
+  - "note tout dans un carnet qu'il ne montre à personne"
+  - "s'adresse aux gens par leur grade, jamais par leur nom"
+  - "tousse quand il ment, et le sait"
+  - "a élevé quelqu'un dont il n'était pas le parent"
+  - "cite des proverbes qu'il invente sur le moment"
+  - "se tient toujours dos à un mur"
+  - "sourit quand la situation est grave"
+  - "parle trop fort parce qu'il entend mal d'une oreille"
+  - "a une dette d'honneur envers un village ennemi"
+  - "range compulsivement tout ce qui traîne"
+  - "évite systématiquement un quartier précis du village"
+  - "porte les couleurs d'un clan auquel il n'appartient pas"
+  - "s'excuse avant de frapper"
+  - "ne dort jamais plus de trois heures d'affilée"
+  - "a un frère ou une sœur dont personne ne parle"
+  - "garde une technique en réserve et refuse de l'employer"
+  - "connaît le nom de tous les enfants du quartier"
+  - "compte à voix basse quand il est stressé"
+  - "a échoué trois fois à l'examen Chûnin et le raconte volontiers"
+  - "ne boit jamais rien qu'il n'a pas versé lui-même"
+  - "traite ses armes comme des êtres vivants"
+  - "a tué quelqu'un par erreur et s'est arrêté de progresser ce jour-là"

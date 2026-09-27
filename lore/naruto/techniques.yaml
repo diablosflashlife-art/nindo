@@ -1,0 +1,256 @@
+# ==========================================================================
+# TECHNIQUES — ce sont des MÉCANIQUES : formules, coûts, prérequis.
+# C'est pourquoi elles s'écrivent à la main et ne se génèrent jamais.
+# ==========================================================================
+techniques:
+  # --- rang E : bases de l'Académie
+  - {id: kawarimi, nom: "Kawarimi no Jutsu", fr: "Substitution", categorie: ninjutsu, rang: E,
+     cout: {chakra: 2}, stat: ninjutsu, prononciation: "Ka-wa-ri-mi",
+     effet: "Échange sa place avec un objet pour esquiver une attaque."}
+  - {id: bunshin, nom: "Bunshin no Jutsu", fr: "Clone", categorie: ninjutsu, rang: E,
+     cout: {chakra: 3}, stat: controle_chakra, prononciation: "Boune-chine",
+     effet: "Crée des clones illusoires sans consistance."}
+  - {id: henge, nom: "Henge no Jutsu", fr: "Métamorphose", categorie: ninjutsu, rang: E,
+     cout: {chakra: 3}, stat: controle_chakra, prononciation: "Hène-gué",
+     effet: "Prend l'apparence d'une autre personne ou d'un objet."}
+  - {id: nawanuke, nom: "Nawanuke no Jutsu", fr: "Libération", categorie: ninjutsu, rang: E,
+     cout: {chakra: 2}, stat: controle_chakra, effet: "Se libère de liens ou d'entraves."}
+  - {id: taijutsu_base, nom: "Corps à corps de l'Académie", categorie: taijutsu, rang: E,
+     cout: {chakra: 0}, stat: taijutsu, effet: "Enchaînements simples enseignés à tous."}
+  - {id: lancer_arme, nom: "Maniement des armes de jet", categorie: taijutsu, rang: E,
+     cout: {chakra: 0}, stat: perception, effet: "Shuriken et kunai, à distance moyenne."}
+
+  # --- rang D
+  - {id: shunshin, nom: "Shunshin no Jutsu", fr: "Course fulgurante", categorie: ninjutsu, rang: D,
+     cout: {chakra: 5}, stat: vitesse, prononciation: "Chounne-chine",
+     effet: "Franchit une courte distance en un éclair, laissant une traînée de feuilles."}
+  - {id: kanashibari, nom: "Kanashibari no Jutsu", fr: "Paralysie temporaire", categorie: genjutsu, rang: D,
+     cout: {chakra: 6}, stat: genjutsu, prononciation: "Ka-na-chi-ba-ri",
+     effet: "Cloue une cible sur place par la seule pression du regard."}
+  - {id: konoha_senpuu, nom: "Konoha Senpûu", fr: "Tourbillon de Konoha", categorie: taijutsu, rang: D,
+     cout: {chakra: 3}, stat: taijutsu, prononciation: "Ko-no-ha Sène-pou",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 4)",
+     effet: "Enchaînement de coups de pied circulaires haut et bas."}
+  - {id: fuin_base, nom: "Fûin : sceau de contention", categorie: fuinjutsu, rang: D,
+     cout: {chakra: 6}, stat: controle_chakra, prononciation: "Fou-ine",
+     effet: "Scelle un objet ou contient un flux de chakra pendant un temps limité."}
+  - {id: iryo_base, nom: "Shôsen Jutsu", fr: "Paume mystique", categorie: iryo, rang: D,
+     cout: {chakra: 7}, stat: controle_chakra, prononciation: "Choh-sène",
+     effet: "Referme une plaie et atténue la douleur. Ne remplace pas le repos."}
+  - {id: kagemane, nom: "Kagemane no Jutsu", fr: "Manipulation des ombres", categorie: ninjutsu, rang: D,
+     cout: {chakra: 7}, stat: intelligence, clan: nara, prononciation: "Ka-gué-ma-né",
+     effet: "Relie son ombre à celle de la cible et impose ses mouvements."}
+  - {id: jyuken_base, nom: "Jûken : frappe souple", categorie: taijutsu, rang: D,
+     cout: {chakra: 4}, stat: taijutsu, clan: hyuga, prononciation: "Djou-kène",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 6)",
+     effet: "Frappe le réseau de chakra plutôt que le corps. Ignore une partie de la défense."}
+  - {id: shintenshin, nom: "Shintenshin no Jutsu", fr: "Transfert d'esprit", categorie: ninjutsu, rang: D,
+     cout: {chakra: 9}, stat: genjutsu, clan: yamanaka, prononciation: "Chine-tène-chine",
+     effet: "Prend le contrôle du corps d'une cible. Le corps de l'utilisateur reste sans défense."}
+  - {id: kikaichu, nom: "Kikaichû", fr: "Insectes parasites", categorie: ninjutsu, rang: D,
+     cout: {chakra: 5}, stat: perception, clan: aburame, prononciation: "Ki-kaï-tchou",
+     effet: "Déploie une nuée d'insectes qui dévorent le chakra."}
+  - {id: gijuu, nom: "Gijû Ninpô", fr: "Combat symbiotique", categorie: taijutsu, rang: D,
+     cout: {chakra: 4}, stat: vitesse, clan: inuzuka,
+     effet: "Attaque coordonnée avec son chien partenaire."}
+  - {id: baika, nom: "Baika no Jutsu", fr: "Décuplement corporel", categorie: taijutsu, rang: D,
+     cout: {chakra: 6}, stat: endurance, clan: akimichi, prononciation: "Baï-ka",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
+     effet: "Augmente sa masse et sa force. Coûte des calories autant que du chakra."}
+
+  # --- rang C
+  - {id: katon_goukakyuu, nom: "Katon : Goukakyû no Jutsu", fr: "Boule de feu suprême",
+     categorie: ninjutsu, element: katon, rang: C, cout: {chakra: 8}, stat: ninjutsu,
+     prononciation: "Ka-tone Goh-ka-kyou",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
+     effet: "Projette une large sphère de flammes.", clan: uchiha}
+  - {id: suiton_suiryudan, nom: "Suiton : Suiryûdan no Jutsu", fr: "Dragon d'eau",
+     categorie: ninjutsu, element: suiton, rang: C, cout: {chakra: 9}, stat: ninjutsu,
+     prononciation: "Soui-tone Soui-ryou-dane",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
+     effet: "Une masse d'eau prend la forme d'un dragon et charge.",
+     limites: {requiert_terrain: {eau: [presente, abondante]}}}
+  - {id: doton_doryuheki, nom: "Doton : Doryûheki", fr: "Mur de terre",
+     categorie: ninjutsu, element: doton, rang: C, cout: {chakra: 7}, stat: ninjutsu,
+     prononciation: "Do-tone Do-ryou-hé-ki",
+     effet: "Élève une paroi de roche. Défense solide, mobilité nulle."}
+  - {id: futon_daitoppa, nom: "Fûton : Daitoppa", fr: "Grande percée",
+     categorie: ninjutsu, element: futon, rang: C, cout: {chakra: 7}, stat: ninjutsu,
+     prononciation: "Fou-tone Daï-tope-pa",
+     effet: "Souffle violent qui disperse et déséquilibre."}
+  - {id: kage_bunshin, nom: "Kage Bunshin no Jutsu", fr: "Multiclonage",
+     categorie: ninjutsu, rang: C, cout: {chakra: 14}, stat: chakra,
+     prononciation: "Ka-gué Boune-chine",
+     prerequis: {stats: {chakra: 16}},
+     effet: "Crée des clones solides qui agissent et transmettent leur expérience.",
+     limites: {risque_sans_prerequis: "Épuisement immédiat : le corps ne suit pas."}}
+  - {id: kuchiyose, nom: "Kuchiyose no Jutsu", fr: "Invocation",
+     categorie: ninjutsu, rang: C, cout: {chakra: 12}, stat: controle_chakra,
+     prononciation: "Kou-tchi-yo-sé",
+     prerequis: {trait: pacte_invocation},
+     effet: "Appelle la créature liée par contrat."}
+  - {id: genjutsu_brume, nom: "Genjutsu : brume mentale", categorie: genjutsu, rang: C,
+     cout: {chakra: 8}, stat: genjutsu, effet: "Brouille les sens de la cible pendant quelques instants."}
+  - {id: kenjutsu_ecole, nom: "Kenjutsu : école du sabre", categorie: kenjutsu, rang: C,
+     cout: {chakra: 3}, stat: vitesse, prononciation: "Kène-djou-tsou",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 5 - (def_power - 10) // 4)",
+     effet: "Formes codifiées de combat au sabre.", limites: {requiert_objet: sabre}}
+  - {id: kugutsu_base, nom: "Kugutsu : marionnette de combat", categorie: kugutsu, rang: C,
+     cout: {chakra: 9}, stat: controle_chakra, prononciation: "Kou-gou-tsou",
+     effet: "Dirige une marionnette armée par des fils de chakra.", village: suna}
+
+  # --- de quoi grandir dans SA spécialité.
+  # Les voies autres que le ninjutsu n'avaient qu'une ou deux entrées : un
+  # spécialiste de fûinjutsu connaissait tout son art au tour 1 et n'avait
+  # plus rien à apprendre. `apprentissage.py` rend ce trou visible, ces
+  # techniques le comblent. Rangs D et C : de quoi tenir jusqu'au chûnin.
+  - {id: fuin_detection, nom: "Fûin : sceau de détection", categorie: fuinjutsu, rang: D,
+     cout: {chakra: 4}, stat: perception, prononciation: "Fou-ine",
+     effet: "Pose une marque qui prévient quand on la franchit. Silencieuse, et lisible de loin."}
+  - {id: fuin_scellement, nom: "Fûin : scellement d'objet", categorie: fuinjutsu, rang: C,
+     cout: {chakra: 7}, stat: controle_chakra,
+     effet: "Range une arme, un corps ou un document dans un parchemin. Ce qu'on scelle ne se voit plus."}
+  - {id: fuin_barriere, nom: "Fûin : barrière à quatre coins", categorie: fuinjutsu, rang: C,
+     cout: {chakra: 10}, stat: controle_chakra,
+     effet: "Quatre marques posées à l'avance ferment un espace. Il faut du temps, et savoir où l'ennemi viendra."}
+  - {id: iryo_diagnostic, nom: "Shôsen : lecture du corps", categorie: iryo, rang: D,
+     cout: {chakra: 4}, stat: intelligence, prononciation: "Choh-sène",
+     effet: "La paume lit ce que l'œil ne voit pas : fracture, poison, chakra bloqué."}
+  - {id: iryo_antidote, nom: "Extraction de poison", categorie: iryo, rang: C,
+     cout: {chakra: 8}, stat: controle_chakra,
+     effet: "Attire le poison hors d'une plaie et le contient. Épuisant, et rarement complet."}
+  - {id: kenjutsu_iai, nom: "Iaijutsu : dégaine", categorie: kenjutsu, rang: D,
+     cout: {chakra: 2}, stat: vitesse, prononciation: "Iaï-djou-tsou",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 5)",
+     effet: "Un seul mouvement, du fourreau à la cible. Tout se joue avant le premier pas.",
+     limites: {requiert_objet: sabre}}
+  - {id: kenjutsu_deux_lames, nom: "Kenjutsu : deux lames", categorie: kenjutsu, rang: C,
+     cout: {chakra: 4}, stat: vitesse,
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 5)",
+     effet: "Une lame occupe, l'autre frappe. Demande deux armes et beaucoup de patience.",
+     limites: {requiert_objet: sabre}}
+  - {id: genjutsu_leurre, nom: "Genjutsu : fausse piste", categorie: genjutsu, rang: D,
+     cout: {chakra: 5}, stat: genjutsu,
+     effet: "La cible voit partir quelqu'un qui n'est pas parti. Tient le temps d'une respiration."}
+  - {id: filature, nom: "Art de la filature", categorie: espionnage, rang: D,
+     cout: {chakra: 2}, stat: perception,
+     effet: "Suivre sans être vu, et savoir quand décrocher. La moitié du métier est de renoncer à temps."}
+  - {id: lecture_labiale, nom: "Lecture des lèvres et des mains", categorie: espionnage, rang: C,
+     cout: {chakra: 0}, stat: intelligence,
+     effet: "Comprendre une conversation qu'on n'entend pas, et les signes qu'une équipe échange."}
+  - {id: deguisement, nom: "Art du déguisement", categorie: espionnage, rang: D,
+     cout: {chakra: 1}, stat: social,
+     effet: "Le vêtement, la démarche, l'accent. Tient tant qu'on ne pose pas de question précise."}
+  - {id: taijutsu_ecole_souple, nom: "Corps à corps : école souple", categorie: taijutsu, rang: D,
+     cout: {chakra: 2}, stat: taijutsu,
+     degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 5)",
+     effet: "On ne bloque pas, on accompagne. Retourne l'élan de l'adversaire contre lui."}
+  - {id: taijutsu_appui, nom: "Déplacement par appuis", categorie: taijutsu, rang: C,
+     cout: {chakra: 5}, stat: controle_chakra,
+     effet: "Marcher sur un mur, sur l'eau, sur une branche mouillée. La base de tout le reste."}
+
+  # --- rang B et au-delà
+  - {id: chidori, nom: "Chidori", fr: "Mille oiseaux", categorie: ninjutsu, element: raiton,
+     rang: A, cout: {chakra: 18}, stat: ninjutsu, stat_secondaire: controle_chakra,
+     prononciation: "Tchi-do-ri",
+     prerequis: {stats: {controle_chakra: 22, vitesse: 18}, niveau_min: 9,
+                 capacites_recommandees: [sharingan]},
+     degats: "max(1, roll + (atk_power - 10) // 2 + 8 - (def_power - 10) // 4)",
+     limites: {usages_par_jour: 4,
+               risque_sans_prerequis: "Trajectoire incontrôlable : l'utilisateur s'expose au contre."},
+     effet: "Concentre la foudre dans la main et charge en ligne droite."}
+  - {id: rasengan, nom: "Rasengan", fr: "Orbe tourbillonnant", categorie: ninjutsu,
+     rang: A, cout: {chakra: 18}, stat: controle_chakra,
+     prononciation: "Ra-sène-gane",
+     prerequis: {stats: {controle_chakra: 24}, niveau_min: 9},
+     degats: "max(1, roll + (atk_power - 10) // 2 + 8 - (def_power - 10) // 4)",
+     limites: {usages_par_jour: 4},
+     effet: "Sphère de chakra en rotation pure, sans transformation élémentaire."}
+  - {id: raiton_armure, nom: "Raiton : armure de foudre", categorie: ninjutsu, element: raiton,
+     rang: B, cout: {chakra: 12}, stat: ninjutsu, prononciation: "Raï-tone",
+     effet: "Enveloppe le corps de foudre : vitesse et réflexes décuplés, chakra dévoré."}
+  - {id: fuin_contrat, nom: "Fûin : sceau de contrat", categorie: fuinjutsu, rang: B,
+     cout: {chakra: 14}, stat: controle_chakra,
+     prerequis: {stats: {controle_chakra: 20}},
+     effet: "Lie deux volontés par un pacte écrit. Le briser a un prix."}
+  - {id: iryo_avance, nom: "Ninjutsu médical avancé", categorie: iryo, rang: B,
+     cout: {chakra: 15}, stat: controle_chakra,
+     prerequis: {stats: {controle_chakra: 20, intelligence: 16}},
+     effet: "Répare des lésions profondes. Exige calme et précision."}
+  # --- techniques de clan, une par clan au rang D.
+  # Chacune est la PORTE du clan : ce qu'un genin de cette maison sait faire au
+  # premier jour. Le reste de l'héritage passe par la lignée, et s'éveille.
+  # Descriptions adaptées du wiki Solve.
+  - {id: suika, nom: "Suika no Jutsu", fr: "Liquéfaction", categorie: ninjutsu, element: suiton,
+     rang: D, cout: {chakra: 5}, stat: controle_chakra, clan: hozuki, prononciation: "Soui-ka",
+     effet: "Une partie du corps perd sa cohésion et devient eau le temps d'un coup. La lame passe au travers."}
+  - {id: kirigakure, nom: "Kirigakure no Jutsu", fr: "Dissimulation dans la brume", categorie: ninjutsu,
+     element: suiton, rang: D, cout: {chakra: 5}, stat: controle_chakra, clan: karatachi,
+     prononciation: "Ki-ri-ga-kou-ré",
+     effet: "Une brume épaisse tombe sur la zone. Pour un Karatachi, elle ne cache rien."}
+  - {id: suiton_requin, nom: "Suiton : dents du requin", categorie: ninjutsu, element: suiton,
+     rang: D, cout: {chakra: 6}, stat: ninjutsu, clan: hoshigaki,
+     degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 4)",
+     effet: "L'eau prend la forme d'une mâchoire et mord. Plus forte au contact de la mer."}
+  - {id: suna_shigure, nom: "Sabaku Shigure", fr: "Averse de sable", categorie: ninjutsu, element: doton,
+     rang: D, cout: {chakra: 6}, stat: controle_chakra, clan: jishaku, prononciation: "Sa-ba-kou Chi-gou-ré",
+     effet: "Le sable se lève et s'abat en pluie dense. Aveugle, blesse, et ne retombe pas au hasard."}
+  - {id: inton_voile, nom: "Inton : voile de l'ombre", categorie: genjutsu, rang: D,
+     cout: {chakra: 6}, stat: genjutsu, clan: mugen, prononciation: "I-ne-tone",
+     effet: "L'ombre intérieure de la cible remonte à la surface : elle voit ce qu'elle craint le plus."}
+  - {id: futon_guide, nom: "Fûton : vent guide", categorie: ninjutsu, element: futon, rang: D,
+     cout: {chakra: 4}, stat: perception, clan: ensho,
+     effet: "Écouter le vent : il dit d'où vient la tempête, où passe la route, qui approche."}
+  - {id: onpa, nom: "Onpa : résonance", fr: "Onde de vibration", categorie: ninjutsu, rang: D,
+     cout: {chakra: 5}, stat: ninjutsu, clan: raimei, prononciation: "One-pa",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 6)",
+     effet: "Le corps émet une vibration qui trouble l'équilibre et l'ouïe. La défense ne l'arrête pas."}
+  - {id: teshi_sendan, nom: "Teshi Sendan", fr: "Phalanges perçantes", categorie: taijutsu, rang: D,
+     cout: {chakra: 4}, stat: taijutsu, clan: kaguya, prononciation: "Té-chi Sène-dane",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 4)",
+     effet: "Les os des doigts jaillissent et partent comme des projectiles."}
+  - {id: fuma_lancer, nom: "Lancer du Fûma", fr: "Grand shuriken démontable", categorie: taijutsu, rang: D,
+     cout: {chakra: 1}, stat: perception, clan: fuma, prononciation: "Fou-ma",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
+     effet: "Un shuriken géant qu'on lance à deux mains. Le second, caché dans l'ombre du premier, est celui qui tue."}
+  - {id: brume_toxique, nom: "Brume toxique", categorie: ninjutsu, rang: D,
+     cout: {chakra: 5}, stat: controle_chakra, clan: salamandre,
+     effet: "La poche salamandre libère un souffle empoisonné. Qui reste dedans s'affaiblit."}
+  - {id: raiton_decharge, nom: "Raiton : décharge", categorie: ninjutsu, element: raiton, rang: D,
+     cout: {chakra: 4}, stat: taijutsu, clan: yotsuki, prononciation: "Raï-tone",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 3 - (def_power - 10) // 4)",
+     effet: "La foudre passe dans le poing au moment de l'impact. Le premier pas vers l'armure."}
+  - {id: chi_bari, nom: "Chi Bari", fr: "Aiguilles de sang", categorie: ninjutsu, rang: D,
+     cout: {chakra: 5}, stat: controle_chakra, clan: chinoike, prononciation: "Tchi Ba-ri",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 2 - (def_power - 10) // 5)",
+     effet: "Le sang d'une plaie se durcit en aiguilles et part. Il faut qu'il ait déjà coulé."}
+  - {id: poing_foudroyant, nom: "Poing foudroyant", categorie: taijutsu, element: raiton, rang: D,
+     cout: {chakra: 3}, stat: taijutsu, clan: narukami,
+     degats: "max(1, roll + (atk_power - 10) // 2 + 4 - (def_power - 10) // 4)",
+     effet: "Le Raiton traverse les muscles et accélère la frappe au-delà de ce qu'un corps devrait permettre."}
+  - {id: essaim_abeilles, nom: "Essaim de la Ruche", categorie: ninjutsu, rang: D,
+     cout: {chakra: 4}, stat: perception, clan: kamizuru,
+     effet: "Les abeilles répondent aux phéromones : elles piquent, pistent, ou forment un mur vivant."}
+  - {id: mine_explosive, nom: "Bakuton : mine de contact", categorie: ninjutsu, element: doton, rang: D,
+     cout: {chakra: 6}, stat: ninjutsu, clan: clan_bakuton, prononciation: "Ba-kou-tone",
+     degats: "max(1, roll + (atk_power - 10) // 2 + 5 - (def_power - 10) // 4)",
+     effet: "Le chakra imprègne le sol ou un objet, qui détone au contact. Ne se désamorce pas."}
+
+  - {id: amaterasu, nom: "Amaterasu", categorie: ninjutsu, element: katon, rang: S,
+     cout: {chakra: 28}, stat: genjutsu, prononciation: "A-ma-té-ra-sou",
+     prerequis: {capacite: sharingan, capacite_palier: 4},
+     degats: "max(1, roll + (atk_power - 10) // 2 + 14 - (def_power - 10) // 6)",
+     limites: {usages_par_jour: 1, cout_persistant: vue_degradee},
+     effet: "Flammes noires qui ne s'éteignent pas d'elles-mêmes."}
+
+# ==========================================================================
+# SYNERGIES ET CONTRES
+# ==========================================================================
+synergies:
+  - {id: clone_zone, type: combo, requiert: [kage_bunshin, katon_goukakyuu], maitrise_min: 75,
+     effet: {bonus_degats: 4, portee: "+1"}, nom: "Barrage de flammes"}
+  - {id: ombre_frappe, type: combo, requiert: [kagemane, konoha_senpuu], maitrise_min: 60,
+     effet: {cible_sans_defense: true}, nom: "Immobiliser puis frapper"}
+  - {id: sceau_contre_invocation, type: contre, requiert: [fuin_base], contre: [kuchiyose],
+     effet: {annule: true}, nom: "Sceller l'invocation"}
+  - {id: chidori_prereq, type: prerequis, requiert: [raiton_armure], debloque: chidori}

@@ -1,0 +1,75 @@
+<!doctype html>
+{% from "_logo.html" import logo %}
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titre %}{{ jeu.nom }} — le jeu de rôle ninja{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="{{ statique('favicon.svg') }}">
+{# HTMX est servi depuis le projet, pas depuis un CDN : le jeu doit tourner
+   sans réseau. Sans lui, le formulaire d'action ne partirait plus du tout. #}
+<script src="/static/vendor/htmx-2.0.4.min.js"></script>
+{# Les polices, elles, sont un confort : si Google Fonts n'est pas joignable,
+   la pile de repli de `jeu.css` prend le relais sans rien casser. #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Shippori+Mincho+B1:wght@600;700;800&family=Yuji+Syuku&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="{{ statique('jeu.css') }}">
+{# `jeu.css` tient la structure et les composants ; `monde.css` tient
+   l'identité de l'univers — le métal du bandeau, le papier du rouleau,
+   l'encre et le sceau. Retirer cette ligne rend l'interface neutre sans rien
+   casser : c'est exactement pour ça que les deux sont séparées. #}
+<link rel="stylesheet" href="{{ statique('monde.css') }}">
+{# `eclat.css` : la direction artistique « l'estampe dans la nuit » — verre,
+   médaillons de clan, calligraphie. Troisième couche, retirable comme les
+   autres. #}
+<link rel="stylesheet" href="{{ statique('eclat.css') }}">
+</head>
+{# Le village de la page teinte l'aura du fond : vert à Konoha, or à Suna. #}
+<body data-cle="{% block cle_page %}konoha{% endblock %}">
+<header class="barre">
+  <a class="marque" href="/" aria-label="{{ jeu.nom }} — accueil">
+    {{ logo(36, 'barre') }}
+    <span class="marque-nom">{{ jeu.nom }}</span>
+    <span class="marque-kanji" aria-hidden="true">{{ jeu.kanji }}</span>
+  </a>
+  <div class="barre-droite">{% block barre %}{% endblock %}</div>
+</header>
+<main class="page {% block largeur %}{% endblock %}">{% block contenu %}{% endblock %}</main>
+
+{# La parallaxe des bandeaux illustrés. Le paysage se décale moins vite que la
+   page, et la profondeur devient sensible au lieu d'être suggérée.
+
+   Écrite ici plutôt que dans chaque gabarit parce qu'elle vaut pour tous les
+   `[data-parallaxe]` ; et volontairement minuscule : une bibliothèque de
+   défilement pour trois lignes de calcul serait un fichier de plus à servir
+   hors ligne. #}
+<script>
+(function () {
+  var sobre = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var bandes = [].slice.call(document.querySelectorAll('[data-parallaxe]'));
+  if (!bandes.length || sobre.matches) return;
+
+  var attendu = false;
+  function placer() {
+    attendu = false;
+    for (var i = 0; i < bandes.length; i++) {
+      var b = bandes[i];
+      var haut = b.getBoundingClientRect().top;
+      /* -1 quand la bande vient d'être dépassée, 0 quand elle est en place :
+         la valeur sert de curseur au CSS, qui décide de l'amplitude. */
+      b.style.setProperty('--defile',
+        Math.max(-1, Math.min(0, haut / (b.offsetHeight || 1))).toFixed(3));
+    }
+  }
+  function demander() {
+    if (!attendu) { attendu = true; requestAnimationFrame(placer); }
+  }
+  addEventListener('scroll', demander, { passive: true });
+  addEventListener('resize', demander);
+  placer();
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

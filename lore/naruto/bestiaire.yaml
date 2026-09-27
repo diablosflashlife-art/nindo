@@ -1,0 +1,414 @@
+# ==========================================================================
+# BESTIAIRE, FLORE ET MINÉRAUX — la matière première des aventures
+# ==========================================================================
+# Pourquoi ce fichier existe : une campagne devient répétitive quand toutes
+# les missions sont « escorter un marchand » et « livrer un message ». Un
+# monde qui a une faune, une flore et des minerais produit des missions
+# concrètes qui ne se ressemblent pas, et qui ne peuvent avoir lieu QUE là.
+#
+# Chaque entrée porte un champ `accroche` : la mission qu'elle justifie à
+# elle seule. Le générateur de missions y puise, et le MJ y trouve de quoi
+# meubler une forêt au lieu de la décrire vide.
+#
+#   pays      liste d'identifiants de pays, ou [toutes]
+#   danger    1 à 10, même échelle que Location.danger
+#   tier      puissance de rencontre, même échelle que rulesets/naruto.yaml
+#   recolte   ce qu'on en tire — c'est ce qui transforme une bête en mission
+# ==========================================================================
+
+faune:
+
+  # ------------------------------------------------------- Pays du Feu
+  - id: sanglier_cendre
+    nom: "Sanglier des cendres"
+    pays: [feu]
+    habitat: "Sous-bois brûlés, coupes de charbonniers"
+    danger: 2
+    tier: 1
+    comportement: "Grégaire et myope. Charge tout ce qui sent la fumée, ce qui inclut la plupart des voyageurs."
+    recolte: ["défenses (60 ryô)", "viande"]
+    accroche: "Une harde a investi la route du charbon. Les charbonniers ne montent plus, et le village manque de combustible avant l'hiver."
+
+  - id: singe_hurleur_rouge
+    nom: "Singe hurleur roux"
+    pays: [feu]
+    habitat: "Canopée des futaies anciennes"
+    danger: 3
+    tier: 2
+    comportement: "Vit en troupes de trente. Vole tout objet brillant et jette des pierres avec une précision inquiétante. Le cri d'alerte d'une troupe porte à deux kilomètres."
+    recolte: []
+    accroche: "Une troupe a volé le rouleau de mission d'une équipe de genin. Récupérer le document sans blesser les singes — le Mont Sarugami considère cette espèce comme parente."
+
+  - id: cerf_sacre_nara
+    nom: "Cerf des Nara"
+    pays: [feu]
+    habitat: "Bois clos du clan Nara"
+    danger: 1
+    tier: 1
+    comportement: "Semi-domestiqué, habitué aux humains, rétif au chakra hostile. Ses bois entrent dans la pharmacopée du clan."
+    recolte: ["velours de bois (usage médical, réservé aux Nara)"]
+    accroche: "Trois cerfs ont disparu du bois clos, sans trace de lutte ni de sang. Les Nara veulent un enquêteur extérieur au clan — ce qui dit déjà qu'ils soupçonnent quelqu'un de l'intérieur."
+
+  - id: mille_pattes_geant
+    nom: "Mille-pattes géant"
+    pays: [feu, herbe]
+    habitat: "Grottes humides, galeries d'irrigation"
+    danger: 5
+    tier: 3
+    comportement: "Aveugle, suit les vibrations. Cinq mètres de long. Ne poursuit pas hors de sa galerie, mais ne lâche jamais dans son tunnel."
+    recolte: ["carapace (armure légère)", "venin paralysant"]
+    accroche: "L'aqueduc du quartier sud est bouché par un nid. Les ouvriers refusent de descendre, et le quartier est sans eau depuis six jours."
+
+  # ------------------------------------------------------- Pays du Vent
+  - id: scorpion_des_dunes
+    nom: "Scorpion des dunes"
+    pays: [vent]
+    habitat: "Dunes, sous les pierres plates"
+    danger: 4
+    tier: 2
+    comportement: "Solitaire, nocturne, s'enfouit au jour. Son venin ne tue pas un adulte, mais paralyse une nuit entière — et une nuit paralysé dans le désert tue."
+    recolte: ["venin brut (base d'antidote et de poison — 300 ryô)"]
+    accroche: "Un atelier de Suna paie le venin frais au prix fort et ne dit pas pour quoi. Cinq spécimens vivants, capturés intacts."
+
+  - id: ver_des_sables
+    nom: "Ver des sables"
+    pays: [vent]
+    habitat: "Cuvettes de sable mouvant"
+    danger: 7
+    tier: 4
+    comportement: "Huit mètres. Détecte le pas régulier et ignore le pas irrégulier — les caravaniers du Vent apprennent à marcher faux."
+    recolte: ["cuir épais", "glandes (imperméabilisant)"]
+    accroche: "La piste commerciale de l'oasis Est en compte trois depuis la crue de sable. Une caravane par semaine disparaît, et Suna est payée pour que la route reste ouverte."
+
+  - id: faucon_messager_suna
+    nom: "Faucon du désert"
+    pays: [vent, terre]
+    habitat: "Falaises et pigeonniers militaires"
+    danger: 2
+    tier: 1
+    comportement: "Dressé pour le courrier. Reconnaît un porteur à son odeur et refuse tout autre. Un faucon détourné ne se laisse pas relire."
+    recolte: []
+    accroche: "Un faucon de Suna s'est posé au mauvais village avec un message chiffré destiné à quelqu'un d'autre. Savoir à qui, sans que Suna l'apprenne."
+
+  # ------------------------------------------------------- Pays de l'Eau
+  - id: requin_de_brume
+    nom: "Requin de brume"
+    pays: [eau]
+    habitat: "Chenaux entre les îles, remonte les estuaires"
+    danger: 6
+    tier: 3
+    comportement: "Attiré par le chakra en mouvement plus que par le sang. Les ninjas de Kiri qui marchent sur l'eau apprennent d'abord à le faire sans vibrer."
+    recolte: ["peau abrasive (poignées d'armes)", "dents"]
+    accroche: "Un banc s'est installé dans le chenal du bac. Le village voisin est coupé depuis deux semaines, et un enfant a essayé de traverser."
+
+  - id: anguille_electrique_kiri
+    nom: "Anguille des fonds"
+    pays: [eau, foudre]
+    habitat: "Fonds vaseux, eaux saumâtres"
+    danger: 4
+    tier: 2
+    comportement: "Décharge à deux mètres, dans l'eau seulement. Immobilise sans tuer, puis attend."
+    recolte: ["organe électrique (composant de raiton)"]
+    accroche: "Un atelier de Kumo achète les organes frais. Le problème : le banc vit en eaux de Kiri, et Kiri n'autorise personne à pêcher là."
+
+  - id: crabe_des_rochers
+    nom: "Crabe carapaçonné"
+    pays: [eau, vagues]
+    habitat: "Estrans rocheux"
+    danger: 3
+    tier: 1
+    comportement: "Carapace assez dure pour émousser un kunai ordinaire. Nourriture de base des îles pauvres."
+    recolte: ["carapace (plaques de protection)", "chair"]
+    accroche: "Le banc a disparu de l'estran d'un village de pêcheurs. Comprendre pourquoi avant que le village ne meure de faim."
+
+  # ---------------------------------------------------- Pays de la Foudre
+  - id: bouquetin_des_orages
+    nom: "Bouquetin des orages"
+    pays: [foudre]
+    habitat: "Crêtes au-dessus de la couche de nuages"
+    danger: 3
+    tier: 2
+    comportement: "Grimpe l'impossible. Les bergers de Kumo suivent ses sentes pour trouver les passages."
+    recolte: ["cornes", "laine imperméable"]
+    accroche: "Un troupeau connaît un col que les cartes de Kumo n'ont pas. Trouver la sente avant les éclaireurs d'Iwa."
+
+  - id: fourmi_foudroyante
+    nom: "Fourmi foudroyante"
+    pays: [foudre]
+    habitat: "Termitières minérales des plateaux"
+    danger: 5
+    tier: 2
+    comportement: "Colonies de cent mille. Accumulent une charge statique dans leur nid ; le nid entier décharge si on le frappe."
+    recolte: ["cristaux de nid (conducteurs de chakra)"]
+    accroche: "Les cristaux de nid valent une fortune aux forges de Kumo. Il faut en extraire sans réveiller la colonie — ou en réveillant la colonie sur quelqu'un d'autre."
+
+  # ----------------------------------------------------- Pays de la Terre
+  - id: taupe_de_pierre
+    nom: "Taupe de pierre"
+    pays: [terre]
+    habitat: "Galeries sous les carrières"
+    danger: 4
+    tier: 2
+    comportement: "Creuse le granit. Aveugle et sourde, sensible au doton. Les mineurs d'Iwa l'utilisent comme foreuse vivante."
+    recolte: ["griffes (outils de perçage)"]
+    accroche: "Une taupe échappée a percé sous les fondations d'un entrepôt d'Iwa. La rattraper avant l'effondrement, sans doton — la moindre secousse la rend furieuse."
+
+  - id: chauve_souris_mineur
+    nom: "Chauve-souris des mines"
+    pays: [terre, eau]
+    habitat: "Galeries abandonnées"
+    danger: 2
+    tier: 1
+    comportement: "Colonies énormes. Leur silence subit est le seul avertissement fiable d'un coup de grisou."
+    recolte: ["guano (salpêtre pour parchemins explosifs)"]
+    accroche: "Iwa manque de salpêtre. Une galerie condamnée en regorge, et elle a été condamnée pour une raison que personne ne retrouve dans les archives."
+
+  # ---------------------------------------------- Pluie, Herbe, Neige, Vagues
+  - id: heron_de_fer
+    nom: "Héron des marais"
+    pays: [pluie]
+    habitat: "Marais et canaux d'Ame"
+    danger: 3
+    tier: 2
+    comportement: "Immobile des heures. Les guetteurs d'Ame s'en inspirent, et certains s'en servent comme sentinelles."
+    recolte: ["plumes de vol (empennage de flèches)"]
+    accroche: "Les hérons d'un secteur ont tous quitté le marais en une nuit. Ce qui les a fait partir est toujours là."
+
+  - id: sangsue_des_rizieres
+    nom: "Sangsue des rizières"
+    pays: [herbe, pluie]
+    habitat: "Rizières inondées, fossés"
+    danger: 2
+    tier: 1
+    comportement: "Indolore. On ne s'aperçoit de rien avant la fièvre, deux jours plus tard."
+    recolte: ["anticoagulant (usage médical)"]
+    accroche: "Une escouade entière est clouée au lit à trois jours de marche. Rapporter l'anticoagulant, et comprendre qui a ensemencé le fossé où elle a bivouaqué."
+
+  - id: loup_blanc_neige
+    nom: "Loup des neiges"
+    pays: [neige]
+    habitat: "Forêts de mélèzes, hautes vallées"
+    danger: 5
+    tier: 3
+    comportement: "Chasse en meute de huit, harcèle sans engager, attend l'épuisement. Ne craint pas le feu — les meutes du Nord ont appris à contourner les foyers."
+    recolte: ["fourrure (400 ryô la peau)"]
+    accroche: "Une meute suit une caravane depuis quatre jours sans attaquer. Elle attend quelque chose, et ce n'est pas la faim."
+
+  - id: pieuvre_des_recifs
+    nom: "Pieuvre des récifs"
+    pays: [vagues, eau]
+    habitat: "Récifs, épaves"
+    danger: 4
+    tier: 2
+    comportement: "Intelligente, curieuse, collectionne les objets métalliques dans son antre."
+    recolte: ["encre (encres de scellement)", "chair"]
+    accroche: "L'anneau de sceau perdu lors du naufrage est dans une tanière, quelque part sur le récif. La pieuvre l'a pris parce qu'il brillait."
+
+  # ------------------------------------------------------------- Partout
+  - id: chien_ninja
+    nom: "Chien de pistage"
+    pays: [toutes]
+    habitat: "Chenils militaires"
+    danger: 2
+    tier: 2
+    comportement: "Dressé au pistage du chakra autant que de l'odeur. Les Inuzuka les élèvent et n'en vendent pas."
+    recolte: []
+    accroche: "Un chien de pistage est rentré seul, blessé, sans son maître. Il peut refaire le chemin — une seule fois, avant que la piste ne se lave."
+
+  - id: corbeau_de_message
+    nom: "Corbeau noir"
+    pays: [toutes]
+    habitat: "Toits, champs de bataille"
+    danger: 1
+    tier: 1
+    comportement: "Se dresse facilement, se retourne facilement. Certains services d'espionnage préfèrent le corbeau au faucon : personne ne remarque un corbeau."
+    recolte: []
+    accroche: "Les mêmes corbeaux tournent au-dessus du terrain d'entraînement depuis huit jours. Quelqu'un regarde par leurs yeux."
+
+  - id: bandits_deserteurs
+    nom: "Bande de déserteurs"
+    pays: [toutes]
+    habitat: "Routes secondaires, ruines, cols"
+    danger: 5
+    tier: 2
+    comportement: "Anciens ninjas de rang genin ou chûnin, six à douze, mal nourris et mal organisés — mais qui connaissent les techniques de base et les habitudes des patrouilles."
+    recolte: ["primes (bingo book local)"]
+    accroche: "Le péage du col n'a pas versé sa dîme depuis deux mois. Ce ne sont pas des voleurs de grand chemin : ils savent exactement quand les patrouilles passent."
+
+  # ------------------------------------------------------- Pays du Son
+  # Oto est devenu jouable : sans ces entrées, sa région n'avait AUCUNE faune
+  # propre, et toutes ses missions puisaient dans les bêtes « de partout ».
+  - id: salamandre_des_digues
+    nom: "Salamandre des digues"
+    pays: [son]
+    habitat: "Rizières inondées, canaux d'irrigation"
+    danger: 3
+    tier: 2
+    comportement: "Nocturne, lente, et venimeuse au toucher. Le Clan de la Salamandre la tient pour une cousine, et interdit qu'on la tue."
+    recolte: ["venin (90 ryô)", "peau"]
+    accroche: "Quelqu'un chasse les salamandres des digues pour leur venin. Le Clan de la Salamandre veut son nom avant le village."
+  - id: heron_noir
+    nom: "Héron noir des marais"
+    pays: [son]
+    habitat: "Roselières, marais d'entraînement"
+    danger: 1
+    tier: 1
+    comportement: "Immobile des heures, puis un coup de bec au millimètre. Les Fûma disent qu'ils ont tout appris de lui."
+    recolte: ["plumes (20 ryô)"]
+    accroche: "Les hérons ont quitté la roselière du sud. Quelque chose les a fait fuir, et les rizières du sud ne dorment plus."
+  - id: chose_des_laboratoires
+    nom: "Chose des laboratoires"
+    pays: [son]
+    habitat: "Forêt des Laboratoires, sous-sols abandonnés"
+    danger: 6
+    tier: 3
+    comportement: "Ce que les expériences ont laissé derrière elles. Elle a faim, elle a peur, et elle se souvient d'avoir été quelqu'un."
+    recolte: ["échantillons (300 ryô, à qui en veut)"]
+    accroche: "Un enfant jure avoir vu une silhouette humaine marcher à quatre pattes près des vieux laboratoires. Le Cercle du Tetsukage veut qu'on vérifie — discrètement."
+
+
+# ==========================================================================
+# FLORE — ce qu'on va chercher, ce qui soigne et ce qui tue
+# ==========================================================================
+flore:
+
+  - id: riz_de_fer
+    nom: "Riz de fer"
+    pays: [son]
+    habitat: "Terrasses hautes, entre les Rizières et le Fer"
+    rarete: courant
+    usage: ration
+    effet: "Un grain dur qui tient une semaine dans une poche. La ration des patrouilles d'Oto."
+    cout_ryo: 5
+    accroche: "Une récolte entière a noirci en une nuit. Maladie, ou quelqu'un qui veut affamer le Pays du Son avant l'hiver."
+
+  - id: herbe_du_feu
+    nom: "Herbe-du-feu"
+    pays: [feu]
+    habitat: "Lisières ensoleillées"
+    rarete: courant
+    usage: medical
+    effet: "Hémostatique. Arrête un saignement de surface en quelques minutes."
+    cout_ryo: 20
+    accroche: "L'hôpital de campagne en a épuisé le stock. Deux jours de cueillette, en territoire qui n'est plus tout à fait sûr."
+
+  - id: racine_de_sommeil
+    nom: "Racine de sommeil"
+    pays: [feu, herbe]
+    habitat: "Sous-bois humides"
+    rarete: peu_commun
+    usage: poison
+    effet: "Endort en quelques minutes. Dose mal calculée : n'endort pas, ou n'éveille plus."
+    cout_ryo: 90
+    accroche: "Quelqu'un a acheté toute la récolte de la saison sous un faux nom. Retrouver l'acheteur avant qu'il ne s'en serve."
+
+  - id: lichen_de_falaise
+    nom: "Lichen de falaise"
+    pays: [terre, foudre, neige]
+    habitat: "Parois nord, au-dessus de mille mètres"
+    rarete: rare
+    usage: medical
+    effet: "Entre dans les remèdes contre l'épuisement du chakra. Repousse en sept ans."
+    cout_ryo: 600
+    accroche: "Un médecin de village le réclame pour un patient qui ne passera pas la semaine. Le seul gisement connu est en territoire d'Iwa."
+
+  - id: fleur_de_brume
+    nom: "Fleur de brume"
+    pays: [eau]
+    habitat: "Marais côtiers, fleurit une nuit par mois"
+    rarete: rare
+    usage: genjutsu
+    effet: "Son pollen rend suggestible. Les praticiens de genjutsu de Kiri s'en servent pour l'entraînement — et pour autre chose."
+    cout_ryo: 800
+    accroche: "Elle fleurit après-demain, et seulement cette nuit-là. Une équipe de Kiri sera sur place aussi."
+
+  - id: cactus_d_eau
+    nom: "Cactus-outre"
+    pays: [vent]
+    habitat: "Plateaux caillouteux"
+    rarete: courant
+    usage: survie
+    effet: "Trois litres d'eau potable par plante. Savoir le reconnaître décide d'une traversée."
+    cout_ryo: 10
+    accroche: "Une carte des peuplements vaut plus qu'un trésor sur la piste de l'Est. Quelqu'un en a dressé une et l'a vendue deux fois."
+
+  - id: champignon_des_morts
+    nom: "Champignon des tombes"
+    pays: [feu, pluie]
+    habitat: "Anciens champs de bataille, sols retournés"
+    rarete: peu_commun
+    usage: poison
+    effet: "Toxine lente, sans goût, sans odeur. Symptômes après douze heures, irréversibles après vingt-quatre."
+    cout_ryo: 350
+    accroche: "Trois morts en un mois dans une garnison, toutes attribuées à la fièvre. La cuisine vient d'un même fournisseur."
+
+  - id: mousse_sanguine
+    nom: "Mousse sanguine"
+    pays: [neige, terre]
+    habitat: "Sous la neige, sur pierre humide"
+    rarete: peu_commun
+    usage: medical
+    effet: "Composant des pilules de sang. Ne se conserve pas hors du froid."
+    cout_ryo: 180
+    accroche: "Une commande de pilules de sang pour l'hôpital, et le seul convoi réfrigéré part dans deux jours."
+
+  - id: bambou_de_fer
+    nom: "Bambou de fer"
+    pays: [feu, herbe]
+    habitat: "Bosquets cultivés"
+    rarete: peu_commun
+    usage: artisanat
+    effet: "Fibres assez résistantes pour les hampes d'armes et les arcs. Une coupe tous les neuf ans."
+    cout_ryo: 140
+    accroche: "L'armurerie du village a besoin de hampes. La bambouseraie appartient à une famille qui refuse de vendre à l'armée depuis trois générations."
+
+
+# ==========================================================================
+# MINÉRAUX — ce qui fait les armes, les sceaux et les guerres
+# ==========================================================================
+mineraux:
+
+  - id: fer_noir
+    nom: "Fer noir"
+    pays: [terre, foudre]
+    rarete: peu_commun
+    usage: forge
+    effet: "Tient un tranchant mieux que l'acier ordinaire et conduit mal le chakra — donc résiste au raiton."
+    cout_ryo: 200
+    accroche: "Le filon se trouve à cheval sur la frontière. Les deux pays le savent, et aucun ne l'a encore dit à l'autre."
+
+  - id: argent_de_sceau
+    nom: "Argent de sceau"
+    pays: [feu, eau]
+    rarete: rare
+    usage: fuinjutsu
+    effet: "Métal qui garde une inscription de chakra sans la perdre. Base de tout sceau permanent."
+    cout_ryo: 900
+    accroche: "Un fûinjutsuka commande une plaque sans dire ce qu'il va y graver. La quantité demandée est celle d'un sceau de confinement."
+
+  - id: sel_de_falaise
+    nom: "Sel de falaise"
+    pays: [vent, eau]
+    rarete: courant
+    usage: commerce
+    effet: "La denrée qui fait vivre trois routes commerciales. Sans elle, rien ne se conserve."
+    cout_ryo: 15
+    accroche: "Une mine de sel s'est effondrée. Le pays voisin propose d'approvisionner — en échange d'un droit de passage militaire."
+
+  - id: cristal_de_chakra
+    nom: "Cristal résonant"
+    pays: [terre, neige]
+    rarete: tres_rare
+    usage: fuinjutsu
+    effet: "Vibre au passage du chakra. Sert de détecteur, de brouilleur, ou de mouchard."
+    cout_ryo: 2500
+    accroche: "Des cristaux résonants ont été trouvés emmurés dans les cloisons de la Tour du Kage. Quelqu'un écoute depuis un moment."
+
+  - id: soufre_volcanique
+    nom: "Soufre volcanique"
+    pays: [terre, neige]
+    rarete: courant
+    usage: explosif
+    effet: "Composant des parchemins explosifs. Un village qui en manque ne fait plus la guerre longtemps."
+    cout_ryo: 40
+    accroche: "Les livraisons de soufre vers le village ont été détournées trois fois de suite, toujours au même col."

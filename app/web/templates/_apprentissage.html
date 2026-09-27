@@ -1,0 +1,65 @@
+{# ==========================================================================
+   CE QUE TU PEUX APPRENDRE.
+
+   POURQUOI CE PANNEAU EXISTE. Le répertoire d'un personnage était figé à la
+   création : trois techniques au tour 1, les mêmes trois au tour 80. Dans ce
+   genre, la technique apprise au bon moment EST le récit.
+
+   ON MONTRE AUSSI CE QUI N'EST PAS ENCORE À PORTÉE, avec ce qui manque. Une
+   technique qu'on ne voit pas ne sera jamais visée, et c'est précisément ce
+   qui donne un objectif d'entraînement.
+
+   `limite` borne la liste sur la table ; la fiche l'affiche en entier.
+   ========================================================================== #}
+{% from "_emblemes.html" import icone as icone_appr %}
+{% if offres_apprentissage %}
+{% set lot = offres_apprentissage[:limite] if limite else offres_apprentissage %}
+<div class="panneau serre apprentissage">
+  <p class="legende">{{ icone_appr('technique', 13) }} Ce que tu peux apprendre</p>
+
+  {% for o in lot %}
+  <div class="appr {{ 'prete' if o.pret else 'lointaine' }}">
+    <div class="appr-tete">
+      <span class="appr-nom">{{ o.nom }}</span>
+      <span class="tag or">{{ o.rang }}</span>
+    </div>
+    {% if o.fr %}<p class="appr-fr">{{ o.fr }}</p>{% endif %}
+
+    <p class="appr-voie">
+      {% if o.source == 'maitre' %}
+        {{ o.detail }} peut te l'enseigner.
+      {% elif o.source == 'parchemin' %}
+        Tu en as le parchemin — il se consommera.
+      {% else %}
+        Ta spécialité : tu peux la travailler seul.
+      {% endif %}
+      <span class="appr-prix">{{ o.tours }} tour{{ 's' if o.tours > 1 }}</span>
+    </p>
+
+    {% if o.pret %}
+    <form method="post" action="/campagnes/{{ camp.id }}/apprendre">
+      <input type="hidden" name="character_id" value="{{ pj.id }}">
+      <input type="hidden" name="technique" value="{{ o.id }}">
+      <input type="hidden" name="retour" value="{{ request.url.path }}">
+      <button type="submit" class="gain"
+              {% if rencontre %}disabled title="Pas au milieu d'un affrontement."{% endif %}>
+        S'entraîner <span class="fleche">→ {{ o.tours }} tour{{ 's' if o.tours > 1 }}</span>
+      </button>
+    </form>
+    {% else %}
+    <p class="appr-manque">
+      {% if o.manque %}Il te faut d'abord {{ o.manque|join(', ') }}.
+      {% else %}{{ o.stat_label }} {{ o.stat_valeur }} — il en faut {{ o.stat_requise }}.
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% if limite and offres_apprentissage|length > limite %}
+  <p class="petit muted" style="margin:.6rem 0 0">
+    {{ offres_apprentissage|length - limite }} autre{{ 's' if offres_apprentissage|length - limite > 1 }}
+    sur <a href="/campagnes/{{ camp.id }}/fiche/{{ pj.id }}">ta fiche</a>.</p>
+  {% endif %}
+</div>
+{% endif %}

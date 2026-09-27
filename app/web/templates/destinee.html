@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import icone %}
+{% from "_paysages.html" import paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% block cle_page %}{{ fiche.village_id or 'konoha' }}{% endblock %}
+{% block titre %}Ta destinée — {{ camp.nom }}{% endblock %}
+{% block largeur %}etroite{% endblock %}
+{% block barre %}<span class="petit muted">{{ fiche.nom }}</span>{% endblock %}
+{% block contenu %}
+
+{# Le choix le plus lourd de la création — celui qu'on ne refait jamais — et
+   c'était la seule étape du parcours sans mise en scène. Le bandeau montre le
+   pays où tout cela se jouera, et le titre se pose dessus. #}
+{{ paysage_defs([fiche.village_id or 'konoha']) }}
+<section class="heros bandeau cadre-paysage" data-parallaxe>
+  {{ estampe(fiche.village_id or 'konoha', 'heros') }}
+  <div class="heros-voile"></div>
+  <span class="heros-kanji" aria-hidden="true">運</span>
+  <div class="heros-contenu">
+    <p class="eyebrow">Le fil se tend</p>
+    <h1>Trois chemins semblent liés à ton avenir</h1>
+    <p class="chapeau">Tu ne sais pas où ils mènent. Personne ne le sait
+      encore — sauf le destin, qui a déjà tout écrit.</p>
+  </div>
+</section>
+
+<form method="post" action="/campagnes/{{ camp.id }}/destinee" id="formulaire">
+  <input type="hidden" name="cle" value="{{ cle }}">
+  <input type="hidden" name="choix" id="choix" value="0">
+  {% for k, v in form.items() %}
+    {% if k not in ('mode_destinee', 'cle', 'choix') %}
+    <input type="hidden" name="{{ k }}" value="{{ v }}">
+    {% endif %}
+  {% endfor %}
+
+  <div class="destin-cartes">
+    {% for p in propositions %}
+    {% set runes = ['壱', '弐', '参'] %}
+    <label class="destin" data-index="{{ loop.index0 }}">
+      <span class="rune">{{ runes[loop.index0 % 3] }}</span>
+      <span class="destin-nom">{{ p.profil_nom }}</span>
+      <span class="destin-texte">
+        {%- for t in p.actifs %}{% if t.revelation_initiale %}{{ t.revelation_initiale }} {% endif %}{% endfor -%}
+        {%- for t in p.latents %}{% if t.revelation_initiale and loop.index <= 2 %}{{ t.revelation_initiale }} {% endif %}{% endfor -%}
+      </span>
+      <span class="destin-pied">
+        {% set total = namespace(v=0) %}
+        {%- for t in p.latents %}{% set total.v = total.v + (t.conditions|length or 1) %}{% endfor -%}
+        {{ p.latents|length }} chose{{ 's' if p.latents|length > 1 }} dorment en toi ·
+        {{ total.v }} révélation{{ 's' if total.v > 1 }} possible{{ 's' if total.v > 1 }}
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <p class="centre petit muted espace" style="max-width:62ch;margin:26px auto 0">
+    Chaque chemin est déjà écrit dans ses moindres détails, et tu n'en verras que ce
+    que ton personnage peut percevoir. Rien ne te sera offert : tout devra être
+    mérité, déclenché ou payé.</p>
+</form>
+
+<script>
+document.querySelectorAll('.destin').forEach(function (carte) {
+  carte.addEventListener('click', function () {
+    document.querySelectorAll('.destin').forEach(function (c) { c.classList.remove('choisie'); });
+    carte.classList.add('choisie');
+    document.getElementById('choix').value = carte.getAttribute('data-index');
+    setTimeout(function () { document.getElementById('formulaire').submit(); }, 260);
+  });
+});
+</script>
+{% endblock %}

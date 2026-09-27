@@ -1,0 +1,40 @@
+{# ==========================================================================
+   CE QUE LE DÉ A DIT.
+
+   Extrait du bloc de tour pour une raison précise : en narration streamée, ce
+   résultat est envoyé AVANT la première phrase du récit. Le joueur sait ce qui
+   lui arrive pendant que la scène s'écrit — et il voit de ses yeux que le jet
+   a précédé la narration, ce qui est exactement la promesse du moteur.
+
+   Prend `resolution`, pas `tour` : il sert aussi bien à un tour enregistré
+   qu'à un tour encore en train de s'écrire.
+   ========================================================================== #}
+{% set c = resolution.get('check') %}
+{% if c %}
+  {% set cls = 'ok' if c.issue in ('reussite','reussite_critique')
+               else ('mi' if c.issue == 'reussite_partielle' else 'ko') %}
+<div class="bloc-jet {{ cls }}">
+  <span class="jet-issue">{{ c.issue|replace('_', ' ') }}</span>
+  <span class="jet-detail">dé {{ c.des|join(', ') }} · {{ c.total }} contre {{ c.difficulte }}</span>
+</div>
+{% endif %}
+
+{# Le détail mécanique d'un échange. Replié par défaut : le joueur lit la
+   scène, et peut vérifier les chiffres quand un résultat le surprend. C'est
+   ce qui rend le moteur crédible sans l'imposer. #}
+{% set cb = resolution.get('combat') %}
+{% if cb %}
+  {% set fini = cb.get('statut') not in (None, 'en_cours') %}
+<div class="bloc-jet {{ 'ok' if cb.get('reussi') else 'ko' }}">
+  <span class="jet-issue">échange {{ cb.get('echange') }}</span>
+  <span class="jet-detail">
+    {{ cb.get('titre', '') }}
+    {%- if fini %} · {{ cb.get('statut')|replace('_', ' ') }}{% endif %}</span>
+</div>
+{% if cb.get('lignes') %}
+<details class="echange">
+  <summary>le détail des jets</summary>
+  {% for l in cb.get('lignes') %}<span class="echange-ligne">{{ l }}</span>{% endfor %}
+</details>
+{% endif %}
+{% endif %}

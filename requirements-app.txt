@@ -1,0 +1,3 @@
+# Ce qu'il faut EN PLUS de requirements.txt pour fabriquer Nindō.exe.
+pywebview>=6.2
+pyinstaller>=6.22

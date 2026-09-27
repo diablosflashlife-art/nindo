@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import embleme, icone %}
+{% from "_paysages.html" import paysage_du_lieu, paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% block cle_page %}{{ pj.village_ref or 'konoha' }}{% endblock %}
+{% block titre %}{{ camp.nom }}{% endblock %}
+{% block barre %}
+  <span class="petit muted">Tour {{ camp.tour }}</span>
+  {# Qui raconte, seulement quand un relais existe : avec Ollama seul, il n'y
+     a rien à surveiller. Mis à jour à chaque tour par l'événement `conteur`. #}
+  {% set qui = conteur() %}
+  {% if qui.relais %}
+  <span id="conteur" class="conteur {{ 'secours' if qui.en_secours }}"
+        title="{{ qui.raison or ('Raconté par ' ~ qui.conteur ~ (' — secours : ' ~ qui.secours if qui.secours else '')) }}">{{ qui.conteur }}</span>
+  {% endif %}
+  {# Masqué tant que le script ne l'a pas activé : un navigateur sans
+     synthèse vocale ne doit pas afficher un bouton qui ne fait rien. #}
+  <button type="button" id="voix" class="bouton-voix" hidden aria-pressed="false">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+         stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z"/>
+      <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+      <path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+    </svg>
+    <span>voix</span>
+  </button>
+  {# La longueur des récits se règle en pleine partie : la table sait mieux que
+     personne si elle a le temps de lire. #}
+  <form method="post" action="/campagnes/{{ camp.id }}/allure" class="allure-choix"
+        title="Longueur des récits">
+    <input type="hidden" name="pj" value="{{ pj.id }}">
+    <select name="allure" onchange="this.form.submit()" aria-label="Longueur des récits">
+      {% for v, l in [('court', 'récits courts'), ('normal', 'récits normaux'), ('long', 'récits longs')] %}
+      <option value="{{ v }}" {% if (camp.allure or 'court') == v %}selected{% endif %}>{{ l }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <a href="/campagnes/{{ camp.id }}/chronique" class="petit">chronique</a>
+  {# « complète » saute sous 640 px : à cinq éléments, la barre se cassait en
+     deux lignes et poussait la scène vers le bas. #}
+  <a href="/campagnes/{{ camp.id }}/fiche/{{ pj.id }}" class="petit">fiche<span
+     class="au-large"> complète</span> →</a>
+{% endblock %}
+{% block scripts %}<script src="{{ statique('voix.js') }}" defer></script>{% endblock %}
+{% block contenu %}
+
+{# Le décor du village sert à la fois la vignette du lieu et le fond de la
+   carte : déclaré une fois, référencé deux. #}
+{{ paysage_defs([pj.village_ref or 'konoha']) }}
+
+<div class="duo">
+  <div>
+
+    <!-- --------------------------------------------------- PRÉCÉDEMMENT -->
+    {# Chargé à part : la table doit s'afficher tout de suite, et le rappel
+       coûte une génération. Il n'apparaît qu'après une vraie pause — voir
+       reprise.necessaire. #}
+    {% if rappel %}
+    {# Le relevé déterministe est DÉJÀ là — il ne coûte que quelques requêtes,
+       et il dit l'essentiel. HTMX va ensuite chercher la version racontée et
+       la substitue quand elle arrive. Si le modèle est éteint, rien ne bouge
+       et le joueur n'aura jamais vu d'écran d'attente. #}
+    <div data-rappel
+         {% if not rappel.du_modele %}hx-get="/campagnes/{{ camp.id }}/reprise?pj={{ pj.id }}"
+         hx-trigger="load" hx-swap="outerHTML"{% endif %}>
+      {% include "_reprise.html" %}
+    </div>
+    {% endif %}
+
+    <!-- ------------------------------------------------------- LE RÉCIT -->
+    {# Les tours passés sont repliés : au bout de dix actions, tout afficher
+       transformait la table en mur de texte. Seule la scène en cours reste
+       au centre ; le reste s'ouvre à la demande. #}
+    <details class="historique" id="historique" {% if tours|length <= 1 %}hidden{% endif %}>
+      <summary>
+        <span class="chevron">▸</span>
+        <span>Ce qui s'est passé avant</span>
+        <span class="compte" id="compte-historique">{{ (tours|length - 1) if tours else 0 }}</span>
+      </summary>
+      <div class="fil" id="fil">
+        {% set historique = true %}
+        {% for tour in tours[:-1] %}{% include "_tour.html" with context %}{% endfor %}
+      </div>
+    </details>
+
+    <div class="panneau scene">
+      <span class="scene-coins" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <p class="legende">{{ icone('journal', 13) }} Scène en cours · {{ camp.nom }}</p>
+      <div class="recit" id="recit">
+        {% set historique = true %}
+        {% for tour in tours[-1:] %}{% include "_tour.html" with context %}{% endfor %}
+      </div>
+      <div id="attente">Le maître du jeu réfléchit</div>
+    </div>
+
+    <!-- --------------------------------------------------- L'AFFRONTEMENT -->
+    {# Entre la scène et l'action : c'est là que la décision se prend. #}
+    {% include "_rencontre.html" %}
+
+    <!-- ------------------------------------------------------ TON ACTION -->
+    {# Une chronique close ne prend plus d'action. Le garde est aussi côté
+       route (_exige_en_cours) : cacher un formulaire n'est pas une règle. #}
+    {% if camp.phase == 'terminee' %}
+    <div class="panneau serre fin-close">
+      <p class="legende">{{ icone('sceau', 13) }} Chronique close</p>
+      <p class="petit muted" style="margin:0 0 .8rem">
+        Cette campagne s'est achevée au tour {{ camp.tour }}. Son épilogue est
+        dans la chronique — et rien n'a été effacé.</p>
+      <div class="rangee espace" style="gap:10px">
+        <a href="/campagnes/{{ camp.id }}/chronique" class="bouton">Lire l'épilogue</a>
+        <form method="post" action="/campagnes/{{ camp.id }}/rouvrir">
+          <button type="submit" class="discret">Rouvrir</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="panneau">
+      {% if pjs|length > 1 %}
+      <p class="legende">Qui agit ce tour-ci</p>
+      <div class="onglets">
+        {% for p in pjs %}
+        <a href="/campagnes/{{ camp.id }}?pj={{ p.id }}"
+           class="onglet {% if p.id == pj.id %}actif{% endif %}">
+          <span class="pastille">{{ p.nom[0] }}</span>
+          <span>{{ p.nom }}<br><small>{{ p.joueur }}</small></span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="propositions" id="propositions">
+        {% if dernier and dernier.propositions %}
+          {% for p in dernier.propositions %}
+          <button type="button" class="proposition"
+                  onclick="remplir(this.getAttribute('data-texte'))"
+                  data-texte="{{ p.texte }}">
+            {{ p.texte }}
+            <span class="risque {{ p.risque }}">risque {{ p.risque }}</span>
+          </button>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      {# En flux, la réponse HTMX n'est plus le tour mais sa COQUILLE : elle
+         arrive en quelques millisecondes et se remplit ensuite toute seule.
+         L'indicateur d'attente n'a donc plus lieu d'être sur ce chemin. #}
+      <form hx-post="/campagnes/{{ camp.id }}/jouer{{ '/flux' if flux else '' }}"
+            hx-target="#recit" hx-swap="beforeend"
+            {% if not flux %}hx-indicator="#attente"{% endif %}
+            hx-on::after-request="if(event.detail.successful){
+                                    document.getElementById('action').value='';
+                                  }
+                                  window.scrollTo(0, document.body.scrollHeight)">
+        <input type="hidden" name="character_id" value="{{ pj.id }}">
+        {% include "_postures.html" %}
+        <textarea name="action" id="action" rows="3" required
+          placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ?{% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}"></textarea>
+        <div class="rangee espace" style="justify-content:space-between">
+          <span class="petit muted">Écris librement, ou choisis une piste ci-dessus.</span>
+          <button type="submit">Agir</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ---------------------------------------------------------- COLONNE -->
+  <div class="colonne">
+
+    {# LA CARTE DU PERSONNAGE. L'estampe de son village en tête, le médaillon
+       de son clan à cheval dessus — le logo du wiki quand il existe — puis
+       son nom. `data-cle` teinte tout à la couleur de l'appartenance. #}
+    <div class="panneau serre carte-perso" data-cle="{{ pj.clan_ref or pj.village_ref or 'sans_clan' }}">
+      <div class="estampe-bandeau">{{ estampe(pj.village_ref or 'konoha', 'cp') }}</div>
+      <div class="cp-corps">
+        <div class="cp-tete">
+          <span class="cp-medaillon">{{ embleme(pj.clan_ref or pj.village_ref or 'sans_clan', 78) }}</span>
+          <span>
+            <div class="cp-nom">{{ pj.nom }}</div>
+            <div class="cp-sous">{{ titre_grade }} · niveau {{ pj.niveau }}</div>
+          </span>
+        </div>
+        <div class="tags" style="margin-bottom:14px">
+          <span class="tag">{{ pj.clan }}</span>
+          <span class="tag pourpre">{{ tier_label }}</span>
+        </div>
+
+        {% include "_ressources.html" %}
+      </div>
+    </div>
+
+    {# PREMIERS PAS. Quatre tours, puis il se tait — et on peut le fermer plus
+       tôt. Mesuré en partie réelle : un joueur ne savait ni qu'une mission se
+       prend, ni qu'une technique s'apprend. Il le dit une fois, sans insister. #}
+    {% if camp.tour <= 4 %}
+    <div class="panneau serre guide" id="guide" hidden>
+      <div class="rangee" style="justify-content:space-between;align-items:center">
+        <p class="legende" style="margin:0">{{ icone('destinee', 13) }} Premiers pas</p>
+        <button type="button" class="discret guide-fermer" aria-label="Fermer le guide">✕</button>
+      </div>
+      <ol class="guide-liste">
+        <li><strong>Écris ce que fait ton ninja</strong>, librement — ou clique une piste proposée.</li>
+        <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué.</li>
+        <li><strong>Les missions</strong> se prennent dans l'onglet <em>Gens</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
+        <li><strong>La carte</strong> (onglet <em>Lieu</em>) : voyager coûte des tours.</li>
+        <li><strong>L'onglet <em>Voie</em></strong> te dit quand une technique peut s'apprendre.</li>
+      </ol>
+    </div>
+    <script>
+    (function () {
+      var g = document.getElementById('guide');
+      if (!g) return;
+      var vu = null;
+      try { vu = localStorage.getItem('nindo.guide.vu'); } catch (e) { vu = null; }
+      if (vu) return;
+      g.hidden = false;
+      g.querySelector('.guide-fermer').addEventListener('click', function () {
+        g.hidden = true;
+        try { localStorage.setItem('nindo.guide.vu', '1'); } catch (e) { /* tant pis */ }
+      });
+    })();
+    </script>
+    {% endif %}
+
+    {# Un point non placé est un point qui manque au prochain jet : il se
+       montre AVANT le lieu, la carte et les missions. #}
+    {% include "_progression.html" %}
+
+    {# ONGLETS. La colonne empilait neuf panneaux — lieu, carte, entourage,
+       missions, techniques, apprentissage, journal — et il fallait faire
+       défiler au milieu d'une scène pour retrouver une échéance. Tout est
+       encore là, mais un pan à la fois : ce qu'on regarde vraiment pendant
+       un tour tient alors sur un écran. L'onglet choisi est retenu par
+       campagne, et un onglet qui a quelque chose d'urgent le dit. #}
+    {% set missions_urgentes = quetes | selectattr('statut', 'in', ['proposée','acceptée','en cours'])
+                                       | selectattr('echeance_tour', 'ne', none)
+                                       | rejectattr('echeance_tour', 'gt', camp.tour + 2) | list %}
+    <nav class="onglets-colonne" data-onglets="{{ camp.id }}" aria-label="Panneaux de jeu">
+      <button type="button" class="onglet-col actif" data-cible="lieu">
+        {{ icone('lieu', 13) }}<span>Lieu</span></button>
+      <button type="button" class="onglet-col" data-cible="gens">
+        {{ icone('relation', 13) }}<span>Gens</span>
+        {% set offres = quetes | selectattr('statut', 'equalto', 'proposée') | list %}
+        {% if missions_urgentes %}<b class="pastille-urgente">{{ missions_urgentes|length }}</b>
+        {% elif offres %}<b class="pastille-jade" title="Une offre de mission attend ta réponse">!</b>{% endif %}</button>
+      <button type="button" class="onglet-col" data-cible="voie">
+        {{ icone('technique', 13) }}<span>Voie</span>
+        {% set pretes = offres_apprentissage | selectattr('pret') | list %}
+        {% if pretes %}<b class="pastille-jade">{{ pretes|length }}</b>{% endif %}</button>
+      <button type="button" class="onglet-col" data-cible="journal">
+        {{ icone('journal', 13) }}<span>Journal</span></button>
+    </nav>
+
+    <div class="onglet-pan" data-onglet="lieu">
+    {# Le lieu s'illustre. Une description seule oblige à imaginer l'endroit
+       à chaque tour ; une vignette le fixe, et le texte n'a plus qu'à
+       préciser ce que l'image ne dit pas. #}
+    {% if lieu %}
+    <div class="panneau lieu">
+      <div class="lieu-vue cadre-paysage">
+        {{ paysage_du_lieu(lieu, pj.village_ref) }}
+        <div class="lieu-titre">
+          <strong>{{ lieu.nom }}</strong>
+          <span class="tag vermillon">danger {{ lieu.danger }}</span>
+        </div>
+      </div>
+      <div class="lieu-corps">
+        <p class="petit muted" style="margin:0">{{ lieu.description }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {% include "_carte.html" %}
+    </div>
+
+    <div class="onglet-pan" data-onglet="gens" hidden>
+    <div class="panneau serre">
+      <p class="legende">{{ icone('relation', 13) }} Celles et ceux qui t'entourent</p>
+      {% for r in relations %}
+      <div class="vignette">
+        <span class="av">{{ r.nom[0] }}</span>
+        <span class="corps">
+          <span class="titre">
+            {{ r.nom }}
+            {% if r.pj %}<span class="tag vermillon">joueur</span>
+            {% elif r.role %}<span class="tag">{{ r.role }}</span>{% endif %}
+          </span>
+          <span class="sous">{{ r.nature }}</span>
+          <span class="jauge {{ 'jade' if r.valeur > 0 else '' }}" style="margin-top:6px">
+            <i style="width:{{ r.valeur|abs }}%"></i></span>
+        </span>
+        <span class="val petit {{ 'ok' if r.valeur > 0 else ('ko' if r.valeur < 0 else '') }}"
+              style="font-family:var(--mono)">{{ r.valeur }}</span>
+      </div>
+      {% else %}<p class="petit muted" style="margin:0">Personne ne te connaît encore.</p>{% endfor %}
+    </div>
+
+    <div class="panneau serre">
+      <p class="legende">{{ icone('mission', 13) }} Missions</p>
+      {% for q in quetes %}
+      {# Le compte à rebours est une information de jeu, pas une décoration :
+         une mission dont le délai passe échoue vraiment, au tour suivant. #}
+      {% set reste = (q.echeance_tour - camp.tour) if q.echeance_tour is not none else none %}
+      <div class="vignette">
+        <span class="av">{{ q.rang }}</span>
+        <span class="corps">
+          <span class="titre">{{ q.titre }}
+            <span class="tag {{ 'vermillon' if q.statut == 'échouée' else '' }}">{{ q.statut }}</span>
+            {% if reste is not none and q.statut in ('proposée','acceptée','en cours') %}
+              {% if reste <= 0 %}<span class="tag vermillon">délai dépassé</span>
+              {% elif reste <= 2 %}<span class="tag vermillon">{{ reste }} tour{{ 's' if reste > 1 }}</span>
+              {% else %}<span class="tag or">{{ reste }} tours</span>{% endif %}
+            {% endif %}
+          </span>
+          <span class="sous">{{ q.description|truncate(110, true, '…') }}</span>
+          {% if q.statut == 'proposée' %}
+          {# Une offre se prend ou se laisse : le joueur doit le décider, pas le
+             deviner. Accepter lance l'arc de la mission. #}
+          <span class="mission-choix">
+            <form method="post" action="/campagnes/{{ camp.id }}/missions/{{ q.id }}/accepter">
+              <input type="hidden" name="character_id" value="{{ pj.id }}">
+              <button type="submit" class="ligne mission-oui">Accepter</button>
+            </form>
+            <form method="post" action="/campagnes/{{ camp.id }}/missions/{{ q.id }}/refuser">
+              <input type="hidden" name="character_id" value="{{ pj.id }}">
+              <button type="submit" class="ligne mission-non">Refuser</button>
+            </form>
+          </span>
+          {% endif %}
+        </span>
+      </div>
+      {% else %}<p class="petit muted" style="margin:0">Aucune mission en cours.</p>{% endfor %}
+      {# Le bureau des missions : l'ossature vient du lore, pas du modèle. #}
+      <form method="post" action="/campagnes/{{ camp.id }}/missions"
+            style="margin-top:.55rem">
+        <input type="hidden" name="character_id" value="{{ pj.id }}">
+        <button type="submit" class="proposition">Demander une mission au bureau</button>
+      </form>
+    </div>
+    </div>
+
+    <div class="onglet-pan" data-onglet="voie" hidden>
+    <div class="panneau serre">
+      <p class="legende">{{ icone('technique', 13) }} Techniques</p>
+      {% for t in techniques %}
+      <div class="stat">
+        <span class="nom">{{ t.nom|truncate(30, true, '…') }}</span>
+        <span class="valeur"><span class="tag or">{{ t.rang }}</span></span>
+        <span class="jauge {{ 'or' if t.maitrise >= 75 else '' }}">
+          <i style="width:{{ t.maitrise }}%"></i></span>
+      </div>
+      {% else %}<p class="petit muted" style="margin:0">Aucune technique.</p>{% endfor %}
+    </div>
+
+    {# Les trois plus accessibles ici ; la liste entière vit sur la fiche. #}
+    {% with limite = 3 %}{% include "_apprentissage.html" %}{% endwith %}
+    </div>
+
+    <div class="onglet-pan" data-onglet="journal" hidden>
+    {% if fils_ouverts or fils_resolus %}
+    <div class="panneau serre fils-recit">
+      <p class="legende">{{ icone('destinee', 13) }} Ce que tu cherches à savoir</p>
+      {% for f in fils_ouverts %}
+      <div class="fil ouvert"><span class="fil-marque">?</span>
+        <span class="petit">{{ f.question }}</span></div>
+      {% endfor %}
+      {% for f in fils_resolus|reverse %}
+      <div class="fil resolu"><span class="fil-marque">✓</span>
+        <span class="petit"><strong>{{ f.question }}</strong><br>{{ f.reponse }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="panneau serre">
+      <p class="legende">{{ icone('journal', 13) }} Journal</p>
+      {% for e in evenements %}
+      <div class="ligne" style="align-items:flex-start">
+        <span class="petit">{{ e.resume }}</span>
+        <span class="val">T{{ e.tour }}</span>
+      </div>
+      {% else %}<p class="petit muted" style="margin:0">Rien ne s'est encore produit.</p>{% endfor %}
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* Les onglets de la colonne. Retenus par campagne : on rouvre la table sur
+   ce qu'on regardait. Et rien ne dépend d'eux — sans JavaScript, le premier
+   pan est visible et les autres portent `hidden`, ce qui reste jouable. */
+(function () {
+  var nav = document.querySelector('.onglets-colonne');
+  if (!nav) return;
+  var CLE = 'chroniques.onglet.' + nav.getAttribute('data-onglets');
+  var boutons = Array.prototype.slice.call(nav.querySelectorAll('.onglet-col'));
+  var pans = Array.prototype.slice.call(document.querySelectorAll('.onglet-pan'));
+  function montrer(cible) {
+    boutons.forEach(function (b) { b.classList.toggle('actif', b.dataset.cible === cible); });
+    pans.forEach(function (p) { p.hidden = p.dataset.onglet !== cible; });
+    try { localStorage.setItem(CLE, cible); } catch (e) { /* tant pis */ }
+  }
+  boutons.forEach(function (b) {
+    b.addEventListener('click', function () { montrer(b.dataset.cible); });
+  });
+  var retenu = null;
+  try { retenu = localStorage.getItem(CLE); } catch (e) { retenu = null; }
+  if (retenu && pans.some(function (p) { return p.dataset.onglet === retenu; })) montrer(retenu);
+})();
+
+function remplir(texte) {
+  var champ = document.getElementById('action');
+  champ.value = texte;
+  champ.focus();
+  champ.setSelectionRange(texte.length, texte.length);
+}
+
+/* HTMX ajoute le nouveau tour à la suite dans #recit. On repousse alors les
+   précédents dans l'historique : la scène en cours reste seule au centre.
+   Faire ce déplacement ici plutôt que côté serveur évite de redemander toute
+   la page à chaque action. */
+(function () {
+  var recit = document.getElementById('recit');
+  var fil = document.getElementById('fil');
+  var repli = document.getElementById('historique');
+  var compte = document.getElementById('compte-historique');
+
+  function ranger() {
+    var tours = recit.querySelectorAll('.tour');
+    for (var i = 0; i < tours.length - 1; i++) fil.appendChild(tours[i]);
+    var n = fil.querySelectorAll('.tour').length;
+    compte.textContent = n;
+    repli.hidden = n === 0;
+  }
+  /* Le flux en a besoin quand il remplace la coquille par le vrai tour, et
+     ce remplacement-là ne passe pas par une requête htmx. */
+  window.rangerTours = ranger;
+
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.target && e.target.id === 'recit') {
+      ranger();
+      recit.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
+  /* Dans l'historique, un tour s'ouvre d'un clic : replié il ne montre que
+     son action et le résultat du jet. */
+  fil.addEventListener('click', function (e) {
+    var tour = e.target.closest('.tour');
+    if (tour) tour.classList.toggle('ouvert');
+  });
+
+  ranger();
+})();
+
+/* ==========================================================================
+   LA NARRATION EN FLUX
+   Le serveur renvoie d'abord une coquille de tour portant `data-flux`. On y
+   branche un EventSource, et la scène se remplit mot à mot pendant que le
+   modèle écrit. À la fin, le serveur envoie le vrai bloc de tour, qui remplace
+   la coquille — et htmx.swap applique au passage les panneaux hors cible
+   (adversaires, postures, ressources).
+
+   Écrit à la main plutôt qu'avec l'extension SSE de htmx : le jeu doit tourner
+   hors ligne, et quarante lignes valent mieux qu'un fichier de plus à
+   embarquer.
+   ========================================================================== */
+(function () {
+  var recit = document.getElementById('recit');
+  var form = document.querySelector('form[hx-post*="/jouer"]');
+  var bouton = form && form.querySelector('button[type="submit"]');
+
+  /* En flux, le formulaire répond en quelques millisecondes : plus rien
+     n'empêche d'envoyer une seconde action pendant que la première s'écrit.
+     Deux tours joués en parallèle décalent l'horloge de campagne et mélangent
+     les échanges — on ferme donc la porte tant que la scène n'est pas finie. */
+  function occuper(oui) {
+    if (!bouton) return;
+    bouton.disabled = oui;
+    bouton.textContent = oui ? 'En cours…' : 'Agir';
+  }
+
+  function brancher(coquille) {
+    var url = coquille.getAttribute('data-flux');
+    if (!url) return;
+    coquille.removeAttribute('data-flux');
+    occuper(true);
+
+    var narration = coquille.querySelector('[data-role="narration"]');
+    var etape = coquille.querySelector('[data-role="etape"]');
+    var etapeTexte = coquille.querySelector('[data-role="etape-texte"]');
+    var source = new EventSource(url);
+
+    source.addEventListener('etape', function (e) {
+      if (etapeTexte) etapeTexte.textContent = e.data;
+    });
+
+    /* Le résultat du dé arrive AVANT la première phrase : le joueur voit de
+       ses yeux que le jet a précédé le récit. */
+    source.addEventListener('jet', function (e) {
+      if (!etape || !e.data.trim()) return;
+      etape.insertAdjacentHTML('beforebegin', e.data);
+    });
+
+    source.addEventListener('conteur', function (e) {
+      var badge = document.getElementById('conteur');
+      if (!badge) return;
+      try {
+        var q = JSON.parse(e.data);
+        badge.textContent = q.conteur;
+        badge.classList.toggle('secours', !!q.en_secours);
+        badge.title = q.raison || ('Raconté par ' + q.conteur +
+          (q.secours ? ' — secours : ' + q.secours : ''));
+      } catch (err) { /* un indicateur muet ne gêne pas le jeu */ }
+    });
+
+    source.addEventListener('mot', function (e) {
+      /* Les astérisques de mise en forme ne s'affichent pas pendant le flux ;
+         le texte enregistré, lui, est épuré côté serveur. */
+      narration.textContent += e.data.replace(/\*/g, '');
+      coquille.classList.add('ecrit');
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    source.addEventListener('fin', function (e) {
+      source.close();
+      occuper(false);
+      htmx.swap(coquille, e.data, { swapStyle: 'outerHTML' });
+      /* Ce remplacement ne passe pas par une requête htmx : les deux réglages
+         qui suivent d'habitude un échange doivent être rappelés à la main. */
+      if (window.rangerTours) window.rangerTours();
+      if (window.accorderPostures) window.accorderPostures();
+      /* `htmx.swap` ne remonte pas jusqu'à #recit : la lecture à voix haute
+         ne saurait pas qu'un tour vient d'arriver sans ce signal. */
+      document.dispatchEvent(new CustomEvent('chroniques:tour'));
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    source.addEventListener('echec', function (e) {
+      source.close();
+      occuper(false);
+      coquille.classList.add('echoue');
+      if (etapeTexte) etapeTexte.textContent = e.data;
+    });
+
+    /* Une coupure réseau ferait retenter la connexion en boucle, et le jeton
+       est à usage unique : autant s'arrêter et le dire. */
+    source.onerror = function () {
+      if (source.readyState === EventSource.CLOSED) return;
+      source.close();
+      occuper(false);
+      coquille.classList.add('echoue');
+      if (etapeTexte) etapeTexte.textContent =
+        'La liaison avec le maître du jeu a été interrompue. Recharge la page.';
+    };
+  }
+
+  function chercher() {
+    recit.querySelectorAll('[data-flux]').forEach(brancher);
+  }
+
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.target && e.target.id === 'recit') chercher();
+  });
+  chercher();
+})();
+
+/* Le choix de posture. Délégué sur document parce que le bloc est remplacé à
+   chaque échange par hx-swap-oob : un écouteur posé sur les labels eux-mêmes
+   disparaîtrait au premier échange. */
+(function () {
+  function accorder() {
+    var bloc = document.getElementById('postures');
+    if (!bloc) return;
+    var coche = bloc.querySelector('input[name="posture"]:checked');
+    bloc.querySelectorAll('.posture').forEach(function (l) {
+      l.classList.toggle('choisie', l.contains(coche));
+    });
+    var levier = bloc.querySelector('.levier-choix');
+    if (levier) levier.hidden = !coche || coche.value !== 'manoeuvre';
+  }
+
+  window.accorderPostures = accorder;
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'posture') accorder();
+  });
+  document.body.addEventListener('htmx:afterSwap', accorder);
+  accorder();
+})();
+</script>
+{% endblock %}

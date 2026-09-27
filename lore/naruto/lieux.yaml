@@ -1,0 +1,290 @@
+# ==========================================================================
+# LES LIEUX DE DÉPART — un jeu de lieux PAR VILLAGE.
+#
+# Avant ce fichier, toute campagne naissait avec les mêmes six lieux —
+# « Terrain d'entraînement 3 », « Forêt frontalière », « Tour du Kage » —
+# placés pour le plan de Konoha. Un genin de Suna s'entraînait donc dans une
+# clairière de forêt, et un genin de Kiri gardait une frontière au nord d'un
+# village qui est une île.
+#
+# Chaque lieu porte :
+#   nom, danger (1..10), description, terrain, tags,
+#   x, y — en centièmes de la carte, ACCORDÉS AU PLAN DU VILLAGE
+#          (voir app/web/templates/_plan.html) : le cœur au centre, la
+#          frontière en marge, et la distance est ce que coûte le voyage.
+# Un lieu de danger ≤ 3 est connu dès le départ ; les autres entrent sur la
+# carte quand une mission y envoie l'équipe.
+#
+# Le lieu le MOINS dangereux est celui où le personnage commence.
+# ==========================================================================
+lieux_par_village:
+
+  # ---------------------------------------------------------------- KONOHA
+  konoha:
+    - nom: "Académie"
+      danger: 1
+      description: "Bâtiment de bois clair aux volets rouges. Cour de sable battu, cibles usées jusqu'au cœur, odeur de craie et de sueur."
+      terrain: {couvert: faible, visibilite: bonne, espace: ouvert}
+      tags: [sûr, social]
+      x: 44
+      y: 58
+    - nom: "Tour du Hokage"
+      danger: 1
+      description: "Salle circulaire aux fenêtres hautes, au pied du Rocher des Hokage. C'est ici que les missions sont attribuées, et que les mauvaises nouvelles arrivent en premier."
+      terrain: {couvert: faible, visibilite: bonne, espace: confine}
+      tags: [sûr, politique]
+      x: 53
+      y: 49
+    - nom: "Quartier marchand"
+      danger: 2
+      description: "Ruelles étroites, étals serrés, rumeurs qui circulent plus vite que les marchandises."
+      terrain: {couvert: moyen, visibilite: moyenne, espace: confine}
+      tags: [social, rumeurs]
+      x: 35
+      y: 66
+    - nom: "Terrain d'entraînement 3"
+      danger: 3
+      description: "Trois poteaux de bois plantés dans une clairière. Le sol garde la trace de toutes les équipes qui sont passées là."
+      terrain: {couvert: moyen, visibilite: bonne, espace: ouvert, eau: presente}
+      tags: [entraînement]
+      x: 64
+      y: 70
+    - nom: "Forêt frontalière"
+      danger: 6
+      description: "Futaie dense où la lumière n'arrive pas jusqu'au sol. Les patrouilles n'y vont jamais seules."
+      terrain: {couvert: eleve, visibilite: faible, espace: confine, eau: presente}
+      tags: [dangereux, exploration]
+      x: 76
+      y: 27
+    - nom: "Poste frontière du Nord"
+      danger: 4
+      description: "Trois baraquements et un pont de corde au-dessus d'un ravin. Deux patrouilles n'en sont pas revenues ce mois-ci."
+      terrain: {couvert: faible, visibilite: moyenne, denivele: eleve, espace: ouvert}
+      tags: [frontière, militaire]
+      x: 58
+      y: 13
+
+  # ------------------------------------------------------------------ SUNA
+  suna:
+    - nom: "Académie des Sables"
+      danger: 1
+      description: "Salles voûtées creusées dans l'argile, fraîches même à midi. On y apprend d'abord à économiser l'eau, ensuite à se battre."
+      terrain: {couvert: moyen, visibilite: moyenne, espace: confine}
+      tags: [sûr, social]
+      x: 40
+      y: 46
+    - nom: "Dôme du Kazekage"
+      danger: 1
+      description: "Le plus grand dôme de la cuvette, marqué du caractère du Vent. Les ordres y tombent secs, comme le reste."
+      terrain: {couvert: faible, visibilite: bonne, espace: confine}
+      tags: [sûr, politique]
+      x: 50
+      y: 54
+    - nom: "Marché des caravanes"
+      danger: 2
+      description: "Toiles tendues entre les dômes, chameaux, épices et nouvelles de trois pays. Les Ensho y fixent les prix, et tout le monde le sait."
+      terrain: {couvert: moyen, visibilite: moyenne, espace: confine}
+      tags: [social, rumeurs]
+      x: 58
+      y: 68
+    - nom: "Arène des dunes"
+      danger: 3
+      description: "Une fosse de sable au pied des falaises, où le vent efface les traces des combats avant le soir."
+      terrain: {couvert: faible, visibilite: bonne, espace: ouvert}
+      tags: [entraînement]
+      x: 38
+      y: 72
+    - nom: "La Faille"
+      danger: 4
+      description: "Le seul passage entre les falaises. Deux parois, un couloir de sable, et des sentinelles qui ne dorment jamais."
+      terrain: {couvert: faible, visibilite: moyenne, denivele: eleve, espace: confine}
+      tags: [frontière, militaire]
+      x: 72
+      y: 82
+    - nom: "Mer de dunes"
+      danger: 6
+      description: "Au-delà des falaises, des dunes à perte de vue et des tempêtes qui se lèvent sans prévenir. On s'y perd en une heure, on y meurt en trois jours."
+      terrain: {couvert: faible, visibilite: faible, espace: ouvert}
+      tags: [dangereux, exploration]
+      x: 88
+      y: 30
+
+  # ------------------------------------------------------------------ KIRI
+  kiri:
+    - nom: "Académie de la Brume"
+      danger: 1
+      description: "Une tour basse au toit couvert de mousse. Les couloirs sont humides, les maîtres silencieux, et l'on n'y félicite personne."
+      terrain: {couvert: moyen, visibilite: faible, espace: confine, eau: presente}
+      tags: [sûr, social]
+      x: 38
+      y: 46
+    - nom: "Tour du Mizukage"
+      danger: 1
+      description: "La plus large des tours cylindriques, au cœur de l'île principale. On y monte par un escalier qui tourne longtemps."
+      terrain: {couvert: faible, visibilite: moyenne, espace: confine, eau: presente}
+      tags: [sûr, politique]
+      x: 49
+      y: 52
+    - nom: "Port des Brumes"
+      danger: 2
+      description: "Pontons de bois noirci, filets, barques qui partent sans lanterne. Les Hôzuki y ont des yeux, et les pêcheurs le savent."
+      terrain: {couvert: moyen, visibilite: faible, espace: ouvert, eau: abondante}
+      tags: [social, rumeurs]
+      x: 30
+      y: 64
+    - nom: "Bassin d'entraînement"
+      danger: 3
+      description: "Une anse abritée où l'on apprend à marcher sur l'eau — et à ne pas couler quand on a raté."
+      terrain: {couvert: faible, visibilite: moyenne, espace: ouvert, eau: abondante}
+      tags: [entraînement]
+      x: 60
+      y: 60
+    - nom: "Passe de l'archipel"
+      danger: 4
+      description: "Un chenal étroit entre deux îles, gardé par un poste sur pilotis. Tout ce qui entre à Kiri passe ici, ou ne passe pas."
+      terrain: {couvert: faible, visibilite: faible, espace: confine, eau: abondante}
+      tags: [frontière, militaire]
+      x: 20
+      y: 80
+    - nom: "Récif Brumeux"
+      danger: 6
+      description: "L'île que les marins contournent. La brume y est plus dense qu'ailleurs, plus ancienne, presque vivante."
+      terrain: {couvert: eleve, visibilite: faible, espace: confine, eau: abondante}
+      tags: [dangereux, exploration]
+      x: 72
+      y: 27
+
+  # ------------------------------------------------------------------ KUMO
+  kumo:
+    - nom: "Académie des Nuages"
+      danger: 1
+      description: "Un palier taillé dans la roche, battu par le vent. On y court avant de savoir lancer un kunai."
+      terrain: {couvert: faible, visibilite: bonne, denivele: eleve, espace: ouvert}
+      tags: [sûr, social]
+      x: 36
+      y: 62
+    - nom: "Bâtiment du Raikage"
+      danger: 1
+      description: "Une façade bleue bâtie dans la plus haute aiguille. Les portes y sont trop grandes pour des hommes ordinaires, et c'est voulu."
+      terrain: {couvert: faible, visibilite: bonne, espace: confine}
+      tags: [sûr, politique]
+      x: 50
+      y: 34
+    - nom: "Ponts suspendus"
+      danger: 2
+      description: "Des passerelles de corde entre les pitons, où les marchands crient plus fort que le vent. Tout se sait vite, et de haut."
+      terrain: {couvert: faible, visibilite: bonne, denivele: eleve, espace: confine}
+      tags: [social, rumeurs]
+      x: 62
+      y: 56
+    - nom: "Cascade du Tonnerre"
+      danger: 3
+      description: "Une chute d'eau sous laquelle on s'entraîne, l'orage au-dessus. Les Narukami y viennent à l'aube, les autres quand ils osent."
+      terrain: {couvert: moyen, visibilite: moyenne, denivele: eleve, espace: ouvert, eau: abondante}
+      tags: [entraînement]
+      x: 74
+      y: 66
+    - nom: "Col des Orages"
+      danger: 4
+      description: "Le seul chemin praticable vers les plaines. Un poste de pierre, un drapeau déchiqueté, et la foudre qui tombe trois fois par nuit."
+      terrain: {couvert: faible, visibilite: faible, denivele: eleve, espace: ouvert}
+      tags: [frontière, militaire]
+      x: 86
+      y: 20
+    - nom: "Mer de nuages"
+      danger: 6
+      description: "Sous la cité, les nuages. Ce qui tombe dedans ne remonte pas toujours, et certains y cherchent ce qui ne devrait pas remonter."
+      terrain: {couvert: eleve, visibilite: faible, denivele: eleve, espace: ouvert}
+      tags: [dangereux, exploration]
+      x: 48
+      y: 88
+
+  # ------------------------------------------------------------------- IWA
+  iwa:
+    - nom: "Académie de la Roche"
+      danger: 1
+      description: "Des salles taillées dans une tour de pierre. On y apprend l'histoire des guerres avant celle des techniques."
+      terrain: {couvert: moyen, visibilite: moyenne, espace: confine}
+      tags: [sûr, social]
+      x: 34
+      y: 70
+    - nom: "Résidence du Tsuchikage"
+      danger: 1
+      description: "La plus haute tour, au toit conique marqué du caractère de la Terre. On y attend longtemps, et debout."
+      terrain: {couvert: faible, visibilite: bonne, espace: confine}
+      tags: [sûr, politique]
+      x: 50
+      y: 46
+    - nom: "Réseau des ponts"
+      danger: 2
+      description: "Des ponts de pierre qui relient les tours, où se tiennent les échoppes et se disent les rancunes."
+      terrain: {couvert: faible, visibilite: bonne, denivele: eleve, espace: confine}
+      tags: [social, rumeurs]
+      x: 66
+      y: 64
+    - nom: "Carrières"
+      danger: 3
+      description: "Des gradins de roche fendue où l'on s'entraîne à coups de Doton. Le Corps d'Explosion y teste ce qu'il ne teste pas ailleurs."
+      terrain: {couvert: moyen, visibilite: bonne, denivele: eleve, espace: ouvert}
+      tags: [entraînement]
+      x: 80
+      y: 76
+    - nom: "Blocs erratiques"
+      danger: 4
+      description: "Des rochers énormes posés au bord du plateau, comme tombés du ciel. Un poste de guet s'y cache, et surveille la route de l'Herbe."
+      terrain: {couvert: eleve, visibilite: moyenne, denivele: eleve, espace: ouvert}
+      tags: [frontière, militaire]
+      x: 14
+      y: 38
+    - nom: "Massif de la Terre"
+      danger: 6
+      description: "Au nord, des montagnes nues, des gorges et des galeries que personne n'a finies de cartographier."
+      terrain: {couvert: moyen, visibilite: faible, denivele: eleve, espace: confine}
+      tags: [dangereux, exploration]
+      x: 50
+      y: 14
+
+  # ------------------------------------------------------------------- OTO
+  oto:
+    - nom: "Académie souterraine"
+      danger: 1
+      description: "Des salles sous la colline, éclairées à la lanterne. On y accepte n'importe qui — c'est tout le principe, et tout le danger."
+      terrain: {couvert: eleve, visibilite: faible, espace: confine}
+      tags: [sûr, social]
+      x: 38
+      y: 58
+    - nom: "Repaire du Tetsukage"
+      danger: 1
+      description: "Une porte ronde dans le flanc d'une colline, et derrière, un dédale. Le Tetsukage reçoit peu, et jamais deux fois au même endroit."
+      terrain: {couvert: eleve, visibilite: faible, espace: confine}
+      tags: [sûr, politique]
+      x: 52
+      y: 48
+    - nom: "Marché des rizières"
+      danger: 2
+      description: "Des étals sur les digues, entre les terrasses inondées. Les parias y vendent ce qu'on ne trouve nulle part ailleurs."
+      terrain: {couvert: faible, visibilite: bonne, espace: ouvert, eau: presente}
+      tags: [social, rumeurs]
+      x: 30
+      y: 76
+    - nom: "Marais d'entraînement"
+      danger: 3
+      description: "Des roseaux, de l'eau jusqu'aux genoux, et des cibles qu'on déplace chaque nuit. On y apprend à combattre sans voir."
+      terrain: {couvert: eleve, visibilite: faible, espace: ouvert, eau: abondante}
+      tags: [entraînement]
+      x: 68
+      y: 70
+    - nom: "Frontière du Riz"
+      danger: 4
+      description: "Une digue fortifiée face aux terres du Pays du Riz. Les Fûma y montent la garde, et personne ne les voit."
+      terrain: {couvert: moyen, visibilite: moyenne, espace: ouvert, eau: presente}
+      tags: [frontière, militaire]
+      x: 18
+      y: 22
+    - nom: "Forêt des Laboratoires"
+      danger: 6
+      description: "Des bois morts autour d'anciens laboratoires abandonnés. Ce qu'on y expérimentait n'est pas tout à fait parti."
+      terrain: {couvert: eleve, visibilite: faible, espace: confine}
+      tags: [dangereux, exploration]
+      x: 78
+      y: 24

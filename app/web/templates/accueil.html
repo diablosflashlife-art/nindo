@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import embleme, icone %}
+{% from "_paysages.html" import paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% from "_emblemes.html" import kanji %}
+{% from "_logo.html" import logo %}
+{# LE VILLAGE DU HÉROS. Pas toujours Konoha : celui de la dernière partie
+   jouée, et, sans partie, un des six au hasard. Le monde n'a pas un centre. #}
+{% set tete_recente = campagnes[0].pjs[0] if campagnes and campagnes[0].pjs else none %}
+{% set village_heros = (tete_recente.village_ref if tete_recente and tete_recente.village_ref
+                        else ['konoha', 'suna', 'kiri', 'kumo', 'iwa', 'oto']|random) %}
+{% block cle_page %}{{ village_heros }}{% endblock %}
+{% block barre %}<a href="/sante" class="petit">diagnostic</a>{% endblock %}
+{% block contenu %}
+
+{# Chaque paysage n'est dessiné qu'UNE fois pour toute la page ; les cartes
+   n'en tiennent qu'une référence. Avec trente-six campagnes, redessiner
+   coûtait 339 Ko et deux secondes et demie. #}
+{{ paysage_defs(['konoha'] + paysages_utilises) }}
+
+{# ---------------------------------------------------------------- LE HÉROS
+   L'estampe d'un village en pleine largeur, et son caractère au pinceau qui
+   prend la lumière. Un joueur doit savoir dans quel monde il entre avant
+   d'avoir lu une ligne. #}
+<section class="heros cadre-paysage" data-parallaxe>
+  {{ estampe(village_heros, 'heros') }}
+  <div class="heros-voile"></div>
+  <span class="heros-kanji" aria-hidden="true">{{ kanji(village_heros) }}</span>
+  <div class="feuilles" aria-hidden="true">
+    {% for f in [[6,17,0],[19,21,3],[33,15,7],[47,24,1],[58,19,11],
+                 [71,16,5],[83,23,9],[93,18,14]] %}
+    <i style="left:{{ f[0] }}%;animation-duration:{{ f[1] }}s;
+              animation-delay:-{{ f[2] }}s"></i>
+    {% endfor %}
+  </div>
+  <div class="heros-contenu">
+    {# La marque en majesté : le logo, le nom, sa traduction, le slogan. #}
+    <div class="blason">
+      {{ logo(128, 'heros', 'blason-logo') }}
+      <div>
+        <p class="eyebrow">Jeu de rôle narratif · maître du jeu IA</p>
+        <h1 class="nom-jeu">{{ jeu.nom }}<span class="nom-kanji" aria-hidden="true">{{ jeu.kanji }}</span></h1>
+        <p class="nom-sens">{{ jeu.kanji }} — {{ jeu.sens }}</p>
+      </div>
+    </div>
+    <p class="slogan">{{ jeu.slogan }}</p>
+    <p class="chapeau">Tu crées un personnage. L'IA crée ton équipe, ton
+      instructeur et ton rival — puis elle devient ton maître du jeu. Tu ne
+      prépares rien : tu découvres.</p>
+    <div class="heros-actions">
+      <a href="#nouvelle" class="bouton">Commencer une chronique</a>
+      {% if campagnes %}<a href="/campagnes/{{ campagnes[0].c.id }}" class="bouton discret">Reprendre « {{ campagnes[0].c.nom|truncate(28, true, '…') }} »</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------ LA VITRINE DES CLANS
+   Les six villages jouables et leurs maisons, avec les logos du wiki Solve.
+   C'est la carte d'identité du monde : on y choisit déjà, en regardant. #}
+{% set vv_villages = pack.villages() | selectattr('rang', 'equalto', 'majeur') | list %}
+<section class="vitrine">
+  <div class="vitrine-tete">
+    <h2>Six villages, dix-neuf clans</h2>
+    <span class="petit muted">Chacun porte son héritage — et ses secrets.</span>
+  </div>
+  <div class="vitrine-villages">
+    {% for v in vv_villages %}
+    <div class="panneau vitrine-village" data-cle="{{ v.id }}">
+      <div class="estampe-bandeau">{{ estampe(v.id, 'vv-' ~ v.id) }}</div>
+      <div class="vv-corps">
+        <div class="vv-nom">
+          <span>{{ embleme(v.id, 46) }}</span>
+          <span><strong>{{ v.nom_fr or v.nom }}</strong><small>{{ v.nom }}</small></span>
+        </div>
+        <div class="vv-clans">
+          {% for c in pack.clans(village=v.id) %}
+          <span class="vv-clan" data-cle="{{ c.id }}" title="{{ c.epithete or '' }}">
+            {{ embleme(c.id, 58) }}
+            <span>{{ c.nom }}<br><em>{{ 'sang' if c.rang == 'majeur' else 'art' }}</em></span>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="duo">
+  <div>
+    {% if campagnes %}
+      <p class="legende">{{ icone('journal', 13) }} Tes campagnes</p>
+      {% for e in campagnes %}
+      {# Le bandeau du premier personnage donne son village à la carte — sa
+         couleur comme son sceau. Une liste de campagnes devient une rangée
+         d'appartenances, ce qui se lit avant les mots. #}
+      {% set tete = e.pjs[0] if e.pjs else None %}
+      {% set marque = (tete.clan_ref or tete.village_ref) if tete else '' %}
+      {% set pays = tete.village_ref if tete and tete.village_ref else 'konoha' %}
+      <div class="campagne-bloc">
+      {# Le ménage. Une croix discrète, qui demande confirmation : effacer une
+         campagne efface tout ce qui s'y rattache, et ça ne se défait pas. #}
+      <form method="post" action="/campagnes/{{ e.c.id }}/supprimer"
+            class="campagne-supprimer"
+            onsubmit="return confirm('Effacer « {{ e.c.nom|e }} » et tout ce qui s\'y rattache ? Ça ne se défait pas.')">
+        <button type="submit" class="ferme-reprise" title="Effacer cette campagne"
+                aria-label="Effacer cette campagne">✕</button>
+      </form>
+      <a href="/campagnes/{{ e.c.id }}" class="panneau carte-campagne"
+         style="color:inherit" data-cle="{{ marque or 'sans_clan' }}">
+        {# La vignette du pays où la campagne se joue, puis le bandeau posé
+           dessus : on reconnaît une partie avant d'avoir lu son nom. #}
+        <span class="campagne-vue">
+          {{ paysage_ref(pays) }}
+          <span class="campagne-sceau">{{ embleme(marque or 'sans_clan', 62) }}</span>
+        </span>
+        <span class="campagne-corps">
+          <h2>{{ e.c.nom }}</h2>
+          <span class="tags">
+            <span class="tag or">tour {{ e.c.tour }}</span>
+            {% if e.c.phase == 'creation' %}
+              <span class="tag vermillon">personnage à créer</span>
+            {% elif e.c.phase == 'amorce' %}
+              <span class="tag vermillon">amorce en cours</span>
+            {% else %}<span class="tag jade">en cours</span>{% endif %}
+            {% for p in e.pjs %}<span class="tag">{{ p.nom }}</span>{% endfor %}
+            {% if not e.pjs %}<span class="tag vermillon">à commencer</span>{% endif %}
+          </span>
+          {% if e.c.resume_ouverture %}
+          <span class="petit muted" style="font-family:var(--display);
+                    font-style:italic;font-size:15.5px;line-height:1.65">
+            {{ e.c.resume_ouverture|truncate(190, true, '…') }}</span>
+          {% endif %}
+        </span>
+      </a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="panneau centre" style="padding:48px 28px">
+        <div style="display:flex;justify-content:center;margin-bottom:18px;opacity:.75"
+             data-cle="konoha">{{ embleme('konoha', 96) }}</div>
+        <h2>Aucune campagne</h2>
+        <p class="muted" style="max-width:44ch;margin:0 auto">
+          Tout commence par un personnage. Le monde, ton équipe et ta première
+          mission naîtront au moment où tu le scelleras.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="colonne">
+    <div class="panneau" id="nouvelle">
+      <p class="legende">{{ icone('destinee', 13) }} Nouvelle campagne</p>
+      <form method="post" action="/campagnes">
+        <div class="champ">
+          <label for="nom">Nom de la campagne</label>
+          <input id="nom" name="nom" required placeholder="L'Ombre du Sceau"></div>
+        <div class="champ">
+          <label for="epoque">Époque</label>
+          <select id="epoque" name="epoque">
+            {% for e in pack.epoques %}
+            <option value="{{ e.id }}" {% if e.id == 'naruto_p1' %}selected{% endif %}>
+              {{ e.nom }}</option>
+            {% endfor %}
+          </select></div>
+        <div class="champ">
+          <label for="ton">Ton souhaité</label>
+          <input id="ton" name="ton" placeholder="shonen sombre, conséquences durables"></div>
+        <div class="champ">
+          <label for="allure">Longueur des récits</label>
+          <select id="allure" name="allure">
+            <option value="court" selected>Courts — idéal à plusieurs, en stream</option>
+            <option value="normal">Normaux</option>
+            <option value="long">Longs — pour qui aime lire</option>
+          </select></div>
+        <button type="submit" class="plein">Commencer</button>
+      </form>
+    </div>
+
+    <div class="panneau serre">
+      <p class="legende">Comment ça se joue</p>
+      <div class="vignette">
+        <span class="av">{{ icone('identite', 17) }}</span>
+        <span class="corps"><span class="titre">Tu crées ton ninja</span>
+          <span class="sous">Nom, village, clan ou absence de clan, spécialisation.</span></span>
+      </div>
+      <div class="vignette">
+        <span class="av">{{ icone('destinee', 17) }}</span>
+        <span class="corps"><span class="titre">Le destin écrit la suite</span>
+          <span class="sous">Un potentiel latent, révélé par ce que tu vivras.</span></span>
+      </div>
+      <div class="vignette">
+        <span class="av">{{ icone('relation', 17) }}</span>
+        <span class="corps"><span class="titre">L'IA crée ton entourage</span>
+          <span class="sous">Instructeur, coéquipiers, rival — chacun avec ses secrets.</span></span>
+      </div>
+      <div class="vignette">
+        <span class="av">{{ icone('mission', 17) }}</span>
+        <span class="corps"><span class="titre">Puis elle mène la partie</span>
+          <span class="sous">Elle se souvient, elle garde ses secrets, elle te répond.</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

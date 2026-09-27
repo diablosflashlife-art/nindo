@@ -1,0 +1,63 @@
+{# ==========================================================================
+   LE PANNEAU D'AFFRONTEMENT
+   Rendu à deux endroits : dans la table au chargement, et renvoyé en
+   hx-swap-oob après chaque échange. Sans ce second usage, il fallait recharger
+   la page pour voir l'état des adversaires changer.
+
+   AUCUN CHIFFRE DE POINTS DE VIE. Le joueur lit « blessé », « il tient à
+   peine », et une jauge. Afficher 7/28 le ferait jouer contre une barre de
+   vie ; le lui cacher entièrement le laisserait sans prise sur la scène.
+   ========================================================================== #}
+<div id="rencontre" {% if oob %}hx-swap-oob="true"{% endif %}>
+{% if rencontre %}
+<div class="panneau rencontre">
+  <p class="legende">Affrontement · échange {{ rencontre.echange + 1 }} / {{ echanges_max }}</p>
+  <p class="renc-titre">{{ rencontre.titre }}</p>
+
+  {# --- l'adversaire, et ce qu'on voit de lui --------------------------- #}
+  {% for e in ennemis %}
+  <div class="stat ennemi">
+    <span class="nom">{{ e.nom }}</span>
+    <span class="valeur"><span class="tag vermillon">{{ e.etat }}</span></span>
+    <span class="jauge sang"><i style="width:{{ e.pct }}%"></i></span>
+  </div>
+  {% endfor %}
+
+  {% if hors_combat %}
+  <p class="petit muted" style="margin:.4rem 0 0">
+    Hors de combat : {{ hors_combat|join(', ') }}</p>
+  {% endif %}
+  {% if allies_au_combat %}
+  <p class="petit muted" style="margin:.2rem 0 0">
+    À tes côtés : {{ allies_au_combat|join(', ') }}</p>
+  {% endif %}
+
+  {# --- les avantages : ce qui réduit l'écart, pas un bonus au dé ------- #}
+  {% if leviers_acquis %}
+  <div class="tags" style="margin-top:.6rem">
+    {% for l in leviers_acquis %}<span class="tag jade">{{ l }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  {# --- la règle du fossé, dite en clair au joueur ---------------------- #}
+  {% if rencontre.objectif and rencontre.objectifs %}
+  <div class="fosse">
+    <p class="fosse-tete">Vaincre est hors de portée</p>
+    <p class="petit">{{ rencontre.fosse.get('note', '') }}. Tant que l'écart n'est
+      pas ramené à un cran, le frapper ne mène à rien — prépare le terrain,
+      trouve sa faille, ou dénoue la scène autrement.</p>
+    <p class="fosse-objectif">
+      {{ rencontre.objectif }}
+      <span class="val">{{ rencontre.progres }}/{{ progres_requis }}</span></p>
+    <span class="jauge or"><i style="width:{{ (rencontre.progres * 100 / progres_requis)|round|int }}%"></i></span>
+    <p class="petit muted" style="margin:.5rem 0 0">
+      Autres issues ouvertes : {{ rencontre.objectifs|join(' · ') }}</p>
+  </div>
+  {% elif rencontre.fosse.get('ecart', 0) >= 1 %}
+  <p class="petit muted" style="margin:.6rem 0 0">
+    Rapport de force : {{ rencontre.fosse.get('note', '') }}
+    {%- if rencontre.fosse.get('a_l_avantage') %} — à ton avantage{% endif %}.</p>
+  {% endif %}
+</div>
+{% endif %}
+</div>

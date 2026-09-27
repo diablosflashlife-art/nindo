@@ -1,0 +1,669 @@
+{# =========================================================================
+   LES PAYSAGES — l'illustration du monde, dessinée ici.
+
+   POURQUOI DU VECTORIEL PLUTÔT QUE DES IMAGES. Le jeu doit tourner hors
+   ligne, tenir dans un dépôt qu'on peut lire, et n'embarquer aucune œuvre
+   tierce. Un paysage dessiné en SVG pèse deux kilo-octets, reste net sur
+   n'importe quel écran, se décline en dix versions en changeant trois
+   dégradés, et se laisse animer par couches. Une photo ne fait rien de tout
+   ça.
+
+   LA MÉTHODE, ET ELLE EST LA MÊME POUR TOUS.
+     1. un ciel en dégradé profond, cinq à sept arrêts — c'est lui qui donne
+        l'heure et l'humeur ;
+     2. un astre bas, avec son halo ;
+     3. TROIS PLANS de silhouettes, du plus clair au plus sombre. La
+        perspective atmosphérique fait tout le travail de profondeur : au
+        loin, les formes se rapprochent de la couleur du ciel ;
+     4. des voiles de brume ENTRE les plans, jamais devant ni derrière tout ;
+     5. un premier plan très sombre qui encadre — c'est ce qui donne
+        l'impression qu'on regarde depuis quelque part.
+
+   Chaque plan porte une classe `p1` `p2` `p3` : le CSS les décale à des
+   vitesses différentes au défilement. La profondeur devient alors sensible
+   plutôt que suggérée.
+
+   AJOUTER UN PAYSAGE : une branche de plus dans `paysage`, rien d'autre. Ni
+   code Python, ni fichier à déposer.
+   ========================================================================= #}
+
+{# Le grain et le vignettage, communs à tous les paysages : sans eux, un
+   aplat vectoriel reste plat et « propre », ce qui est exactement le défaut
+   qu'on cherche à corriger. #}
+{% macro _finition(k) %}
+  <rect width="1200" height="420" fill="url(#vig-{{ k }})"/>
+  <rect width="1200" height="420" filter="url(#grain-{{ k }})" opacity=".12"/>
+{% endmacro %}
+
+{# Une forêt, et non un aplat vert. Un motif de cimes répété puis DÉCOUPÉ par
+   la silhouette du relief : la masse garde sa forme, mais son bord est
+   dentelé et sa surface a du grain. C'est ce qui sépare une illustration
+   d'un camembert. #}
+{% macro _cimes(k, id, couleur, ecart=26, haut=40) %}
+  <pattern id="cimes-{{ k }}-{{ id }}" width="{{ ecart }}" height="{{ haut }}"
+           patternUnits="userSpaceOnUse">
+    <path d="M0 {{ haut }}L{{ (ecart/2)|round|int }} 2 {{ ecart }} {{ haut }}z"
+          fill="{{ couleur }}"/>
+  </pattern>
+{% endmacro %}
+
+{% macro _defs_communs(k) %}
+  <radialGradient id="vig-{{ k }}" cx="50%" cy="58%" r="78%">
+    <stop offset=".45" stop-color="#000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+  </radialGradient>
+  <filter id="grain-{{ k }}" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <filter id="flou-{{ k }}" x="-10%" y="-10%" width="120%" height="120%">
+    <feGaussianBlur stdDeviation="3.2"/>
+  </filter>
+{% endmacro %}
+
+
+{# --- LE CADRE, ET RIEN D'AUTRE ----------------------------------------
+   `xMidYMax` ancre le recadrage SUR LE SOL. Centré, un bandeau haut coupait
+   le sol et le soleil pour ne garder que du ciel — on perdait tout le sujet
+   de l'image. #}
+{% macro paysage(cle, classe='') %}
+<svg class="paysage {{ classe }}" viewBox="0 0 1200 420"
+     preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  {{ scene(cle or 'konoha') }}
+</svg>
+{% endmacro %}
+
+
+{# --- UN SEUL DESSIN, AUTANT DE VUES QU'ON VEUT --------------------------
+   La page d'accueil affiche un paysage par campagne. Redessiné à chaque
+   carte, Konoha pesait trente-six fois : 339 Ko et deux secondes et demie
+   de rendu sur une base réelle. On le définit donc UNE fois en tête de
+   page, et chaque vue n'est plus qu'une référence de quelques octets.
+
+   `paysage_defs` déclare, `paysage_ref` affiche. Pour une page qui n'a
+   qu'une seule illustration, `paysage` tout court reste plus simple. #}
+{% macro paysage_defs(cles) %}
+<svg width="0" height="0" aria-hidden="true"
+     style="position:absolute;overflow:hidden">
+  <defs>
+    {% for c in cles|unique %}<g id="pay-{{ c }}">{{ scene(c) }}</g>{% endfor %}
+  </defs>
+</svg>
+{% endmacro %}
+
+{% macro paysage_ref(cle, classe='') %}
+<svg class="paysage {{ classe }}" viewBox="0 0 1200 420"
+     preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <use href="#pay-{{ cle or 'konoha' }}"/>
+</svg>
+{% endmacro %}
+
+
+{# --- LE DESSIN LUI-MÊME ------------------------------------------------- #}
+{% macro scene(cle) %}
+{% set k = cle or 'konoha' %}
+<g>
+
+{# ======================================================== KONOHA — le Feu
+   Fin de journée sur la futaie. L'ambre au ras de l'horizon contre le bleu
+   d'encre du zénith : c'est le contraste qui porte toute l'image. #}
+{% if k == 'konoha' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0a1020"/>
+      <stop offset=".28" stop-color="#15263a"/>
+      <stop offset=".52" stop-color="#2d3b41"/>
+      <stop offset=".70" stop-color="#6b4a35"/>
+      <stop offset=".84" stop-color="#b9673a"/>
+      <stop offset=".95" stop-color="#dd9153"/>
+      <stop offset="1"   stop-color="#f2c37a"/>
+    </linearGradient>
+    <radialGradient id="halo-{{ k }}" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffe2ad" stop-opacity=".95"/>
+      <stop offset=".45" stop-color="#f0a85e" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#f0a85e" stop-opacity="0"/>
+    </radialGradient>
+    {# Des cimes FINES. À vingt pixels d'écart elles font des tentes ; à dix,
+       elles font une forêt. C'est le réglage qui décide de tout ici. #}
+    {{ _cimes(k, 1, '#454f57', 13, 21) }}
+    {{ _cimes(k, 2, '#27392f', 11, 18) }}
+    <linearGradient id="roche-{{ k }}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"   stop-color="#241d17"/>
+      <stop offset=".62" stop-color="#3a2d21"/>
+      <stop offset="1"   stop-color="#6b4a2e"/>
+    </linearGradient>
+    {# La masse est LISSE, c'est le motif de cimes qui fait le dentelé. Un
+       relief anguleux PLUS des cimes donnait de grosses tentes vertes. #}
+    <clipPath id="cl1-{{ k }}">
+      <path d="M0 316c66-18 134 4 200-10 66-14 134-30 200-16 66 14 134 26 200 12
+               66-14 134-24 200-10 66 14 134 22 200 8 66-14 134-20 200-6v126H0z"/>
+    </clipPath>
+    <clipPath id="cl2-{{ k }}">
+      <path d="M392 420v-52c68-20 134 2 202-12 68-14 134-32 202-18 68 14 134 26 202 12
+               68-14 134-26 202-14v84z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="906" cy="342" r="180" fill="url(#halo-{{ k }})"/>
+  <circle cx="906" cy="342" r="40" fill="#ffeac4" opacity=".95"/>
+
+  {# plan 1 — les crêtes boisées du fond. Le bord est dentelé par le motif de
+     cimes, pas lissé : une ligne d'horizon propre trahit le vectoriel. #}
+  <g class="p1" opacity=".5" filter="url(#flou-{{ k }})">
+    <path d="M0 316c66-18 134 4 200-10 66-14 134-30 200-16 66 14 134 26 200 12
+             66-14 134-24 200-10 66 14 134 22 200 8 66-14 134-20 200-6v126H0z"
+          fill="#39434a"/>
+    <g clip-path="url(#cl1-{{ k }})">
+      <rect y="274" width="1200" height="150" fill="url(#cimes-{{ k }}-1)"/>
+    </g>
+  </g>
+
+  {# plan 2 — LA FALAISE TAILLÉE. Le sujet de l'image : elle monte haut, elle
+     occupe le tiers gauche, et sa face droite prend le couchant. Les quatre
+     effigies sont des masses le long de son arête, jamais des portraits —
+     c'est ce qui les rend crédibles à cette distance. #}
+  <g class="p2">
+    <path d="M0 420V214l54-22 32-34 66-12 28-32 82-6 34-28 88 10 30 32 52 14
+             22 36 40 18 16 42v158z" fill="url(#roche-{{ k }})"/>
+    {# l'arête éclairée, un liseré mince du côté du soleil #}
+    <path d="M0 214l54-22 32-34 66-12 28-32 82-6 34-28 88 10 30 32 52 14 22 36
+             40 18 16 42" fill="none" stroke="#e8a55e" stroke-opacity=".3"
+          stroke-width="2.5"/>
+    <g fill="#1a1510" opacity=".45">
+      <path d="M58 196c2-22 16-36 32-34s28 18 26 40l-4 30-58-6z"/>
+      <path d="M170 154c2-22 16-36 32-34s28 18 26 40l-4 32-58-8z"/>
+      <path d="M296 126c2-22 16-36 32-34s28 18 26 40l-4 32-58-8z"/>
+      <path d="M418 160c2-22 16-36 32-34s28 18 26 40l-4 30-58-6z"/>
+    </g>
+    {# les terrasses creusées à flanc, et les fenêtres du bureau du Kage #}
+    <g stroke="#c98a4a" stroke-opacity=".16" stroke-width="2" fill="none">
+      <path d="M0 300l530-58M0 346l520-52M10 392l506-48"/>
+    </g>
+    <g fill="#f0b86a" opacity=".4">
+      <path d="M96 318h14v18H96zM168 306h12v16h-12zM254 292h14v18h-14z
+               M340 282h12v16h-12z"/>
+    </g>
+  </g>
+
+  {# plan 2 bis — la canopée du village, cimes serrées, et les toits qui
+     accrochent la dernière lumière entre les arbres. #}
+  <g class="p2">
+    <path d="M392 420v-52c68-20 134 2 202-12 68-14 134-32 202-18 68 14 134 26 202 12
+             68-14 134-26 202-14v84z" fill="#17221d"/>
+    <g clip-path="url(#cl2-{{ k }})">
+      <rect y="332" width="1200" height="100" fill="url(#cimes-{{ k }}-2)"/>
+    </g>
+    <g fill="#e8a862" opacity=".6">
+      <path d="M470 404l18-14 18 14zM560 412l14-11 14 11zM656 402l18-14 18 14z
+               M760 410l14-11 14 11zM858 402l18-14 18 14zM960 410l14-11 14 11z
+               M1064 404l18-14 18 14z"/>
+    </g>
+    {# la brume de fin de journée entre le village et nous #}
+    <rect y="366" width="1200" height="54" fill="#dd9153" opacity=".1"/>
+  </g>
+
+  {# plan 3 — la ramure au-dessus de nous. C'est elle qui place le spectateur
+     SOUS les arbres plutôt que devant une carte postale. #}
+  <g class="p3" fill="#070a08">
+    <path d="M0 420V0h118c-14 40-40 58-42 104-2 50 22 74 18 124-4 46-30 74-26 122
+             2 30 10 46 6 70z" opacity=".97"/>
+    <path d="M1200 420V0h-128c18 46 44 62 40 112-4 52-26 72-20 124 6 48 28 76 22 124
+             -2 24-8 40-6 60z" opacity=".97"/>
+    <path d="M104 26c62-16 120 6 168 44-60-10-112-24-168-44z"/>
+    <path d="M118 128c50-18 104-4 146 26-52-4-100-10-146-26z"/>
+    <path d="M1078 14c-64-12-122 14-168 54 60-14 112-32 168-54z"/>
+    <path d="M1068 116c-54-14-106 4-146 36 52-8 100-18 146-36z"/>
+    {# quelques feuilles détachées : le détail qui casse la symétrie #}
+    <g opacity=".8">
+      <path d="M300 96c8-6 18-4 22 4-8 6-18 4-22-4z"/>
+      <path d="M382 168c8-6 18-4 22 4-8 6-18 4-22-4z"/>
+      <path d="M860 70c-8-6-18-4-22 4 8 6 18 4 22-4z"/>
+    </g>
+  </g>
+
+{# ========================================================= SUNA — le Vent
+   Midi écrasant. Ici la lumière ne vient pas d'un astre bas mais de partout
+   à la fois : le ciel est presque blanc à l'horizon. #}
+{% elif k == 'suna' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#1c2438"/>
+      <stop offset=".26" stop-color="#4a4a52"/>
+      <stop offset=".50" stop-color="#8f7a5c"/>
+      <stop offset=".72" stop-color="#cfa668"/>
+      <stop offset="1"   stop-color="#e8c98a"/>
+    </linearGradient>
+    <linearGradient id="dune-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9a069"/><stop offset="1" stop-color="#7a5c3a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="420" cy="150" r="120" fill="#ffe9bd" opacity=".16"/>
+  <circle cx="420" cy="150" r="34" fill="#fff3d6" opacity=".7"/>
+
+  <g class="p1" opacity=".45" filter="url(#flou-{{ k }})" fill="#9a8158">
+    <path d="M0 296c140-34 210 16 330-4 118-20 168-52 286-38 112 14 156 52 268 46
+             112-6 188-38 316-22v142H0z"/>
+  </g>
+
+  {# plan 2 — les murailles de grès et la faille d'entrée. Sommets érodés,
+     jamais plats : c'est du grès travaillé par le vent depuis mille ans. #}
+  <g class="p2">
+    <path d="M672 420V218l26-18 22 12 30-24 24 20 26-10 18 18v204z" fill="#7d5c39"/>
+    <path d="M880 420V188l32-22 26 14 34-28 30 24 30-12 24 22v234z" fill="#6d4f31"/>
+    <path d="M792 420V248l22-16 18 10 24-20 20 16 20-8 14 14v176z" fill="#5a4128"/>
+    {# la faille : deux parois qui ne se rejoignent pas, et l'ombre entre #}
+    <path d="M868 420V256l14-10v174z" fill="#2b1f13" opacity=".85"/>
+    <g stroke="#3d2c1b" stroke-opacity=".45" stroke-width="3" fill="none">
+      <path d="M674 254h94M682 300h110M884 226h130M890 280h146M898 336h140"/>
+    </g>
+    {# les ouvertures creusées à même la roche #}
+    <g fill="#231a10" opacity=".6">
+      <path d="M700 300h16v22h-16zM730 336h14v20h-14zM920 266h18v24h-18z
+               M956 312h16v22h-16zM930 360h14v20h-14z"/>
+    </g>
+  </g>
+
+  {# plan 3 — les dunes, en trois courbes qui se recouvrent #}
+  <g class="p3">
+    <path d="M0 352c150-40 250 8 370-12 118-20 190-44 300-28 108 16 168 44 280 36
+             94-6 168-26 250-14v86H0z" fill="url(#dune-{{ k }})" opacity=".95"/>
+    <path d="M0 400c180-36 260 6 402-10 140-16 220-30 340-16 118 14 196 30 300 22
+             60-4 110-12 158-8v32H0z" fill="#4a361f"/>
+    {# les crêtes prises par le vent #}
+    <path d="M120 356c90-22 150 4 236-8M640 356c80-14 140 8 222 2"
+          stroke="#e8c98a" stroke-opacity=".25" stroke-width="2" fill="none"/>
+  </g>
+
+{# ========================================================= KIRI — l'Eau
+   Rien n'est net. Les bancs de brume horizontaux découpent l'image en
+   tranches, et c'est le seul paysage où le premier plan est plus PÂLE que
+   le fond. #}
+{% elif k == 'kiri' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#161f28"/>
+      <stop offset=".34" stop-color="#2c3d48"/>
+      <stop offset=".62" stop-color="#53686f"/>
+      <stop offset=".86" stop-color="#8fa0a2"/>
+      <stop offset="1"   stop-color="#b4c1bf"/>
+    </linearGradient>
+    <linearGradient id="voile-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4cfcc" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#c4cfcc" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#c4cfcc" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+
+  {# plan 1 — des îlots rocheux irréguliers qui sortent de la brume #}
+  <g class="p1" fill="#2e4149" opacity=".7" filter="url(#flou-{{ k }})">
+    <path d="M40 302l48-78 22 26 30-62 34 50 26-22 44 86z"/>
+    <path d="M286 308l62-102 26 34 36-78 40 62 30-26 52 110z"/>
+    <path d="M620 298l52-88 22 28 32-66 36 54 26-22 46 94z"/>
+    <path d="M880 312l58-96 24 32 34-72 38 58 28-24 50 102z"/>
+  </g>
+  <rect class="p1" y="266" width="1200" height="62" fill="url(#voile-{{ k }})"/>
+
+  {# plan 2 — le grand pont, tendu d'un bord à l'autre. Le tablier ondule
+     légèrement : une poutre rigoureusement droite fait maquette. #}
+  <g class="p2">
+    <path d="M0 318c150-12 250 10 400 4s250-16 400-6 250 14 400 2v14
+             c-150 12-250-2-400-8s-250 14-400 8-250-18-400-6z" fill="#1d262b"/>
+    <g fill="#1d262b">
+      <path d="M148 330h16v90h-16zM330 328h16v92h-16zM512 334h16v86h-16z
+               M694 330h16v90h-16zM876 336h16v84h-16zM1058 330h16v90h-16z"/>
+    </g>
+    <g fill="#1d262b" opacity=".8">
+      <path d="M140 326h32l-4-22h-24zM322 324h32l-4-22h-24zM504 330h32l-4-22h-24z
+               M686 326h32l-4-22h-24zM868 332h32l-4-22h-24zM1050 326h32l-4-22h-24z"/>
+    </g>
+    {# les lanternes du pont, seules lueurs chaudes de la scène #}
+    <g fill="#e8c07a" opacity=".55">
+      <path d="M152 300h8v10h-8zM334 298h8v10h-8zM516 304h8v10h-8z
+               M698 300h8v10h-8zM880 306h8v10h-8zM1062 300h8v10h-8z"/>
+    </g>
+  </g>
+  <rect class="p2" y="328" width="1200" height="52" fill="url(#voile-{{ k }})" opacity=".85"/>
+
+  {# plan 3 — les pins tordus du premier plan, et l'eau plate #}
+  <g class="p3" fill="#101619">
+    <path d="M0 420v-66c62-8 98-32 144-28 48 4 68 32 122 30 56-2 80-28 132-24v88z"/>
+    <path d="M1200 420v-58c-72-10-114-28-164-24-52 4-74 28-128 26v56z"/>
+    <path d="M92 352c-4-22-16-34-34-40 18-2 30 4 38 16 4-18 0-32-10-44
+             16 8 24 22 24 42 6-14 16-22 30-26-14 12-22 26-24 46z"/>
+    <path d="M1126 344c4-20 16-32 32-38-16-2-28 4-36 16-4-18 0-30 10-42
+             -16 8-24 22-24 40-6-12-16-20-28-24 12 12 20 26 22 44z"/>
+  </g>
+  {# l'eau : un miroir mat, et deux traînées de reflet #}
+  <rect class="p3" y="388" width="1200" height="32" fill="#b4c1bf" opacity=".12"/>
+  <g class="p3" fill="#cfd9d6" opacity=".14">
+    <path d="M150 396h18v3h-18zM158 404h30v3h-30zM696 398h20v3h-20z
+             M688 408h34v3h-34z"/>
+  </g>
+
+{# ======================================================== KUMO — la Foudre
+   Les sommets percent une mer de nuages. L'éclair n'éclaire rien : il
+   découpe. #}
+{% elif k == 'kumo' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0d1226"/>
+      <stop offset=".34" stop-color="#232a4a"/>
+      <stop offset=".60" stop-color="#4a4d6e"/>
+      <stop offset=".82" stop-color="#8b8aa4"/>
+      <stop offset="1"   stop-color="#c3c0cf"/>
+    </linearGradient>
+    <linearGradient id="nuee-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d7d4e2" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#9d9bb4" stop-opacity=".35"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  {# la fracture dans le ciel #}
+  <path class="p1" d="M742 0l-34 96h44l-30 84 92-116h-46l32-64z"
+        fill="#e8e4ff" opacity=".22"/>
+
+  {# Des arêtes, pas des triangles : chaque sommet a son épaulement et sa
+     dent secondaire, et aucun n'est symétrique. #}
+  <g class="p1" fill="#39406a" opacity=".55" filter="url(#flou-{{ k }})">
+    <path d="M20 302l72-112 26 34 40-96 46 84 30-34 66 124z"/>
+    <path d="M300 312l84-130 28 40 44-82 40 76 34-30 74 126z"/>
+    <path d="M960 300l78-124 26 38 42-88 44 80 32-30 74 124z"/>
+  </g>
+
+  <g class="p2" fill="#242a48">
+    <path d="M540 322l92-166 30 44 46-122 56 110 36-40 94 174z"/>
+    {# la neige sur les faces au vent : elle suit l'arête, elle ne la coupe pas #}
+    <path d="M708 78l30 58-28 16-18-32 10-14-12-8z" fill="#e8e4ff" opacity=".2"/>
+    <path d="M632 156l22 38-22 12-14-24z" fill="#e8e4ff" opacity=".12"/>
+    <path d="M130 334l82-148 26 40 40-108 50 98 32-36 84 154z"/>
+    <path d="M278 186l26 48-24 14-16-28z" fill="#e8e4ff" opacity=".16"/>
+  </g>
+
+  {# la mer de nuages, entre les sommets et nous #}
+  <g class="p2">
+    <path d="M0 330c90-22 150 12 250 6s160-34 268-22 168 40 276 30 172-36 276-22
+             62 10 130 14v88H0z" fill="url(#nuee-{{ k }})"/>
+  </g>
+
+  <g class="p3" fill="#0b0e1c">
+    <path d="M0 420v-48c80-18 130 10 220 2s140-34 240-22 160 36 258 26 156-30 250-18
+             130 20 232 16v44z"/>
+    <path d="M0 420V236l96 184zM1200 420V214l-108 206z" opacity=".92"/>
+  </g>
+
+{# ========================================================== IWA — la Terre
+   Des strates, de la poussière, et rien de tendre. La lumière rasante
+   souligne chaque couche de roche. #}
+{% elif k == 'iwa' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#1a1a24"/>
+      <stop offset=".32" stop-color="#3d3438"/>
+      <stop offset=".58" stop-color="#6e5344"/>
+      <stop offset=".80" stop-color="#a97a50"/>
+      <stop offset="1"   stop-color="#d4a672"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="240" cy="330" r="130" fill="#e8b97c" opacity=".14"/>
+
+  <g class="p1" fill="#6a5442" opacity=".5" filter="url(#flou-{{ k }})">
+    <path d="M0 304l122-78 34 26 84-108 62 72 48-40 96 118 74-66 88 82 66-56
+             104 96 84-70 122 98 116-52v124H0z"/>
+  </g>
+
+  {# plan 2 — les tours de roche. Des blocs ÉBRÉCHÉS, avec leur éboulis au
+     pied : une colonne à bords nets ressemble à un pilier de béton. #}
+  <g class="p2">
+    <path d="M168 420V206l22-26 18 10 26-40 30 46 20-12 20 30v206z" fill="#54402f"/>
+    <path d="M168 420v-34l36-16 30 18 34-22 26 20 30-14v48z" fill="#3a2b1f"/>
+    <path d="M744 420V166l30-38 22 14 34-58 40 62 26-16 28 44v246z" fill="#4a382a"/>
+    <path d="M744 420v-40l44-20 36 22 40-26 32 24 36-18v58z" fill="#33261b"/>
+    <path d="M968 420V244l24-32 20 12 26-44 32 48 22-14 22 34v172z" fill="#3f3024"/>
+    {# les strates : elles s'interrompent et se décalent d'un bloc à l'autre #}
+    <g stroke="#d4a672" stroke-opacity=".2" stroke-width="3" fill="none">
+      <path d="M170 248h58M244 252h78M170 300h124M182 348h102
+               M746 224h96M858 232h78M746 288h150M760 348h158
+               M970 286h48M1030 292h62M970 342h116"/>
+    </g>
+  </g>
+
+  <g class="p3" fill="#181209">
+    <path d="M0 420v-96l130 34 120-52 156 58 140-40 166 52 148-46 160 54 180-36v72z"/>
+    <path d="M0 420V210l70 210zM1200 420V186l-84 234z" opacity=".95"/>
+  </g>
+  {# la poussière en suspension : ce qui rend l'air épais #}
+  <rect class="p3" y="300" width="1200" height="120" fill="#d4a672" opacity=".07"/>
+
+{# ========================================================= OTO — le Son
+   Une futaie de bambous pâles dans une lumière qui ne vient de nulle part.
+   Le seul paysage qui ne rassure pas. #}
+{% elif k == 'oto' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#120c1c"/>
+      <stop offset=".5" stop-color="#2a1d3e"/>
+      <stop offset="1" stop-color="#4c3766"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="620" cy="300" r="180" fill="#8f6fd0" opacity=".12"/>
+  <g class="p1" stroke="#6b52a0" stroke-opacity=".35" stroke-width="7" filter="url(#flou-{{ k }})">
+    <path d="M90 420V60M260 420V20M430 420V80M610 420V30M790 420V70M960 420V24M1120 420V66"/>
+  </g>
+  <g class="p2" stroke="#3b2a5c" stroke-width="13">
+    <path d="M170 420V40M500 420V10M700 420V50M1040 420V16"/>
+  </g>
+  <g class="p3" stroke="#150e22" stroke-width="24">
+    <path d="M60 420V-10M350 420V-20M880 420V-16M1160 420V-10"/>
+  </g>
+  <rect class="p3" y="330" width="1200" height="90" fill="#0d0916" opacity=".7"/>
+
+{# ========================================================== AME — la Pluie
+   Verticale, grise, industrielle. Il n'y a pas d'horizon : que des tours et
+   de l'eau qui tombe. #}
+{% elif k == 'ame' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12171c"/>
+      <stop offset=".55" stop-color="#2b343c"/>
+      <stop offset="1" stop-color="#55646d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <g class="p1" fill="#39454e" opacity=".6" filter="url(#flou-{{ k }})">
+    <path d="M120 420V150h60v270zM300 420V96h48v324zM620 420V180h70v240z
+             M900 420V120h54v300zM1080 420V206h56v214z"/>
+  </g>
+  <g class="p2" fill="#232c33">
+    <path d="M220 420V110h74v310zM440 420V60h86v360zM760 420V140h78v280z
+             M1000 420V84h68v336z"/>
+    <g fill="#8fd0e0" opacity=".5">
+      <path d="M244 150h12v12h-12zM268 190h12v12h-12zM466 110h12v12h-12z
+               M496 160h12v12h-12zM784 190h12v12h-12zM1024 130h12v12h-12z"/>
+    </g>
+  </g>
+  <g class="p3" stroke="#aebfc8" stroke-opacity=".35" stroke-width="1.6">
+    <path d="M40 0l-24 420M180 0l-24 420M340 0l-24 420M520 0l-24 420M700 0l-24 420
+             M880 0l-24 420M1040 0l-24 420M1180 0l-24 420"/>
+  </g>
+  <rect class="p3" y="380" width="1200" height="40" fill="#55646d" opacity=".35"/>
+
+{# ========================================================= KUSA — l'Herbe
+   Des plaines hautes que le vent couche. Le paysage le plus paisible du
+   pack, et c'est voulu : il sert de respiration. #}
+{% elif k == 'kusa' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2a2a"/>
+      <stop offset=".45" stop-color="#4a5c44"/>
+      <stop offset=".78" stop-color="#9aa35c"/>
+      <stop offset="1" stop-color="#d8cb84"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="960" cy="330" r="46" fill="#fff0bd" opacity=".8"/>
+  <g class="p1" fill="#5f7048" opacity=".55" filter="url(#flou-{{ k }})">
+    <path d="M0 318c160-30 260 14 400-2s230-40 360-26 200 40 320 32 120-14 120-14v112H0z"/>
+  </g>
+  <g class="p2" fill="#3c4a32">
+    <path d="M0 356c180-28 280 16 430 0s240-34 380-18 240 34 390 24v58H0z"/>
+  </g>
+  <g class="p3" stroke="#151d13" stroke-width="3" stroke-linecap="round" opacity=".9">
+    <path d="M30 420q6-52 24-76M110 420q-4-60 14-88M200 420q8-48 30-70
+             M300 420q-6-56 12-82M400 420q8-50 28-74M520 420q-4-58 14-86
+             M640 420q8-46 30-68M760 420q-6-54 12-80M880 420q8-50 28-74
+             M1000 420q-4-56 14-84M1120 420q8-48 30-70"/>
+  </g>
+
+{# ========================================================= TAKI — la Chute
+   Une paroi, de l'eau qui tombe, et de la brume qui remonte. La verticale
+   est le sujet. #}
+{% elif k == 'taki' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e1a18"/>
+      <stop offset=".5" stop-color="#1e3a33"/>
+      <stop offset="1" stop-color="#3f6a56"/>
+    </linearGradient>
+    <linearGradient id="eau-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe8e0" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#cfe8e0" stop-opacity=".15"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <g class="p1" fill="#20433a" opacity=".6" filter="url(#flou-{{ k }})">
+    <path d="M0 260l180-120 160 120 150-90 190 90 170-110 180 110 170-70v160H0z"/>
+  </g>
+  <g class="p2" fill="#16302a">
+    <path d="M0 420V150l240 30v240zM1200 420V128l-250 42v250z"/>
+    <path d="M440 420V186h320v234z" opacity=".9"/>
+  </g>
+  <rect class="p2" x="520" y="186" width="160" height="234" fill="url(#eau-{{ k }})"/>
+  <rect class="p3" y="360" width="1200" height="60" fill="#cfe8e0" opacity=".16"/>
+  <g class="p3" fill="#0a1714">
+    <path d="M0 420v-40c120-16 200 8 320-2s180-26 300-16 200 26 320 18 180-16 260-10v50z"/>
+  </g>
+
+{# ======================================== TERRAINS GÉNÉRIQUES — les lieux
+   Servent aux lieux de campagne qui n'appartiennent à aucun village :
+   une forêt, une frontière, des ruines. #}
+{% elif k == 'foret' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1410"/>
+      <stop offset=".5" stop-color="#182c22"/>
+      <stop offset="1" stop-color="#3e5a3c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <g class="p1" fill="#2c4432" opacity=".55" filter="url(#flou-{{ k }})">
+    <path d="M80 420l70-190 70 190zM300 420l80-220 80 220zM560 420l64-170 64 170z
+             M800 420l86-230 86 230zM1040 420l60-160 60 160z"/>
+  </g>
+  <g class="p2" fill="#17281c">
+    <path d="M160 420l90-250 90 250zM460 420l80-220 80 220zM740 420l96-260 96 260z
+             M1010 420l74-210 74 210z"/>
+  </g>
+  <g class="p3" fill="#070d09">
+    <path d="M0 420V20h70c-6 60-16 100-12 160 4 58 14 92 10 150s-12 58-8 90z"/>
+    <path d="M1200 420V10h-82c8 66 20 104 14 168-6 62-18 92-12 152 4 40 10 54 6 90z"/>
+    <path d="M0 420v-50c140-20 220 10 360-2s220-30 360-18 240 30 380 20 100-12 100-12v62z"/>
+  </g>
+
+{% elif k == 'frontiere' %}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#101827"/>
+      <stop offset=".45" stop-color="#2c3448"/>
+      <stop offset=".78" stop-color="#6d5f63"/>
+      <stop offset="1" stop-color="#b08a6a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="660" cy="322" r="120" fill="#e8c39a" opacity=".13"/>
+  <g class="p1" fill="#4b4a52" opacity=".5" filter="url(#flou-{{ k }})">
+    <path d="M0 310l190-110 170 110 180-90 200 90 180-120 280 120v110H0z"/>
+  </g>
+  {# le ravin et son pont de corde : tout le sens du lieu tient là #}
+  <g class="p2" fill="#272733">
+    <path d="M0 420V196l300 34v190z"/>
+    <path d="M1200 420V180l-320 44v196z"/>
+    <path d="M300 230c110 46 230 42 320-6" fill="none"
+          stroke="#1a1a22" stroke-width="5"/>
+    <g stroke="#1a1a22" stroke-width="2.5">
+      <path d="M340 246v-18M400 262v-22M470 268v-24M540 264v-22M610 248v-18"/>
+    </g>
+  </g>
+  <g class="p3" fill="#0a0a10">
+    <path d="M0 420v-70l180 22 160-34 200 40 180-28 200 36 280-24v58z"/>
+  </g>
+
+{% else %}
+  {# --------------------------------------------- défaut : le village, la nuit #}
+  <defs>
+    {{ _defs_communs(k) }}
+    <linearGradient id="ciel-{{ k }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b111d"/>
+      <stop offset=".45" stop-color="#1d2738"/>
+      <stop offset=".8" stop-color="#4a4152"/>
+      <stop offset="1" stop-color="#8a6a58"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#ciel-{{ k }})"/>
+  <circle cx="300" cy="120" r="34" fill="#e8e0cc" opacity=".55"/>
+  <g class="p1" fill="#2a3244" opacity=".55" filter="url(#flou-{{ k }})">
+    <path d="M0 320c150-30 240 10 380-6s230-36 360-22 220 36 340 28 120-12 120-12v112H0z"/>
+  </g>
+  {# les toits, et les lanternes qu'on allume #}
+  <g class="p2" fill="#1a2130">
+    <path d="M100 420V300l70-44 70 44v120zM280 420V330l60-38 60 38v90z
+             M440 420V290l84-52 84 52v130zM660 420V336l58-36 58 36v84z
+             M820 420V300l76-48 76 48v120zM1030 420V330l60-38 60 38v90z"/>
+  </g>
+  <g class="p2" fill="#e8b45c" opacity=".75">
+    <path d="M156 336h16v18h-16zM330 366h14v16h-14zM508 322h20v22h-20z
+             M704 372h14v16h-14zM880 338h18v20h-18zM1080 366h14v16h-14z"/>
+  </g>
+  <g class="p3" fill="#080b12">
+    <path d="M0 420v-44c160-14 250 14 400 4s240-26 380-16 240 26 380 18 40-6 40-6v44z"/>
+  </g>
+{% endif %}
+
+  {{ _finition(k) }}
+</g>
+{% endmacro %}
+
+
+{# --- QUEL PAYSAGE POUR QUEL LIEU ---------------------------------------
+   Un lieu de campagne n'a pas d'identifiant de village : il a un nom, des
+   tags et un terrain. On en déduit une scène, et on retombe sur le village
+   de la partie quand rien ne correspond. #}
+{% macro cle_du_lieu(lieu, village_ref='') %}{%- set nom = ((lieu.nom if lieu else '') ~ ' ' ~ (lieu.tags|join(' ') if lieu and lieu.tags else ''))|lower -%}
+{%- if 'forêt' in nom or 'foret' in nom or 'bois' in nom -%}foret
+{%- elif 'frontière' in nom or 'frontiere' in nom or 'poste' in nom or 'pont' in nom -%}frontiere
+{%- elif 'montagne' in nom or 'roche' in nom or 'col' in nom -%}iwa
+{%- elif 'eau' in nom or 'rivière' in nom or 'riviere' in nom or 'marais' in nom -%}taki
+{%- else -%}{{ village_ref or 'village' }}{%- endif -%}{% endmacro %}
+
+{% macro paysage_du_lieu(lieu, village_ref='') %}
+  {{ paysage(cle_du_lieu(lieu, village_ref)|trim) }}
+{% endmacro %}

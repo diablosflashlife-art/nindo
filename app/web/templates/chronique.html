@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import embleme, icone %}
+{% from "_paysages.html" import paysage_defs, paysage_ref %}
+{% from "_estampe.html" import estampe %}
+{% block cle_page %}{{ pj.village_ref or 'konoha' }}{% endblock %}
+{% block titre %}Chronique — {{ camp.nom }}{% endblock %}
+{% block barre %}
+  <span class="petit muted">Tour {{ camp.tour }}</span>
+  <a href="/campagnes/{{ camp.id }}" class="petit">← retour à la table</a>
+{% endblock %}
+{% block contenu %}
+
+{# ==========================================================================
+   LA CHRONIQUE.
+
+   Tout était déjà en base — résumés hiérarchiques, événements, rencontres,
+   destinées ouvertes — et le joueur n'en voyait jamais rien. Une campagne de
+   quarante tours ne laissait qu'un mur de scrollback qu'on ne relit pas.
+
+   Ici, l'histoire est dans l'ordre, avec ses chapitres, et le fil des tours
+   en cours au bout. C'est la page qu'on ouvre quand quelqu'un demande
+   « raconte ».
+   ========================================================================== #}
+{{ paysage_defs([pj.village_ref or 'konoha']) }}
+
+<section class="heros bandeau cadre-paysage" data-parallaxe>
+  {{ estampe(pj.village_ref or 'konoha', 'heros') }}
+  <div class="heros-voile"></div>
+  <span class="heros-kanji" aria-hidden="true">記</span>
+  <div class="heros-contenu">
+    <p class="eyebrow">Chronique</p>
+    <h1>{{ camp.nom }}</h1>
+    <p class="chapeau">
+      {{ camp.tour }} tour{{ 's' if camp.tour > 1 }} ·
+      {% for p in pjs %}{{ p.nom }}{{ ', ' if not loop.last }}{% endfor %}
+    </p>
+  </div>
+</section>
+
+<div class="chronique">
+
+  {# --- l'ouverture : le premier texte de la campagne ------------------- #}
+  {% if ouverture %}
+  <section class="chapitre">
+    <p class="chapitre-num">Au commencement</p>
+    <div class="panneau scene">
+      <div class="recit"><div class="tour-narration">{{ ouverture.narration }}</div></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# --- les chapitres : un résumé par tranche de tours ------------------ #}
+  {% for ch in chapitres %}
+  <section class="chapitre">
+    <p class="chapitre-num">Tours {{ ch.du }} à {{ ch.au }}</p>
+    <div class="panneau">
+      <p class="chapitre-texte">{{ ch.texte }}</p>
+      {% if ch.marquants %}
+      <div class="chapitre-traces">
+        {% for t in ch.marquants %}
+        <div class="trace">
+          <span class="trace-tour">T{{ t.index }}</span>
+          <span class="trace-corps">
+            {% if t.action and not t.action.startswith('[') %}
+            <span class="trace-action">{{ t.action|truncate(120, true, '…') }}</span>
+            {% endif %}
+            {% if t.effets %}
+            <span class="trace-effets">
+              {% for e in t.effets[:3] %}<span class="consequence">{{ e }}</span>{% endfor %}
+            </span>
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endfor %}
+
+  {# --- ce qui n'est pas encore résumé : le présent --------------------- #}
+  {% if en_cours %}
+  <section class="chapitre">
+    <p class="chapitre-num">
+      {% if couvert %}Depuis le tour {{ couvert + 1 }}{% else %}Jusqu'ici{% endif %}
+      <span class="chapitre-note">pas encore refermé</span>
+    </p>
+    <div class="panneau scene">
+      <div class="recit">
+        {% for t in en_cours[-4:] %}
+        <div class="tour">
+          <div class="tour-tete"><span class="tour-num">tour {{ t.index }}</span></div>
+          {% if t.action and not t.action.startswith('[') %}
+          <div class="bloc-action">
+            <span class="tour-acteur">{{ noms.get(t.character_id, 'Le joueur') }}</span>
+            <p class="tour-action">{{ t.action }}</p>
+          </div>
+          {% endif %}
+          <div class="bloc-narration">
+            <div class="tour-narration">{{ t.narration }}</div></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# --- le mot de la fin ------------------------------------------------ #}
+  {# `Campaign.phase` connaissait « terminee » et rien ne la déclenchait : une
+     campagne ne s'achevait jamais, elle s'arrêtait. L'épilogue est le seul
+     texte qu'on montre à quelqu'un qui n'a pas joué. #}
+  {% if epilogue %}
+  <section class="chapitre">
+    <p class="chapitre-num">Épilogue
+      <span class="chapitre-note">tour {{ epilogue.au_tour }}</span></p>
+    <div class="panneau scene epilogue">
+      <div class="recit">
+        {% for para in epilogue.texte.split('\n\n') %}
+        {% if para.strip() %}<p class="epilogue-texte">{{ para.strip() }}</p>{% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% if camp.phase == 'terminee' %}
+    <form method="post" action="/campagnes/{{ camp.id }}/rouvrir"
+          class="fin-actions">
+      <p class="petit muted" style="margin:0">
+        Cette chronique est close. Rien n'est effacé.</p>
+      <button type="submit" class="discret">Rouvrir — il reste une scène</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if camp.phase != 'terminee' %}
+  <section class="chapitre">
+    <div class="panneau serre fin-offre">
+      <p class="legende">{{ icone('sceau', 13) }} Le mot de la fin</p>
+      {% if fin_possible[0] %}
+      <p class="petit muted" style="margin:0 0 .8rem">
+        {{ fin_possible[1] }} Conclure écrit l'épilogue de cette campagne et
+        ferme la table. On peut toujours rouvrir ensuite.</p>
+      <form method="post" action="/campagnes/{{ camp.id }}/clore">
+        <input type="hidden" name="character_id" value="{{ pj.id }}">
+        <button type="submit">Clore la chronique</button>
+      </form>
+      {% else %}
+      <p class="petit muted" style="margin:0">{{ fin_possible[1] }}</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# --- la colonne des faits : ce qui s'est joué, en résumé ------------- #}
+  <section class="chapitre">
+    <p class="chapitre-num">Ce que cette campagne a produit</p>
+    <div class="bilan">
+
+      {% if jalons %}
+      <div class="panneau serre">
+        <p class="legende">{{ icone('journal', 13) }} Les moments qui ont compté</p>
+        {% for e in jalons %}
+        <div class="ligne" style="align-items:flex-start">
+          <span class="petit">{{ e.resume }}</span>
+          <span class="val">T{{ e.tour }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if rencontres %}
+      <div class="panneau serre">
+        <p class="legende">{{ icone('combat', 13) }} Les affrontements</p>
+        {% for r in rencontres %}
+        <div class="vignette">
+          <span class="av">{{ r.echange }}</span>
+          <span class="corps">
+            <span class="titre">{{ r.titre }}
+              <span class="tag {{ 'jade' if r.statut in ('gagnee','objectif_atteint')
+                                 else ('vermillon' if r.statut == 'perdue' else '') }}">
+                {{ r.statut|replace('_', ' ') }}</span></span>
+            <span class="sous">
+              tour {{ r.tour_debut }}{% if r.tour_fin and r.tour_fin != r.tour_debut %} à {{ r.tour_fin }}{% endif %}
+              · {{ r.echange }} échange{{ 's' if r.echange > 1 }}
+              {%- if r.butin %} · butin : {{ r.butin|join(', ')|truncate(60, true, '…') }}{% endif %}
+            </span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Ce que la destinée a ouvert — l'INDICE reçu, jamais la vérité. #}
+      {% if eveils %}
+      <div class="panneau serre">
+        <p class="legende">{{ icone('destinee', 13) }} Ce qui s'est ouvert en toi</p>
+        {% for t in eveils %}
+        <div class="vignette">
+          <span class="av">{{ {'pressenti':'?', 'en_eveil':'~', 'eveille':'✦'}.get(t.etat, '·') }}</span>
+          <span class="corps">
+            <span class="titre">{{ t.libelle or t.trait_ref }}
+              <span class="tag {{ 'or' if t.etat == 'eveille' else '' }}">{{ t.etat|replace('_', ' ') }}</span></span>
+            {% if t.revelation_initiale %}
+            <span class="sous">{{ t.revelation_initiale }}</span>
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+        <p class="petit muted" style="margin:10px 0 0">
+          Ce que tu lis ici est ce que ton personnage a perçu. Le reste est
+          écrit depuis le premier jour, et t'attend.</p>
+      </div>
+      {% endif %}
+
+      {# Les questions ouvertes, et celles qu'on a laissé se refermer. C'est le
+         seul endroit du jeu où NE RIEN FAIRE laisse une trace écrite — et la
+         raison pour laquelle la curiosité vaut quelque chose. On n'affiche que
+         la QUESTION : la vérité reste en base, où elle a toujours été. #}
+      {% if questions or questions_perdues %}
+      <div class="panneau serre">
+        <p class="legende">{{ icone('sceau', 13) }} Ce qui reste sans réponse</p>
+        {% for s in questions %}
+        <div class="vignette">
+          <span class="av">?</span>
+          <span class="corps">
+            <span class="titre">{{ s.question }}
+              <span class="tag or">piste {{ s.niveau_revele }}/3</span></span>
+            <span class="sous">Tu en as vu un bout. Il reste à tirer le fil.</span>
+          </span>
+        </div>
+        {% endfor %}
+        {% for s in questions_perdues %}
+        <div class="vignette">
+          <span class="av">✕</span>
+          <span class="corps">
+            <span class="titre">{{ s.question }}
+              <span class="tag vermillon">trop tard</span></span>
+            <span class="sous">Personne n'a cherché à temps. La réponse
+              existait ; elle n'est plus atteignable.</span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+  </section>
+</div>
+{% endblock %}

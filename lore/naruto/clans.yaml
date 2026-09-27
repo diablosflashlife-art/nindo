@@ -1,0 +1,695 @@
+# ==========================================================================
+# CLANS — l'appartenance est une IDENTITÉ choisie librement.
+# La lignée, elle, est un POTENTIEL : latente, conditionnelle, jamais acquise
+# à la création. Tous les Uchiha n'éveillent pas le Sharingan.
+#
+# SOURCE. Les clans, leur histoire, leur culture et leurs héritages suivent le
+# wiki du serveur Solve (wiki.solve-community.fr), résumés et reformulés pour
+# le jeu — pas recopiés. Deux exceptions, faute de page sur ce wiki : les
+# Yotsuki et le clan Bakuton suivent le canon.
+#
+# RANG. `majeur` = clan de SANG (héritage héréditaire : dôjutsu, cellules,
+# os, poison). `mineur` = clan d'ART (une force qui se transmet par
+# l'apprentissage). Ce n'est pas une mesure d'importance : les Ayatsuri
+# pèsent lourd à Suna, mais leur pouvoir a été forgé, pas hérité.
+#
+# `secret` est pour le MOTEUR seulement : c'est une amorce d'intrigue, jamais
+# montrée au joueur à la création. Là où le wiki garde une vérité voilée, on
+# ne l'invente pas — on note seulement qu'elle existe.
+# ==========================================================================
+clans:
+
+  # ================================================================ KONOHA
+  - id: hyuga
+    nom: "Hyûga"
+    epithete: "Les Yeux Célestes"
+    rang: majeur
+    village: konoha
+    prononciation: "Hyou-ga"
+    bonus: {taijutsu: 3, perception: 3}
+    lignee: byakugan
+    techniques: [jyuken_base]
+    traditions: ["Branche principale (Sôke) et branche secondaire (Bunke)",
+                 "Le Jûken frappe le réseau de chakra, pas le corps"]
+    obligations: ["Obéir à la Sôke", "Protéger le secret du Byakugan"]
+    histoire: "Lignée ancienne venue des terres montagneuses, symbole de pureté, de discipline et de noblesse. Leur regard pâle est la preuve vivante de leur sang."
+    tension: "La Bunke sert la Sôke sous la contrainte d'un sceau, et chaque génération le sait."
+
+  - id: uchiha
+    nom: "Uchiha"
+    epithete: "Les Démons aux Yeux Rouges"
+    rang: majeur
+    village: konoha
+    prononciation: "Ou-tchi-ha"
+    bonus: {genjutsu: 3, ninjutsu: 2}
+    affinite: [katon]
+    lignee: sharingan
+    techniques: [katon_goukakyuu]
+    traditions: ["Le feu comme origine et comme serment", "Un héritage unique, sans branches rivales"]
+    obligations: ["Rendre des comptes au chef de clan", "Ne pas déshonorer le nom"]
+    histoire: "L'une des plus anciennes flammes du Pays du Feu, cofondatrice de Konoha aux côtés des Senju. Le Sharingan est lié à l'âme de son porteur plus qu'à son corps."
+    tension: "Un clan fondateur que le village regarde avec méfiance."
+
+  - id: senju
+    nom: "Senju"
+    epithete: "Les Descendants de la Forêt"
+    rang: majeur
+    village: konoha
+    prononciation: "Sène-djou"
+    bonus: {endurance: 3, chakra: 2}
+    lignee: mokuton
+    techniques: []
+    traditions: ["Deux lignées : celle d'Hashirama et celle de Tobirama",
+                 "Les cellules Senju, densité de vie inscrite dans la chair"]
+    obligations: ["Servir le village avant le clan"]
+    histoire: "Mémoire même du monde shinobi. Leur chair porte une vitalité hors norme, et chez les plus rares, le bois vivant répond au chakra."
+    tension: "Deux héritages d'une même famille, qui ne comprennent pas le devoir de la même façon."
+
+  - id: aburame
+    nom: "Aburame"
+    epithete: "Les Maîtres des Essaims"
+    rang: majeur
+    village: konoha
+    prononciation: "A-bou-ra-mé"
+    bonus: {perception: 3, controle_chakra: 2}
+    lignee: essaim_rare
+    techniques: [kikaichu]
+    traditions: ["Aucune lignée supérieure : chaque essaim vaut par son hôte",
+                 "Le Jardin Aburame, forêt du nord-ouest, domaine du clan"]
+    obligations: ["Nourrir l'essaim de son propre chakra"]
+    histoire: "Mémoire silencieuse du Pays du Feu. Leurs insectes vivent dans leur corps — Kikaichû le plus souvent, et parfois une évolution plus rare, plus dangereuse."
+    tension: "Une vieille guerre les oppose aux Kamizuru d'Iwa, et elle n'a jamais été soldée."
+
+  # ================================================================== KIRI
+  - id: hozuki
+    nom: "Hôzuki"
+    epithete: "La Royauté des Abysses"
+    rang: majeur
+    village: kiri
+    prononciation: "Hoh-zou-ki"
+    bonus: {controle_chakra: 3, social: 2}
+    affinite: [suiton]
+    lignee: hydrification
+    techniques: [suika]
+    traditions: ["Le pouvoir se conquiert par l'intelligence et se garde par la manipulation",
+                 "On négocie d'abord, on noie ensuite"]
+    obligations: ["Servir l'emprise du clan sur Kiri"]
+    histoire: "Nés, disent les légendes, dans les failles abyssales de l'archipel. Artisans de la création de Kirigakure, ils règnent par les pactes, les dettes et les mariages politiques — et leur corps peut devenir eau."
+    tension: "Ils tiennent le village. Tout le monde attend le jour où ils le lâcheront."
+    secret: "Ce que les Hôzuki font des Yokushin, et ce qu'ils leur retirent."
+
+  - id: karatachi
+    nom: "Karatachi"
+    epithete: "Les Assassins de la Brume"
+    rang: majeur
+    village: kiri
+    prononciation: "Ka-ra-ta-tchi"
+    bonus: {vitesse: 3, perception: 2}
+    lignee: kirisogan
+    techniques: [kirigakure]
+    traditions: ["L'absence est une forme de pouvoir", "Le basilic veille là où la brume cache la mort"]
+    obligations: ["Ne jamais être vu frapper"]
+    histoire: "Venus du Récif Brumeux, une île que les marins contournaient. Les couteaux invisibles de Kiri : pas une armée, pas une bannière — une présence qu'on sent quand la brume s'épaissit."
+    tension: "Le village les craint autant qu'il les emploie."
+    secret: "Le Récif Brumeux garde une part de l'histoire du clan que ses propres membres ne connaissent pas."
+
+  - id: hoshigaki
+    nom: "Hoshigaki"
+    epithete: "Les Instincts Prédateurs"
+    rang: majeur
+    village: kiri
+    prononciation: "Ho-chi-ga-ki"
+    bonus: {endurance: 3, chakra: 3}
+    affinite: [suiton]
+    lignee: cellules_isonade
+    techniques: [suiton_requin]
+    traditions: ["Seule la force fait loi", "Le clan vit en banc : on y mérite sa place en mordant"]
+    obligations: ["Ne jamais devenir la proie des siens"]
+    histoire: "Descendants des pêcheurs du Dock Sanglant, engloutis par les profondeurs et recrachés changés. Branchies, crocs, peau épaisse : la malédiction d'Isonade inscrite dans leurs cellules."
+    tension: "Leur chair est convoitée. Leur instinct, lui, ne demande pas la permission."
+
+  - id: yokushin
+    nom: "Yokushin"
+    epithete: "Les Sombres Esclaves"
+    rang: mineur
+    village: kiri
+    prononciation: "Yo-kou-chine"
+    bonus: {endurance: 2, chakra: 1}
+    lignee: peche
+    techniques: []
+    traditions: ["Servir les Hôzuki, et par eux la Brume", "Beaucoup n'ont même pas de nom"]
+    obligations: ["Être lié à un maître Hôzuki"]
+    histoire: "Officiellement, un clan ancien revenu soudain dans l'équilibre de Kiri, fidèle au pouvoir central. Dans les faits, un statut inférieur, une fonction plutôt qu'une famille — et chacun porte un péché qui n'est pas le sien."
+    tension: "On ne demande pas à un Yokushin ce qu'il veut. On lui demande à qui il appartient."
+    secret: "Les Yokushin ne sont pas nés : ils ont été faits, dans des laboratoires sous l'océan."
+
+  # ================================================================== SUNA
+  - id: jishaku
+    nom: "Jishaku"
+    epithete: "Les Descendants du Désert"
+    rang: majeur
+    village: suna
+    prononciation: "Dji-cha-kou"
+    bonus: {controle_chakra: 3, endurance: 2}
+    affinite: [futon, doton]
+    lignee: sakin
+    techniques: [suna_shigure]
+    traditions: ["Le désert est un ancêtre, pas un décor", "Shibuki Jishaku unit les dunes et fonda Sunagakure"]
+    obligations: ["Le village passe avant la famille"]
+    histoire: "Présents avant les cités, avant les routes, avant le pays lui-même. Clan des Kazekage, il a appris à bâtir avec le sable plutôt que contre lui."
+    tension: "Porter ce nom, c'est être jugé à l'aune des Kazekage qui l'ont porté."
+    secret: "Une branche maudite, celle de Shinkuro Jishaku, hante encore le sang du clan."
+
+  - id: mugen
+    nom: "Mugen"
+    epithete: "La Secte des Ombres"
+    rang: majeur
+    village: suna
+    prononciation: "Mou-guène"
+    bonus: {genjutsu: 4, intelligence: 1}
+    lignee: soryugan
+    techniques: [inton_voile]
+    traditions: ["Le monde visible n'est qu'une surface fragile", "Rites ésotériques et Inton"]
+    obligations: ["Garder les rites de la secte"]
+    histoire: "Venus d'ailleurs que des dunes, jamais vraiment nomades. Un clan façonné par l'illusion et une quantité d'Inton qui dépasse l'esprit ordinaire. Nui Mugen reste leur sommet inatteignable."
+    tension: "La mort du Kazekage Hoshino Mugen et la guerre contre les Jishaku ont laissé des cicatrices que le village n'a pas refermées."
+
+  - id: ayatsuri
+    nom: "Ayatsuri"
+    epithete: "Les Marionnettistes"
+    rang: mineur
+    village: suna
+    prononciation: "A-ya-tsou-ri"
+    bonus: {controle_chakra: 2, intelligence: 1}
+    techniques: [kugutsu_base]
+    traditions: ["Deux branches : Bunraku et Sabuku", "Au sortir de l'académie, on construit sa première marionnette"]
+    obligations: ["Une marionnette se transmet, elle ne se vend pas"]
+    histoire: "Là où d'autres héritèrent d'un pouvoir par le sang, les Ayatsuri forgèrent le leur dans l'exil, l'obsession et des savoirs interdits. Artisans, stratèges, gardiens d'un équilibre fragile."
+    tension: "La Bataille des Cordes les a laissés seuls quand Suna était prise en étau. Ils ne l'ont pas oublié."
+    secret: "Sous le domaine du clan, un arbre dont l'origine n'est jamais racontée."
+
+  - id: ensho
+    nom: "Ensho"
+    epithete: "Les Enfants des Quatre Vents"
+    rang: mineur
+    village: suna
+    prononciation: "Ène-cho"
+    bonus: {vitesse: 2, social: 1}
+    affinite: [futon]
+    techniques: [futon_guide]
+    traditions: ["Chaque enfant naît avec un vent intérieur : Aquilon, Sirocco, Zéphyr ou Levant",
+                 "Le commerce des vents : suivre les courants plutôt que tracer des routes contre eux"]
+    obligations: ["Honorer la route de Fujin Ensho"]
+    histoire: "Le plus ancien clan du Pays du Vent. Ils parcouraient le désert bien avant les villages, et en ont fait des routes marchandes. Ils ont pris la place des Raimei dans les échanges de Suna."
+    tension: "Les Raimei partis à Oto n'ont pas pardonné."
+
+  # =================================================================== OTO
+  - id: raimei
+    nom: "Raimei"
+    epithete: "Les Virtuoses du Chaos"
+    rang: majeur
+    village: oto
+    prononciation: "Raï-méï"
+    bonus: {ninjutsu: 2, social: 2, perception: 1}
+    lignee: resonance
+    techniques: [onpa]
+    traditions: ["Shindorai, les nobles artistes aux cheveux violets",
+                 "Moku no Mei, les maîtres des vibrations, qui se privent de la vue"]
+    obligations: ["Ne pas laisser son don s'échapper dans le sommeil"]
+    histoire: "Ancienne lignée du Pays du Vent, maîtres des routes et des vibrations. Supplantés par les Ensho, ils partirent fonder avec d'autres le Pays du Son. Leur corps est l'origine même du son qu'ils propagent."
+    tension: "Deux lignées d'un même sang, et chacune accuse l'autre d'avoir trahi la nature du son."
+
+  - id: kaguya
+    nom: "Kaguya"
+    epithete: "Les Monstres Osseux"
+    rang: majeur
+    village: oto
+    prononciation: "Ka-gou-ya"
+    bonus: {taijutsu: 3, endurance: 2}
+    lignee: shikotsumyaku
+    techniques: [teshi_sendan]
+    traditions: ["La souffrance partagée fait la famille, pas le sang",
+                 "Les quatre degrés de la souffrance, enseignés par Kuraichi"]
+    obligations: ["Protéger l'Os-Source : le sternum"]
+    histoire: "Nés d'une expérience à Otogakure, d'un rêve de perfection devenu blessure. Une famille bâtie par ceux que ce rêve avait transformés. Leur nom vient d'une légende : la princesse Kagaya."
+    tension: "La lignée Suza affirme qu'on naît Kaguya ; la famille de Kuraichi, qu'on le devient."
+
+  - id: fuma
+    nom: "Fûma"
+    epithete: "Les Ombres et les Lames"
+    rang: mineur
+    village: oto
+    prononciation: "Fou-ma"
+    bonus: {vitesse: 2, perception: 1}
+    techniques: [fuma_lancer, lancer_arme]
+    traditions: ["Le bukijutsu est une langue, pas un complément", "Le Rite du Doigt Manquant"]
+    obligations: ["L'assassinat obéit à des codes, jamais à l'humeur"]
+    histoire: "Nés entre le Pays du Riz et le Pays du Fer, là où personne ne protégeait personne. Oto ne pouvait pas frapper de front : les Fûma frappaient ailleurs. Aucun don héréditaire — seulement l'arme et la doctrine."
+    tension: "Un clan qui ne vit que de la guerre des autres."
+    secret: "Le Sceau du Kaimon, dont le clan ne parle qu'entre soi."
+
+  - id: salamandre
+    nom: "Salamandre"
+    epithete: "Les Empoisonneurs"
+    rang: majeur
+    village: oto
+    prononciation: "Sa-la-man-dre"
+    bonus: {endurance: 2, controle_chakra: 2, chakra: 1}
+    lignee: poche_salamandre
+    techniques: [brume_toxique]
+    traditions: ["Les Miraculés, nés avec la poche ; les Adoptés, qui doivent tout prouver",
+                 "Sayaka, la Reine des Salamandres, choisit ses porteurs"]
+    obligations: ["Protéger la poche salamandre comme d'autres protègent leurs yeux"]
+    histoire: "Fondé par Denki, orphelin de Konoha parti rejoindre le projet naissant d'Otogakure, refuge des parias. Depuis la guerre de ses héritiers, les Miraculés dirigent le clan d'une main de fer."
+    tension: "Naître avec le poison n'est pas la même chose que le recevoir — et les Adoptés le savent."
+
+  # ================================================================== KUMO
+  - id: yotsuki
+    nom: "Yotsuki"
+    epithete: "Le sang du Raikage"
+    rang: majeur
+    village: kumo
+    prononciation: "Yo-tsou-ki"
+    bonus: {taijutsu: 3, vitesse: 2}
+    affinite: [raiton]
+    lignee: foudre_yotsuki
+    techniques: [raiton_decharge]
+    traditions: ["La force se prouve, elle ne se raconte pas"]
+    obligations: ["Répondre au Raikage avant sa famille"]
+    histoire: "Clan de guerriers de Kumogakure, lié à la lignée des Raikage. Leur corps se renforce de foudre ; on y entre par l'effort avant d'y entrer par le nom."
+    tension: "La hiérarchie du clan double celle du village, et les deux se disputent."
+
+  - id: chinoike
+    nom: "Chinoike"
+    epithete: "Les Saigneurs"
+    rang: majeur
+    village: kumo
+    prononciation: "Tchi-no-i-ké"
+    bonus: {genjutsu: 2, controle_chakra: 2, perception: 1}
+    lignee: ketsuryugan
+    techniques: [chi_bari]
+    traditions: ["Le sang n'est jamais anodin : il porte la mémoire", "On naît avec les yeux violets"]
+    obligations: ["Ne rien oublier : ni une dette, ni une humiliation"]
+    histoire: "Originaires du Pays des Sources Chaudes, sur des frontières jamais en paix. Leur réputation les a précédés à Kumo. Leurs yeux violets rougissent quand le sang répond."
+    tension: "Kumo les a accueillis. Le reste du monde se souvient pourquoi on les chassait."
+
+  - id: narukami
+    nom: "Narukami"
+    epithete: "Les Poings Foudroyants"
+    rang: majeur
+    village: kumo
+    prononciation: "Na-rou-ka-mi"
+    bonus: {taijutsu: 3, endurance: 2}
+    affinite: [raiton]
+    lignee: cellules_foudroyantes
+    techniques: [poing_foudroyant]
+    traditions: ["Le corps doit être assez fort pour porter la foudre, l'esprit assez droit pour n'en être pas dévoré",
+                 "Taijutsu et nintaijutsu dès l'enfance"]
+    obligations: ["Rester debout quand le corps gronde"]
+    histoire: "L'un des plus anciens piliers du Pays de la Foudre, présent au milieu des falaises avant que Kumo ne dompte les orages. Le clan qui a donné au village son identité la plus brutale."
+    tension: "Un Narukami qui renonce à se battre n'a plus de place parmi les siens."
+
+  # =================================================================== IWA
+  - id: kamizuru
+    nom: "Kamizuru"
+    epithete: "Les Apiculteurs"
+    rang: majeur
+    village: iwa
+    prononciation: "Ka-mi-zou-rou"
+    bonus: {perception: 2, controle_chakra: 2, intelligence: 1}
+    lignee: pheromones
+    techniques: [essaim_abeilles]
+    traditions: ["Une société ne survit que si chacun connaît sa place : la Ruche",
+                 "La Reine des Abeilles vit au cœur de la Ruche Royale"]
+    obligations: ["Servir la ruche avant soi"]
+    histoire: "Venus des terres rudes qui deviendraient le Pays de la Terre. Ils ne portent pas la ruche en eux comme les Aburame : ils en font partie, par les phéromones qu'ils produisent — et leur miel est une matière vivante."
+    tension: "La Guerre des Essaims contre les Aburame n'a jamais vraiment cessé."
+
+  - id: clan_bakuton
+    nom: "Bakuton"
+    epithete: "Les Artificiers d'Iwa"
+    rang: majeur
+    village: iwa
+    prononciation: "Ba-kou-tone"
+    bonus: {ninjutsu: 3, endurance: 2}
+    affinite: [doton, raiton]
+    lignee: bakuton
+    techniques: [mine_explosive]
+    traditions: ["On compte toujours ses doigts après l'entraînement",
+                 "Le Corps d'Explosion recrute dans le clan"]
+    obligations: ["Répondre à l'appel du Corps d'Explosion"]
+    histoire: "Lignée d'Iwa dont le sang mêle Terre et Foudre et fait détoner la matière. Le village en a fait une unité, le Corps d'Explosion. Peu de vieux dans ses rangs."
+    tension: "Iwa y voit une arme, pas des gens."
+
+# ==========================================================================
+# LIGNÉES — paliers, déclencheurs, coûts
+# ==========================================================================
+lignees:
+  - id: sharingan
+    nom: "Sharingan"
+    prononciation: "Chah-rine-gane"
+    famille: dojutsu
+    clan: uchiha
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Un tomoe",    apport: 6,  cout_chakra: 2, declencheur: "un choc émotionnel violent"}
+      - {niveau: 2, nom: "Deux tomoe",  apport: 12, cout_chakra: 4, declencheur: "un combat où la vie est réellement en jeu"}
+      - {niveau: 3, nom: "Trois tomoe", apport: 22, cout_chakra: 6, declencheur: "une maîtrise prolongée",
+         prerequis: {controle_chakra: 18}}
+      - {niveau: 4, nom: "Mangekyô Sharingan", apport: 45, cout_chakra: 14,
+         declencheur: "la perte d'un être cher, par sa propre faute",
+         prerequis: {controle_chakra: 26}, cout_persistant: vue_degradee}
+    risques: ["épuisement du chakra", "cécité progressive au palier 4"]
+  - id: byakugan
+    nom: "Byakugan"
+    prononciation: "Bya-kou-gane"
+    famille: dojutsu
+    clan: hyuga
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Vision étendue", apport: 8,  cout_chakra: 2, declencheur: "l'éveil naturel, vers dix ans"}
+      - {niveau: 2, nom: "Champ complet",  apport: 16, cout_chakra: 4, declencheur: "un entraînement rigoureux du clan"}
+      - {niveau: 3, nom: "Vision du réseau de chakra", apport: 26, cout_chakra: 7,
+         declencheur: "la maîtrise du Jûken", prerequis: {controle_chakra: 20}}
+    risques: ["angle mort permanent dans la nuque"]
+  - id: mokuton
+    nom: "Mokuton"
+    prononciation: "Mo-kou-tone"
+    famille: kekkei_genkai
+    clan: senju
+    transmission: eveil
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Pousse", apport: 14, cout_chakra: 8, declencheur: "une fusion réussie du Suiton et du Doton"}
+      - {niveau: 2, nom: "Ramure", apport: 30, cout_chakra: 16, declencheur: "un usage en situation désespérée",
+         prerequis: {controle_chakra: 24}}
+      - {niveau: 3, nom: "Ermite Naturel", apport: 44, cout_chakra: 20,
+         declencheur: "une symbiose complète avec l'énergie naturelle",
+         prerequis: {controle_chakra: 28}}
+    risques: ["rejet du corps", "épuisement massif"]
+  - id: essaim_rare
+    nom: "Essaim rare"
+    prononciation: "Ki-kaï-tchou"
+    famille: kekkei_genkai
+    clan: aburame
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Essaim affirmé", apport: 7, cout_chakra: 3,
+         declencheur: "un essaim nourri jusqu'à l'épuisement pour protéger quelqu'un"}
+      - {niveau: 2, nom: "Évolution de l'essaim", apport: 16, cout_chakra: 7,
+         declencheur: "une mutation de l'essaim — Rinkaichû, Kidaichû ou une autre, jamais choisie",
+         prerequis: {controle_chakra: 16}}
+    risques: ["un essaim affamé se nourrit sur l'hôte"]
+  - id: hyoton
+    nom: "Hyôton"
+    prononciation: "Hyoh-tone"
+    famille: kekkei_genkai
+    transmission: hereditaire
+    rarete: rare
+    prerequis_trait: affinite_suiton
+    paliers:
+      - {niveau: 1, nom: "Gel spontané", apport: 8,  cout_chakra: 4, declencheur: "un danger mortel en présence d'eau ou de froid"}
+      - {niveau: 2, nom: "Miroirs",      apport: 18, cout_chakra: 10, declencheur: "un entraînement dirigé"}
+    risques: ["persécution : Kiri a purgé ces lignées"]
+  - id: hydrification
+    nom: "Liquéfaction"
+    prononciation: "Sui-ka no jutsu"
+    famille: kekkei_genkai
+    clan: hozuki
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Chair molle", apport: 7, cout_chakra: 3,
+         declencheur: "une lame qui aurait dû être mortelle"}
+      - {niveau: 2, nom: "Corps liquide", apport: 16, cout_chakra: 9,
+         declencheur: "un entraînement du clan, en immersion",
+         prerequis: {controle_chakra: 16}}
+    risques: ["déshydratation : le corps réclame de l'eau après chaque usage",
+              "le Raiton traverse l'eau"]
+  - id: kirisogan
+    nom: "Kirisôgan"
+    prononciation: "Ki-ri-soh-gane"
+    famille: dojutsu
+    clan: karatachi
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Œil du Récif", apport: 7, cout_chakra: 2,
+         declencheur: "une nuit de brume où l'on aurait dû mourir"}
+      - {niveau: 2, nom: "La brume révèle", apport: 16, cout_chakra: 5,
+         declencheur: "un premier assassinat que personne n'a vu",
+         prerequis: {controle_chakra: 16}}
+      - {niveau: 3, nom: "Pacte du basilic", apport: 26, cout_chakra: 9,
+         declencheur: "la rencontre d'un basilic, et y survivre"}
+    risques: ["hors de la brume et de la nuit, l'œil ne donne presque rien"]
+  - id: cellules_isonade
+    nom: "Cellules Hoshigaki"
+    prononciation: "I-so-na-dé"
+    famille: kekkei_genkai
+    clan: hoshigaki
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Branchies", apport: 7, cout_chakra: 2,
+         declencheur: "une noyade qui n'en est pas une"}
+      - {niveau: 2, nom: "Instinct du banc", apport: 16, cout_chakra: 6,
+         declencheur: "un combat gagné par l'instinct contre la raison"}
+      - {niveau: 3, nom: "Forme prédatrice", apport: 28, cout_chakra: 11,
+         declencheur: "céder entièrement à la faim", cout_persistant: instinct_dominant}
+    risques: ["l'instinct décide parfois à ta place", "ta chair est convoitée"]
+  - id: peche
+    nom: "Péché"
+    prononciation: "Yo-kou-chine"
+    famille: kekkei_genkai
+    clan: yokushin
+    transmission: greffe
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Le vice s'installe", apport: 9, cout_chakra: 3,
+         declencheur: "le lien avec un maître Hôzuki", cout_persistant: vice}
+      - {niveau: 2, nom: "Le vice déborde", apport: 20, cout_chakra: 8,
+         declencheur: "céder au péché devant témoins"}
+    risques: ["le péché n'est pas le tien : il pèse quand même",
+              "Luxure, Avarice, Gourmandise, Colère, Paresse, Envie ou Orgueil — jamais choisi"]
+  - id: sakin
+    nom: "Sakin"
+    prononciation: "Sa-kine"
+    famille: kekkei_genkai
+    clan: jishaku
+    transmission: eveil
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Sable obéissant", apport: 8, cout_chakra: 4,
+         declencheur: "un danger immédiat, en plein désert"}
+      - {niveau: 2, nom: "Sable d'Or", apport: 20, cout_chakra: 10,
+         declencheur: "écouter le désert au lieu de le commander",
+         prerequis: {controle_chakra: 18}}
+      - {niveau: 3, nom: "Ermite Désertique", apport: 36, cout_chakra: 16,
+         declencheur: "laisser le désert te traverser",
+         prerequis: {controle_chakra: 24}}
+    risques: ["loin du désert, le sable répond mal", "la branche de Shinkuro"]
+  - id: soryugan
+    nom: "Sôryugan"
+    prononciation: "Soh-ryou-gane"
+    famille: dojutsu
+    clan: mugen
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Spirale violette", apport: 7, cout_chakra: 3,
+         declencheur: "voir, une fois, les ténèbres de quelqu'un"}
+      - {niveau: 2, nom: "Clarté obscure", apport: 17, cout_chakra: 7,
+         declencheur: "un rite de la secte mené à son terme",
+         prerequis: {controle_chakra: 16}}
+      - {niveau: 3, nom: "Les pas de Nui", apport: 30, cout_chakra: 12,
+         declencheur: "perdre pied entre illusion et réalité, et revenir",
+         prerequis: {controle_chakra: 24}}
+    risques: ["le regard trop long trouble ceux qui le croisent — et celui qui le porte"]
+  - id: jiton
+    nom: "Jiton"
+    prononciation: "Dji-tone"
+    famille: kekkei_genkai
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Sable obéissant", apport: 8, cout_chakra: 4,
+         declencheur: "un danger immédiat, sans arme sous la main"}
+      - {niveau: 2, nom: "Bouclier permanent", apport: 18, cout_chakra: 10,
+         declencheur: "avoir survécu à ce qu'on ne devait pas survivre",
+         prerequis: {controle_chakra: 18}}
+    risques: ["le sable répond aussi à la peur"]
+  - id: resonance
+    nom: "Vibrations Raimei"
+    prononciation: "Raï-méï"
+    famille: kekkei_genkai
+    clan: raimei
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Le corps résonne", apport: 7, cout_chakra: 3,
+         declencheur: "un cauchemar qui réveille tout le monde autour de toi"}
+      - {niveau: 2, nom: "Vibration dirigée", apport: 16, cout_chakra: 7,
+         declencheur: "un chant ou un combat où le son porte la décision"}
+      - {niveau: 3, nom: "Les Serviteurs", apport: 28, cout_chakra: 12,
+         declencheur: "un pacte avec ce que Kazan Raimei a laissé derrière lui"}
+    risques: ["le don s'échappe dans le sommeil", "les Moku no Mei paient leur maîtrise de leurs yeux"]
+  - id: shikotsumyaku
+    nom: "Shikotsumyaku"
+    prononciation: "Chi-ko-tsou-mya-kou"
+    famille: kekkei_genkai
+    clan: kaguya
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Ossature malléable", apport: 12, cout_chakra: 4, declencheur: "une blessure grave"}
+      - {niveau: 2, nom: "Danse des os",       apport: 28, cout_chakra: 10, declencheur: "un combat à mort"}
+      - {niveau: 3, nom: "L'Os-Source", apport: 40, cout_chakra: 16,
+         declencheur: "regarder en face la quatrième souffrance",
+         prerequis: {endurance: 22}}
+    risques: ["fragilité osseuse à long terme", "l'Os-Source, s'il se brise, ne revient pas"]
+  - id: poche_salamandre
+    nom: "Poche salamandre"
+    prononciation: "Sa-la-man-dre"
+    famille: kekkei_genkai
+    clan: salamandre
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Le poison répond", apport: 8, cout_chakra: 3,
+         declencheur: "survivre à un poison qui aurait tué n'importe qui"}
+      - {niveau: 2, nom: "Chair toxique", apport: 18, cout_chakra: 8,
+         declencheur: "tuer par le poison, et le vouloir"}
+      - {niveau: 3, nom: "Ermite Salamandre", apport: 34, cout_chakra: 15,
+         declencheur: "être choisi par Sayaka, la Reine des Salamandres",
+         prerequis: {controle_chakra: 22}}
+    risques: ["un Adopté doit toujours prouver davantage", "le poison ne distingue pas toujours"]
+  - id: foudre_yotsuki
+    nom: "Chair de foudre"
+    prononciation: "Yo-tsou-ki"
+    famille: kekkei_genkai
+    clan: yotsuki
+    transmission: eveil
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Décharge", apport: 7, cout_chakra: 3,
+         declencheur: "un coup porté au-delà de ses forces"}
+      - {niveau: 2, nom: "Armure vivante", apport: 18, cout_chakra: 8,
+         declencheur: "un entraînement sous l'orage, avec le clan",
+         prerequis: {endurance: 18}}
+    risques: ["le cœur paie ce que les muscles empruntent"]
+  - id: ketsuryugan
+    nom: "Ketsuryûgan"
+    prononciation: "Kè-tsou-ryou-gane"
+    famille: dojutsu
+    clan: chinoike
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Le violet rougit", apport: 8, cout_chakra: 3,
+         declencheur: "voir couler le sang de quelqu'un qu'on aime"}
+      - {niveau: 2, nom: "Le sang obéit", apport: 18, cout_chakra: 8,
+         declencheur: "un combat où l'on fait saigner pour survivre",
+         prerequis: {controle_chakra: 17}}
+      - {niveau: 3, nom: "Mémoire du sang", apport: 30, cout_chakra: 13,
+         declencheur: "venger une dette ancienne du clan"}
+    risques: ["la rancune du clan devient la tienne"]
+  - id: cellules_foudroyantes
+    nom: "Cellules foudroyantes"
+    prononciation: "Na-rou-ka-mi"
+    famille: kekkei_genkai
+    clan: narukami
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Muscles chargés", apport: 8, cout_chakra: 3,
+         declencheur: "tenir debout quand le corps entier gronde"}
+      - {niveau: 2, nom: "Poing de l'orage", apport: 18, cout_chakra: 8,
+         declencheur: "vaincre à mains nues un adversaire plus fort",
+         prerequis: {taijutsu: 18}}
+    risques: ["un esprit qui plie est dévoré par la foudre qu'il porte"]
+  - id: pheromones
+    nom: "Phéromones de la Ruche"
+    prononciation: "Ka-mi-zou-rou"
+    famille: kekkei_genkai
+    clan: kamizuru
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "L'essaim écoute", apport: 7, cout_chakra: 3,
+         declencheur: "un essaim qui te suit sans qu'on l'ait appelé"}
+      - {niveau: 2, nom: "Miélomancie", apport: 17, cout_chakra: 7,
+         declencheur: "façonner le miel vivant sous l'œil d'un ancien",
+         prerequis: {controle_chakra: 16}}
+      - {niveau: 3, nom: "Ermite Abeille", apport: 32, cout_chakra: 14,
+         declencheur: "être reconnu par la Reine des Abeilles"}
+    risques: ["la ruche passe avant l'individu — y compris toi"]
+  - id: bakuton
+    nom: "Bakuton"
+    prononciation: "Ba-kou-tone"
+    famille: kekkei_genkai
+    clan: clan_bakuton
+    transmission: hereditaire
+    rarete: rare
+    paliers:
+      - {niveau: 1, nom: "Détonation de contact", apport: 9, cout_chakra: 5,
+         declencheur: "une colère qu'on n'a pas su contenir"}
+      - {niveau: 2, nom: "Charge façonnée", apport: 19, cout_chakra: 11,
+         declencheur: "un entraînement du Corps d'Explosion",
+         prerequis: {controle_chakra: 15}}
+    risques: ["mutilation : le Corps d'Explosion compte peu de vétérans intacts"]
+  - id: senjutsu
+    nom: "Senjutsu (mode ermite)"
+    prononciation: "Sène-djou-tsou"
+    famille: senjutsu
+    transmission: eveil
+    rarete: tres_rare
+    paliers:
+      - {niveau: 1, nom: "Perception de l'énergie naturelle", apport: 10, cout_chakra: 6,
+         declencheur: "un apprentissage auprès d'un maître d'un lieu sacré"}
+      - {niveau: 2, nom: "Mode ermite imparfait", apport: 26, cout_chakra: 14,
+         declencheur: "une méditation poussée au-delà du raisonnable",
+         prerequis: {controle_chakra: 24}, cout_persistant: petrification_partielle}
+    risques: ["pétrification en cas d'échec"]
+  - id: marque_maudite
+    nom: "Marque maudite"
+    famille: kekkei_genkai
+    transmission: greffe
+    rarete: tres_rare
+    paliers:
+      - {niveau: 1, nom: "Premier état", apport: 16, cout_chakra: 6,
+         declencheur: "avoir survécu à l'apposition de la marque", cout_persistant: dependance}
+      - {niveau: 2, nom: "Second état",  apport: 34, cout_chakra: 14,
+         declencheur: "un abandon volontaire au pouvoir de la marque", cout_persistant: corruption}
+    risques: ["dépendance", "corruption mentale", "un maître qui tire les fils"]
+
+# ==========================================================================
+# BIJÛ
+# ==========================================================================
+bijuu:
+  - {id: ichibi,  nom: "Shukaku",   queues: 1, village_hote: suna,   prononciation: "Chou-ka-kou", personnalite: "insomniaque, provocateur, instable"}
+  - {id: nibi,    nom: "Matatabi",  queues: 2, village_hote: kumo,   prononciation: "Ma-ta-ta-bi", personnalite: "féline, ironique, distante"}
+  - {id: sanbi,   nom: "Isobu",     queues: 3, village_hote: kiri,   prononciation: "I-so-bou",    personnalite: "timide, prudente, fuyante"}
+  - {id: yonbi,   nom: "Son Gokû",  queues: 4, village_hote: iwa,    prononciation: "Sone Go-kou", personnalite: "fier, bourru, honorable"}
+  - {id: gobi,    nom: "Kokuô",     queues: 5, village_hote: iwa,    prononciation: "Ko-kou-oh",   personnalite: "calme, obstiné"}
+  - {id: rokubi,  nom: "Saiken",    queues: 6, village_hote: kiri,   prononciation: "Saï-kène",    personnalite: "bavard, pacifique"}
+  - {id: nanabi,  nom: "Chômei",    queues: 7, village_hote: taki,   prononciation: "Tchoh-méï",   personnalite: "enjoué, insouciant"}
+  - {id: hachibi, nom: "Gyûki",     queues: 8, village_hote: kumo,   prononciation: "Gyou-ki",     personnalite: "loyal, coopératif, sarcastique"}
+  - {id: kyubi,   nom: "Kurama",    queues: 9, village_hote: konoha, prononciation: "Kou-ra-ma",   personnalite: "rancunier, méprisant, immensément fier"}
+
+# ==========================================================================
+# OBJETS NOTABLES
+# ==========================================================================
+objets:
+  - {id: kubikiribocho, nom: "Kubikiribôchô", categorie: arme_legendaire, ensemble: sept_epees,
+     prononciation: "Kou-bi-ki-ri-boh-tchoh", effets: {bonus_degats: 6, requis: {endurance: 18}},
+     particularite: "Se régénère en absorbant le fer du sang qu'elle verse."}
+  - {id: samehada, nom: "Samehada", categorie: arme_legendaire, ensemble: sept_epees,
+     prononciation: "Sa-mé-ha-da", effets: {bonus_degats: 5},
+     particularite: "Absorbe le chakra de ses victimes. Choisit son porteur."}
+  - {id: rouleau_scellement, nom: "Rouleau de scellement interdit", categorie: parchemin,
+     particularite: "Contient des techniques que le village a choisi d'oublier."}
+  - {id: kunai_trois_branches, nom: "Kunai à trois branches", categorie: outil,
+     particularite: "Support de marquage pour les techniques de téléportation."}

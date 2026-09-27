@@ -1,0 +1,49 @@
+# Publier une version de Nindō.
+#
+# Déclenché par une étiquette « vX.Y.Z » (voir app/version.py et NOUVEAUTES.md).
+# GitHub vérifie le jeu (tests), fabrique Nindō.exe, et l'attache à la version :
+# le lanceur de chaque joueur la proposera au lancement suivant.
+name: Publier
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances
+        run: pip install -r requirements.txt -r requirements-app.txt
+
+      - name: L'étiquette correspond à la version, et les notes existent
+        id: notes
+        run: python scripts/notes_version.py "${{ github.ref_name }}"
+
+      - name: Tests
+        env:
+          LLM_PROVIDER: mock
+        run: python -m pytest -q
+
+      - name: Fabrication de Nindo.exe
+        run: pyinstaller nindo.spec --noconfirm
+
+      - name: Archive
+        shell: pwsh
+        run: Compress-Archive -Path dist/Nindo -DestinationPath Nindo-windows.zip
+
+      - name: Publication
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.notes.outputs.titre }}
+          body_path: notes.md
+          files: Nindo-windows.zip

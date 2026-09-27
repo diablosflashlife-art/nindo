@@ -1,0 +1,39 @@
+{# ==========================================================================
+   LE CHOIX MÉCANIQUE DU JOUEUR, pendant un affrontement.
+
+   Pourquoi des boutons plutôt que de laisser le modèle deviner : « je recule
+   en couvrant Mio » est une posture défensive, et un arbitre local la classait
+   une fois sur trois en offensive. Le joueur écrit ce qu'il veut ; ce qu'il
+   RISQUE, il le choisit lui-même.
+
+   Vide hors combat — le champ reste absent du formulaire, et le tour ordinaire
+   ne change pas d'un octet.
+   ========================================================================== #}
+<div id="postures" {% if oob %}hx-swap-oob="true"{% endif %}>
+{% if rencontre %}
+  <p class="legende">Ce que tu risques cet échange</p>
+  <div class="postures">
+    {% for p in postures %}
+    <label class="posture {% if loop.first %}choisie{% endif %}">
+      <input type="radio" name="posture" value="{{ p.code }}"
+             {% if loop.first %}checked{% endif %}>
+      <span class="posture-nom">{{ p.label }}</span>
+      <span class="posture-aide">{{ p.aide }}</span>
+      {% if p.chakra %}<span class="posture-cout">{{ p.chakra }} chakra</span>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+
+  {# Le levier ne concerne que la manœuvre : masqué le reste du temps plutôt
+     que désactivé, pour ne pas suggérer un choix qui n'en est pas un. #}
+  <div class="levier-choix" hidden>
+    <label class="petit muted" for="levier">Quel avantage cherches-tu à établir ?</label>
+    <select name="levier" id="levier">
+      {% for l in leviers %}
+      <option value="{{ l.code }}" {% if l.acquis %}disabled{% endif %}>
+        {{ l.libelle }}{% if l.acquis %} — déjà acquis{% endif %}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endif %}
+</div>

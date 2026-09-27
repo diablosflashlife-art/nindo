@@ -1,0 +1,300 @@
+# ==========================================================================
+# ARCHÉTYPES DE MISSION — la variété comme donnée
+# ==========================================================================
+# Le générateur de missions ne part pas d'une page blanche : il tire un
+# archétype, l'ancre sur des entités RÉELLES de la campagne (un lieu, un
+# PNJ, une faction, une bête, un minerai), ajoute une complication, et ne
+# demande au modèle que d'habiller le résultat.
+#
+# C'est ce qui empêche les quarante missions d'une campagne de se ressembler,
+# tout en garantissant qu'aucune ne cite un lieu ou un personnage inventé.
+#
+#   rangs         rangs de mission où l'archétype est plausible
+#   commanditaire qui paie — change complètement le ton d'une même mission
+#   ancre         les collections de lore où puiser l'objet de la mission
+#   clause        objectif non dit, révélé en cours de mission (facultatif)
+# ==========================================================================
+
+archetypes_mission:
+
+  # ------------------------------------------------------------- rang D
+  - id: nuisible
+    nom: "Nuisible"
+    rangs: [D, C]
+    categorie: extermination
+    commanditaire: [civil, village]
+    lieu_type: [village, foret, ferme, aqueduc]
+    ancre: [faune]
+    objectif: "Chasser ou tuer une bête qui empêche des civils de travailler."
+    enjeu: "Sans résultat, un quartier ou un hameau perd son eau, sa route ou sa récolte."
+    complications:
+      - "La bête n'est pas seule : c'est une portée, et la mère n'est pas là."
+      - "Quelqu'un l'a attirée là volontairement."
+      - "Le commanditaire a sous-évalué la bête pour payer moins."
+      - "Un enfant du hameau l'a apprivoisée et s'y oppose."
+    duree_tours: [3, 7]
+
+  - id: recolte
+    nom: "Récolte"
+    rangs: [D, C, B]
+    categorie: recolte
+    commanditaire: [civil, village, clan]
+    lieu_type: [foret, montagne, marais, desert]
+    ancre: [flore, mineraux]
+    objectif: "Rapporter une quantité précise d'une ressource, intacte et dans les délais."
+    enjeu: "Un patient, un atelier ou une garnison dépend de la livraison."
+    complications:
+      - "Le gisement est sur un territoire qui n'est pas celui du commanditaire."
+      - "Une autre équipe a été envoyée chercher la même chose."
+      - "La ressource ne se conserve que quelques heures."
+      - "Ce qui vit sur le gisement n'était pas dans le briefing."
+    duree_tours: [4, 9]
+
+  - id: courrier
+    nom: "Courrier"
+    rangs: [D, C]
+    categorie: livraison
+    commanditaire: [village, conseil, guilde]
+    lieu_type: [route, village, frontiere]
+    ancre: []
+    objectif: "Porter un document ou un objet scellé à un destinataire nommé, sans l'ouvrir."
+    enjeu: "Le contenu décide de quelque chose que le porteur n'a pas à savoir."
+    clause: "Le destinataire réel n'est pas celui annoncé."
+    complications:
+      - "Le sceau est déjà brisé quand on le remet."
+      - "Quelqu'un attend sur la route, et sait ce que vous portez."
+      - "Le destinataire refuse de prendre livraison."
+      - "Le document désigne un membre de l'équipe."
+    duree_tours: [3, 6]
+
+  - id: corvee
+    nom: "Corvée"
+    rangs: [D]
+    categorie: service
+    commanditaire: [civil]
+    lieu_type: [village, ferme]
+    ancre: []
+    objectif: "Un travail ingrat et sans danger que personne ne veut faire."
+    enjeu: "La réputation de l'équipe auprès des civils — qui parlent entre eux."
+    complications:
+      - "Le client cache pourquoi il ne peut pas le faire lui-même."
+      - "On tombe sur quelque chose qui n'aurait pas dû être là."
+      - "Un autre client offre mieux pour laisser tomber celui-ci."
+    duree_tours: [2, 4]
+
+  # ------------------------------------------------------------- rang C
+  - id: escorte
+    nom: "Escorte"
+    rangs: [C, B, A]
+    categorie: escorte
+    commanditaire: [civil, guilde, conseil, village_etranger]
+    lieu_type: [route, frontiere, col, mer]
+    ancre: [faune, bingo_book]
+    objectif: "Amener une personne ou un convoi à destination, vivant et à l'heure."
+    enjeu: "Ce que la personne transporte, sait ou représente."
+    clause: "Le protégé a menti sur la raison de son voyage."
+    complications:
+      - "Le protégé désobéit aux consignes au pire moment."
+      - "La menace vient de l'intérieur du convoi."
+      - "La destination a changé de mains pendant le trajet."
+      - "On est suivi depuis le départ, sans attaque — on attend quelque chose."
+    duree_tours: [6, 14]
+
+  - id: reconnaissance
+    nom: "Reconnaissance"
+    rangs: [C, B, A]
+    categorie: reconnaissance
+    commanditaire: [village, conseil]
+    lieu_type: [frontiere, foret, ruines, montagne]
+    ancre: [faune, organisations]
+    objectif: "Observer, cartographier, rentrer. Ne pas être vu, ne pas engager."
+    enjeu: "Une décision militaire attend le rapport."
+    complications:
+      - "Il y a quelqu'un sur place qui ne devrait pas y être."
+      - "L'ordre de ne pas engager devient intenable."
+      - "Le terrain ne correspond pas aux cartes existantes."
+      - "On découvre que quelqu'un a déjà fait ce rapport, et qu'il a disparu."
+    duree_tours: [5, 11]
+
+  - id: enquete
+    nom: "Enquête"
+    rangs: [C, B, A]
+    categorie: enquete
+    commanditaire: [village, clan, conseil, civil]
+    lieu_type: [village, quartier, archives]
+    ancre: [organisations, bingo_book, flore]
+    objectif: "Comprendre ce qui s'est passé, et le prouver."
+    enjeu: "Quelqu'un sera accusé, protégé ou disculpé selon la conclusion."
+    clause: "Le commanditaire connaît déjà la réponse et cherche une couverture."
+    complications:
+      - "Deux témoignages fiables se contredisent totalement."
+      - "La piste mène à quelqu'un que l'équipe connaît."
+      - "Une preuve disparaît entre sa découverte et sa remise."
+      - "On est prié d'arrêter, poliment, par quelqu'un de haut placé."
+    duree_tours: [7, 16]
+
+  - id: protection_rapprochee
+    nom: "Protection"
+    rangs: [C, B, A]
+    categorie: protection
+    commanditaire: [conseil, clan, civil, guilde]
+    lieu_type: [village, ceremonie, auberge]
+    ancre: [bingo_book, organisations]
+    objectif: "Garder quelqu'un en vie pendant une durée ou un événement donné."
+    enjeu: "Sa mort déclenche autre chose que sa mort."
+    complications:
+      - "Le protégé veut se rendre là où il est le plus vulnérable."
+      - "La menace n'est pas un assassin mais une accusation."
+      - "Il y a deux protégés et on ne peut en couvrir qu'un."
+      - "Le protégé est celui contre qui il faudra témoigner ensuite."
+    duree_tours: [5, 12]
+
+  # ------------------------------------------------------------- rang B
+  - id: capture
+    nom: "Capture"
+    rangs: [B, A]
+    categorie: capture
+    commanditaire: [village, conseil]
+    lieu_type: [route, ruines, village_etranger, foret]
+    ancre: [bingo_book]
+    objectif: "Ramener une cible vivante et capable de parler."
+    enjeu: "Ce qu'elle sait vaut plus que ce qu'elle a fait."
+    clause: "L'ordre de la ramener vivante n'est pas partagé par tout le monde."
+    complications:
+      - "La cible se laisse prendre trop facilement."
+      - "Une seconde équipe a l'ordre de la tuer."
+      - "La cible a une raison légitime, et le dit bien."
+      - "Elle a pris quelqu'un en otage pour forcer la négociation."
+    duree_tours: [8, 18]
+
+  - id: sabotage
+    nom: "Sabotage"
+    rangs: [B, A]
+    categorie: sabotage
+    commanditaire: [conseil, village]
+    lieu_type: [pont, mine, entrepot, frontiere]
+    ancre: [mineraux, organisations]
+    objectif: "Rendre une chose inutilisable sans que l'on sache qui l'a fait."
+    enjeu: "Une attribution publique déclencherait une guerre."
+    complications:
+      - "Des civils travaillent sur place et n'ont pas été évacués."
+      - "La cible a plus de valeur intacte qu'on ne le croyait."
+      - "Le matériel prévu ne suffit pas, et il faut improviser."
+      - "Un témoin survit, et on sait qui c'est."
+    duree_tours: [7, 15]
+
+  - id: exfiltration
+    nom: "Exfiltration"
+    rangs: [B, A, S]
+    categorie: exfiltration
+    commanditaire: [conseil, organisations]
+    lieu_type: [village_etranger, prison, monastere]
+    ancre: [organisations, bingo_book]
+    objectif: "Sortir quelqu'un d'un endroit dont il ne peut pas sortir seul."
+    enjeu: "Sa présence là-bas est une preuve que personne ne veut voir produite."
+    clause: "La personne à sortir ne veut pas partir."
+    complications:
+      - "La fenêtre se ferme plus tôt qu'annoncé."
+      - "Il y a une deuxième personne à sortir, non prévue."
+      - "Le contact sur place a déjà été retourné."
+      - "Sortir la personne coûtera la couverture d'un agent en place depuis des années."
+    duree_tours: [9, 20]
+
+  - id: diplomatie
+    nom: "Mission diplomatique"
+    rangs: [B, A]
+    categorie: diplomatie
+    commanditaire: [conseil, village_etranger]
+    lieu_type: [village_etranger, ceremonie, frontiere]
+    ancre: [organisations]
+    objectif: "Obtenir, ou empêcher, une signature."
+    enjeu: "Une tension entre deux villages monte ou redescend d'un cran."
+    complications:
+      - "Un incident de rue met tout par terre à la veille de la signature."
+      - "L'autre partie a des informations sur l'équipe elle-même."
+      - "Le texte à signer a été modifié entre les deux lectures."
+      - "Un membre de la délégation sabote de l'intérieur."
+    duree_tours: [8, 16]
+
+  # -------------------------------------------------------- rangs A et S
+  - id: chasse_deserteur
+    nom: "Chasse au déserteur"
+    rangs: [A, S]
+    categorie: chasse
+    commanditaire: [village, conseil]
+    lieu_type: [frontiere, ruines, monastere, foret]
+    ancre: [bingo_book, organisations]
+    objectif: "Neutraliser un nukenin dont la prime figure au bingo book."
+    enjeu: "Il détient, ou transmet, quelque chose qui appartenait au village."
+    clause: "Il a été envoyé par le village, et a été désavoué depuis."
+    complications:
+      - "Il n'est pas seul, et ses compagnons ne sont pas des déserteurs."
+      - "La population locale le protège, et a ses raisons."
+      - "Sa version des faits est vérifiable."
+      - "On a l'ordre de rapporter le corps, pas les mots."
+    duree_tours: [10, 24]
+
+  - id: confinement
+    nom: "Confinement"
+    rangs: [A, S]
+    categorie: confinement
+    commanditaire: [conseil, organisations]
+    lieu_type: [ruines, grotte, sanctuaire]
+    ancre: [sites_invocation, mineraux, organisations]
+    objectif: "Sceller, murer ou déplacer quelque chose qui ne doit pas rester où il est."
+    enjeu: "Ce que ça fait si ça sort, et le fait que très peu de gens le sachent."
+    clause: "Le sceau existant a été affaibli de l'intérieur du village."
+    complications:
+      - "Le sceau demande un composant qui manque."
+      - "Quelqu'un veut précisément que ça sorte."
+      - "Le confinement exige une présence permanente sur place."
+      - "Ce qui est enfermé parle, et dit des choses vérifiables."
+    duree_tours: [10, 25]
+
+  - id: succession
+    nom: "Affaire de succession"
+    rangs: [A, S]
+    categorie: politique
+    commanditaire: [conseil, clan]
+    lieu_type: [village, archives, ceremonie]
+    ancre: [organisations]
+    objectif: "Peser sur l'attribution d'un siège vacant — ou empêcher qu'on y pèse."
+    enjeu: "Qui commandera le village, et ce qu'il fera de l'armée."
+    clause: "Le candidat soutenu par le commanditaire n'est pas celui qu'on croit."
+    complications:
+      - "Le candidat le plus compétent est le moins recommandable."
+      - "Un dossier compromettant sur l'équipe elle-même ressort."
+      - "Le siège est réclamé par deux clans qui tiennent chacun un quartier."
+      - "Le titulaire précédent n'est peut-être pas mort."
+    duree_tours: [12, 30]
+
+
+# ==========================================================================
+# COMMANDITAIRES — la même mission ne se joue pas pareil selon qui paie
+# ==========================================================================
+commanditaires:
+  civil:            {label: "Un civil", pression: faible, paie: mal, note: "Dit tout ce qu'il sait, et ne sait pas grand-chose. Ne peut pas protéger l'équipe si ça tourne mal."}
+  village:          {label: "Le bureau des missions", pression: moyenne, paie: correct, note: "Ordre officiel, couverture officielle. Le rapport compte autant que le résultat."}
+  conseil:          {label: "Le Conseil", pression: forte, paie: bien, note: "Briefing incomplet par principe. Ce qu'on ne vous a pas dit fait partie de la mission."}
+  clan:             {label: "Un clan", pression: forte, paie: bien, note: "Un service rendu à un clan crée une dette dans les deux sens. Le village n'est pas informé."}
+  guilde:           {label: "La Guilde des routes", pression: moyenne, paie: tres_bien, note: "Contrat clair, aucune loyauté. Paie mieux que le village, et le village le sait."}
+  village_etranger: {label: "Un village étranger", pression: forte, paie: tres_bien, note: "Légal si le traité le permet. Politiquement coûteux dans tous les cas."}
+  organisations:    {label: "Une organisation", pression: extreme, paie: variable, note: "On ne refuse pas, et on ne raconte pas. Ce genre de mission n'apparaît sur aucun registre."}
+
+
+# ==========================================================================
+# REVERS — ce qui tourne mal, indépendamment de l'archétype
+# ==========================================================================
+# Le moteur en tire un sur trois missions environ. Ce sont les revers, pas
+# les objectifs, qui font qu'on se souvient d'une mission.
+revers:
+  - "Le délai est réduit de moitié en cours de route."
+  - "Un membre de l'équipe reçoit un ordre contradictoire, à lui seul."
+  - "Le contact prévu est mort quand on arrive."
+  - "L'équipe est reconnue alors qu'elle devait rester anonyme."
+  - "Le paiement est annulé, mais pas la mission."
+  - "Une équipe d'un autre village travaille sur le même dossier, dans l'autre sens."
+  - "La météo ferme la seule route de repli."
+  - "Un civil a tout vu et veut être payé pour se taire."
+  - "Le matériel a été saboté avant le départ."
+  - "Une victoire trop nette attire l'attention de quelqu'un qu'on ne voulait pas intéresser."

@@ -1,0 +1,305 @@
+{# ==========================================================================
+   L'ESTAMPE — la grande illustration de chaque village.
+
+   Une composition à l'encre, en couches, dans la tradition de l'ukiyo-e et
+   du lavis : un ciel qui donne l'heure, un soleil bas et son halo, trois
+   plans de relief séparés par des bancs de brume, un premier plan presque
+   noir qui encadre, des oiseaux et des nuées qui passent. La profondeur ne
+   vient pas du détail : elle vient de la PERSPECTIVE ATMOSPHÉRIQUE — chaque
+   plan plus clair et plus pâle que celui de devant, et la brume qui monte
+   entre eux.
+
+   UNE PALETTE ET UN RELIEF PAR VILLAGE. Konoha, collines boisées au couchant ;
+   Suna, dunes dorées ; Kiri, îles et tours dans la brume turquoise ; Kumo,
+   aiguilles au-dessus des nuages sous l'orage ; Iwa, tours de pierre rouille ;
+   Oto, marais et rizières sous un crépuscule mauve.
+
+   RÈGLES DE DESSIN, apprises à la première version :
+     - aucun plan ne s'arrête sur une arête verticale : chaque relief descend
+       jusqu'au bas du cadre en pente, sinon on voit un mur ;
+     - la brume est une BANDE douce (transparente, dense, transparente), jamais
+       un rectangle qui s'arrête net ;
+     - les nuées sont floutées : un trait net de nuage fait une rayure.
+
+   Tout est vectoriel et dessiné ici : aucune image, aucun réseau. Le cadre
+   est un viewBox 1600×600, recadré par le bas (`xMidYMax slice`) : le sol
+   reste toujours visible, le ciel absorbe les formats étroits.
+   ========================================================================== #}
+
+{% set PALETTES = {
+  'konoha': {'haut':'#0b0e22','milieu':'#43203a','horizon':'#e47a3c','soleil':'#ff6b3d','halo':'#ff9d5a',
+             'p1':'#4a3050','p2':'#2e2140','p3':'#1a1426','p4':'#08070c','brume':'#f3a57e','relief':'monts'},
+  'suna':   {'haut':'#110d1d','milieu':'#592c22','horizon':'#f2a64c','soleil':'#ffd680','halo':'#ffbc5c',
+             'p1':'#7a4b33','p2':'#553424','p3':'#352018','p4':'#130b07','brume':'#f7c88a','relief':'dunes'},
+  'kiri':   {'haut':'#051015','milieu':'#14323b','horizon':'#94cbc6','soleil':'#f0faf5','halo':'#c4e9e2',
+             'p1':'#35585d','p2':'#20393d','p3':'#122428','p4':'#050c0e','brume':'#d6eeea','relief':'iles'},
+  'kumo':   {'haut':'#070918','milieu':'#252858','horizon':'#968cd0','soleil':'#fff2b0','halo':'#cbbcff',
+             'p1':'#3d4378','p2':'#262a52','p3':'#161937','p4':'#07081a','brume':'#cdc6f4','relief':'pics'},
+  'iwa':    {'haut':'#110a0a','milieu':'#46231a','horizon':'#d8763a','soleil':'#ff9250','halo':'#ffae6c',
+             'p1':'#5a3a2b','p2':'#3b261c','p3':'#241712','p4':'#0e0806','brume':'#f2ab7c','relief':'mesas'},
+  'oto':    {'haut':'#0a0715','milieu':'#331a47','horizon':'#c4619f','soleil':'#ffc0e4','halo':'#e38fd3',
+             'p1':'#46315e','p2':'#2d1f41','p3':'#1c1329','p4':'#090611','brume':'#eaaee4','relief':'marais'},
+} %}
+
+{% macro _brume(uid, y, h) %}
+<rect x="-20" y="{{ y }}" width="1640" height="{{ h }}" fill="url(#{{ uid }}-brume)"/>
+{% endmacro %}
+
+{# le liseré de lumière sur une crête : c'est lui qui détache un plan de
+   l'autre, bien plus que la couleur #}
+{% macro _crete(uid, d, P) %}
+<path d="{{ d }}" fill="none" stroke="{{ P.halo }}" stroke-opacity=".32"
+      stroke-width="1.6" stroke-linejoin="round"/>
+{% endmacro %}
+
+{% macro estampe(village='konoha', uid='e') %}
+{% set P = PALETTES.get(village) or PALETTES['konoha'] %}
+{% set R = P.relief %}
+<svg class="estampe" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice"
+     xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-village="{{ village }}">
+  <defs>
+    <linearGradient id="{{ uid }}-ciel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{ P.haut }}"/>
+      <stop offset="0.5" stop-color="{{ P.milieu }}"/>
+      <stop offset="0.8" stop-color="{{ P.horizon }}"/>
+      <stop offset="1" stop-color="{{ P.horizon }}"/>
+    </linearGradient>
+    <radialGradient id="{{ uid }}-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(1080 360) scale(700 380)">
+      <stop offset="0" stop-color="{{ P.halo }}" stop-opacity="0.8"/>
+      <stop offset="0.3" stop-color="{{ P.halo }}" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="{{ P.halo }}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="{{ uid }}-soleil" cx="0.4" cy="0.36" r="0.72">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="0.45" stop-color="{{ P.soleil }}"/>
+      <stop offset="1" stop-color="{{ P.soleil }}"/>
+    </radialGradient>
+    <linearGradient id="{{ uid }}-brume" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{ P.brume }}" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="{{ P.brume }}" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="{{ P.brume }}" stop-opacity="0"/>
+    </linearGradient>
+    {% for n in ['p1', 'p2', 'p3'] %}
+    <linearGradient id="{{ uid }}-{{ n }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{ P[n] }}"/>
+      <stop offset="1" stop-color="{{ P[n] }}" stop-opacity="0.7"/>
+    </linearGradient>
+    {% endfor %}
+    <linearGradient id="{{ uid }}-sol" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{ P.p4 }}" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="{{ P.p4 }}"/>
+    </linearGradient>
+    <filter id="{{ uid }}-nuee" x="-20%" y="-60%" width="140%" height="220%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="{{ uid }}-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/>
+    </filter>
+  </defs>
+
+  {# ------------------------------------------------------------------ ciel #}
+  <rect width="1600" height="600" fill="url(#{{ uid }}-ciel)"/>
+  <rect width="1600" height="600" fill="url(#{{ uid }}-halo)"/>
+  <g fill="#ffffff">
+    {% for s in [[120,60,1.3],[260,120,0.8],[410,44,1.1],[560,96,0.7],[700,30,1.2],
+                 [860,84,0.8],[1240,52,1],[1380,110,0.7],[1520,40,1.3],[980,24,0.7],
+                 [330,180,0.6],[640,150,0.7],[1460,170,0.6]] %}
+    <circle cx="{{ s[0] }}" cy="{{ s[1] }}" r="{{ s[2] }}" opacity="{{ 0.3 + s[2] * 0.3 }}"/>
+    {% endfor %}
+  </g>
+
+  {# le soleil bas, et les nuées floutées qui le traversent #}
+  <circle cx="1080" cy="360" r="96" fill="url(#{{ uid }}-soleil)"/>
+  <g class="nuees" filter="url(#{{ uid }}-nuee)">
+    <ellipse cx="1040" cy="366" rx="210" ry="9" fill="{{ P.milieu }}" opacity="0.7"/>
+    <ellipse cx="1150" cy="392" rx="170" ry="7" fill="{{ P.milieu }}" opacity="0.55"/>
+  </g>
+  <g class="nuees lentes" filter="url(#{{ uid }}-nuee)" fill="{{ P.brume }}">
+    <ellipse cx="300" cy="238" rx="360" ry="16" opacity="0.14"/>
+    <ellipse cx="820" cy="206" rx="300" ry="12" opacity="0.1"/>
+    <ellipse cx="1380" cy="258" rx="320" ry="14" opacity="0.12"/>
+  </g>
+
+  {# le vol d'oiseaux devant le soleil #}
+  <g class="oiseaux" fill="none" stroke="{{ P.haut }}" stroke-width="2.2"
+     stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
+    {% for o in [[1000,292,1],[1036,278,0.8],[1064,300,0.7],[1094,284,0.6],[972,312,0.55]] %}
+    <path d="M{{ o[0] - 10*o[2] }} {{ o[1] }}q{{ 5*o[2] }} {{ -6*o[2] }} {{ 10*o[2] }} 0q{{ 5*o[2] }} {{ -6*o[2] }} {{ 10*o[2] }} 0"/>
+    {% endfor %}
+  </g>
+
+  {# ================================================================ RELIEFS #}
+  {% if R == 'dunes' %}
+    {% set c1 = "M-20 392 C200 344 360 376 520 356 C700 332 860 376 1040 352 C1240 326 1420 368 1620 344" %}
+    <path d="{{ c1 }} V600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {{ _brume(uid, 330, 130) }}
+    {% set c2 = "M-20 438 C180 396 380 450 600 414 C820 380 980 444 1180 416 C1380 390 1500 428 1620 418" %}
+    <path d="{{ c2 }} V600 H-20Z" fill="url(#{{ uid }}-p2)"/>{{ _crete(uid, c2, P) }}
+    {# la cité fortifiée sur sa falaise, et ses dômes #}
+    <g fill="{{ P.p3 }}">
+      <path d="M1150 476 C1170 452 1190 436 1210 430 H1470 C1490 436 1510 452 1530 476Z"/>
+      {% for d in [[1236,430,22],[1286,430,32],[1342,430,18],[1388,430,27],[1440,430,21]] %}
+      <path d="M{{ d[0]-d[2] }} {{ d[1] }}a{{ d[2] }} {{ d[2] }} 0 0 1 {{ 2*d[2] }} 0z"/>
+      {% endfor %}
+    </g>
+    {{ _brume(uid, 410, 110) }}
+    {% set c3 = "M-20 500 C240 468 420 520 700 490 C980 460 1180 520 1400 494 C1500 484 1560 490 1620 488" %}
+    <path d="{{ c3 }} V600 H-20Z" fill="url(#{{ uid }}-p3)"/>
+    <path d="M-20 548 C260 526 520 566 820 542 C1120 520 1360 560 1620 538 V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+
+  {% elif R == 'iles' %}
+    {% set c1 = "M-20 392 L90 330 L170 358 L260 300 L360 352 L460 318 L560 362 L700 344 L820 380" %}
+    <path d="{{ c1 }} L900 600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {% set c1b = "M1620 372 L1500 318 L1420 346 L1330 294 L1240 342 L1150 320 L1040 370" %}
+    <path d="{{ c1b }} L960 600 H1620Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1b, P) }}
+    {{ _brume(uid, 320, 150) }}
+    {# les îles et leurs tours cylindriques au toit végétal #}
+    <g fill="{{ P.p2 }}">
+      <path d="M150 446 C220 420 420 414 500 440 C510 448 500 456 480 458 H170 C150 456 140 450 150 446Z"/>
+      <path d="M730 438 C820 410 1080 402 1160 432 C1172 442 1160 452 1140 454 H750 C730 452 720 444 730 438Z"/>
+      {% for t in [[240,442,26,70],[300,442,20,52],[350,442,30,90],[410,442,18,44],
+                   [820,434,24,62],[880,434,34,106],[950,434,22,58],[1010,434,28,82],[1080,434,18,46]] %}
+      <rect x="{{ t[0]-t[2]/2 }}" y="{{ t[1]-t[3] }}" width="{{ t[2] }}" height="{{ t[3] }}" rx="3"/>
+      <ellipse cx="{{ t[0] }}" cy="{{ t[1]-t[3] }}" rx="{{ t[2]/2+5 }}" ry="7"/>
+      {% endfor %}
+    </g>
+    <g fill="{{ P.halo }}" opacity="0.5">
+      {% for w in [[350,380],[880,352],[1010,378],[240,398]] %}
+      <rect x="{{ w[0]-3 }}" y="{{ w[1] }}" width="6" height="8" rx="1"/>
+      {% endfor %}
+    </g>
+    {{ _brume(uid, 400, 110) }}
+    {# l'eau, et le reflet du soleil qui s'y étire #}
+    <rect y="466" width="1600" height="140" fill="{{ P.p3 }}"/>
+    <g fill="{{ P.soleil }}">
+      {% for r in [[1080,480,120,3,0.5],[1080,494,170,3,0.35],[1080,508,90,2,0.3],[1080,522,140,2,0.2],[1080,538,70,2,0.15]] %}
+      <rect x="{{ r[0]-r[2]/2 }}" y="{{ r[1] }}" width="{{ r[2] }}" height="{{ r[3] }}" rx="1.5" opacity="{{ r[4] }}"/>
+      {% endfor %}
+    </g>
+    <path d="M-20 560 q220-18 440 0 t440 0 t440 0 t320 0 V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+
+  {% elif R == 'pics' %}
+    {% set c1 = "M-20 430 L60 300 L110 358 L170 220 L230 348 L300 258 L360 378 L430 298 L520 420" %}
+    <path d="{{ c1 }} L600 600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {% set c1b = "M1620 420 L1540 280 L1490 348 L1420 198 L1360 338 L1300 268 L1220 400" %}
+    <path d="{{ c1b }} L1140 600 H1620Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1b, P) }}
+    {{ _brume(uid, 330, 150) }}
+    {# les aiguilles de la cité, et le bâtiment bleu dans la plus haute #}
+    <g fill="url(#{{ uid }}-p2)">
+      <path d="M540 500 L596 300 L620 240 L644 300 L700 500Z"/>
+      <path d="M696 500 L740 330 L760 286 L780 330 L826 500Z"/>
+      <path d="M420 500 L466 360 L486 326 L506 360 L548 500Z"/>
+    </g>
+    <rect x="596" y="300" width="48" height="42" rx="4" fill="{{ P.p3 }}"/>
+    <g fill="{{ P.halo }}" opacity="0.65">
+      {% for w in [[604,310],[616,310],[628,310],[610,324],[622,324]] %}
+      <rect x="{{ w[0] }}" y="{{ w[1] }}" width="8" height="6" rx="1"/>
+      {% endfor %}
+    </g>
+    <path d="M1320 110 l-26 60 h20 l-30 72" fill="none" stroke="{{ P.soleil }}"
+          stroke-width="3" opacity="0.7" stroke-linejoin="round"/>
+    {# la mer de nuages, sous la cité #}
+    <g filter="url(#{{ uid }}-nuee)" fill="{{ P.brume }}">
+      <ellipse cx="200" cy="490" rx="300" ry="30" opacity="0.3"/>
+      <ellipse cx="700" cy="508" rx="360" ry="34" opacity="0.26"/>
+      <ellipse cx="1250" cy="494" rx="380" ry="32" opacity="0.3"/>
+    </g>
+    <path d="M-20 548 q120-26 260 0 q140-30 300 0 q140-26 300 0 q150-30 320 0 q140-24 460 0 V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+
+  {% elif R == 'mesas' %}
+    {% set c1 = "M-20 392 L-20 330 H140 L160 350 H300 L320 318 H440 L470 360 H620 L680 410" %}
+    <path d="{{ c1 }} L760 600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {% set c1b = "M1620 400 V310 H1470 L1450 340 H1300 L1280 298 H1160 L1140 360 H1000 L940 410" %}
+    <path d="{{ c1b }} L860 600 H1620Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1b, P) }}
+    {{ _brume(uid, 320, 150) }}
+    {# les tours de pierre à toit conique, et les ponts qui les relient #}
+    <g fill="url(#{{ uid }}-p2)">
+      {% for t in [[420,480,56,150],[540,480,70,200],[660,480,48,120],[780,480,60,170]] %}
+      <rect x="{{ t[0]-t[2]/2 }}" y="{{ t[1]-t[3] }}" width="{{ t[2] }}" height="{{ t[3] }}"/>
+      <path d="M{{ t[0]-t[2]/2-8 }} {{ t[1]-t[3] }} L{{ t[0] }} {{ t[1]-t[3]-t[2]*0.8 }} L{{ t[0]+t[2]/2+8 }} {{ t[1]-t[3] }}Z"/>
+      {% endfor %}
+    </g>
+    <g fill="none" stroke="{{ P.p2 }}" stroke-width="4">
+      <path d="M448 370 q46 18 64 0"/><path d="M575 390 q42 18 61 0"/><path d="M684 410 q36 16 66 0"/>
+    </g>
+    {{ _brume(uid, 410, 110) }}
+    {% set c3 = "M-20 500 L200 470 L360 490 L560 460 L760 492 L980 466 L1200 494 L1400 470 L1620 488" %}
+    <path d="{{ c3 }} V600 H-20Z" fill="url(#{{ uid }}-p3)"/>
+    <path d="M-20 552 L260 530 L520 556 L820 534 L1120 560 L1400 536 L1620 550 V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+
+  {% elif R == 'marais' %}
+    {% set c1 = "M-20 390 C200 358 360 380 520 364 C720 346 900 380 1100 360 C1300 342 1460 372 1620 358" %}
+    <path d="{{ c1 }} V600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {{ _brume(uid, 330, 130) }}
+    {% set c2 = "M-20 440 C260 418 520 446 800 426 C1080 408 1340 440 1620 422" %}
+    <path d="{{ c2 }} V600 H-20Z" fill="url(#{{ uid }}-p2)"/>{{ _crete(uid, c2, P) }}
+    <g fill="none" stroke="{{ P.brume }}" stroke-opacity="0.2" stroke-width="2">
+      <path d="M-20 458 C300 440 560 462 840 446 C1120 430 1360 456 1620 442"/>
+      <path d="M-20 474 C300 456 580 478 860 462 C1140 448 1380 470 1620 458"/>
+      <path d="M-20 490 C300 474 600 494 880 480 C1160 466 1400 488 1620 476"/>
+    </g>
+    {# le repaire, à demi enterré, et sa porte ronde éclairée #}
+    <path d="M1130 482 C1150 430 1320 430 1350 482Z" fill="{{ P.p3 }}"/>
+    <circle cx="1240" cy="472" r="13" fill="{{ P.halo }}" opacity="0.5"/>
+    {{ _brume(uid, 440, 90) }}
+    <path d="M-20 540 C260 518 540 556 820 534 C1100 514 1360 552 1620 528 V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+    <g stroke="{{ P.p4 }}" stroke-width="3" stroke-linecap="round" fill="none">
+      {% for x in range(30, 1600, 34) %}
+      <path d="M{{ x }} 604 q{{ (x % 5) - 2 }} -40 {{ (x % 9) - 4 }} -{{ 46 + (x % 7) * 9 }}"/>
+      {% endfor %}
+    </g>
+
+  {% else %}
+    {# KONOHA — collines boisées, le rocher gravé, la tour et les toits #}
+    {% set c1 = "M-20 392 C120 340 220 368 320 330 C420 292 520 350 640 320 C760 290 860 340 980 316 C1100 294 1240 342 1360 318 C1460 300 1540 330 1620 322" %}
+    <path d="{{ c1 }} V600 H-20Z" fill="url(#{{ uid }}-p1)"/>{{ _crete(uid, c1, P) }}
+    {{ _brume(uid, 300, 140) }}
+    {# le rocher des Hokage : une falaise irrégulière, et cinq visages en relief #}
+    {% set roc = "M130 462 L150 420 L176 380 L204 356 L240 340 L286 334 L330 326 L372 332 L416 328 L452 344 L484 372 L508 410 L530 462" %}
+    <path d="{{ roc }} Z" fill="url(#{{ uid }}-p2)"/>{{ _crete(uid, roc, P) }}
+    <g>
+      {% for x in [224, 272, 320, 368, 414] %}
+      <ellipse cx="{{ x + 14 }}" cy="{{ 374 + (x % 3) * 3 }}" rx="15" ry="20" fill="{{ P.p3 }}" opacity="0.55"/>
+      <path d="M{{ x + 2 }} {{ 368 + (x % 3) * 3 }} q12 -14 24 0" fill="none" stroke="{{ P.halo }}"
+            stroke-opacity="0.22" stroke-width="1.4"/>
+      {% endfor %}
+    </g>
+    {# la tour ronde et les toits du village #}
+    <g fill="{{ P.p2 }}">
+      <rect x="610" y="372" width="80" height="90" rx="6"/>
+      <path d="M594 378 C620 352 680 352 706 378Z"/>
+      {% for r in [[540,424,56],[716,412,70],[806,426,52],[872,416,64],[950,428,50],[1016,420,58]] %}
+      <rect x="{{ r[0] }}" y="{{ r[1] }}" width="{{ r[2] }}" height="{{ 470-r[1] }}"/>
+      <path d="M{{ r[0]-10 }} {{ r[1]+2 }} Q{{ r[0]+r[2]/2 }} {{ r[1]-22 }} {{ r[0]+r[2]+10 }} {{ r[1]+2 }}Z"/>
+      {% endfor %}
+    </g>
+    <g fill="{{ P.halo }}" opacity="0.55">
+      {% for w in [[640,400],[664,400],[560,440],[740,432],[830,444],[896,436],[1040,440]] %}
+      <rect x="{{ w[0] }}" y="{{ w[1] }}" width="7" height="8" rx="1"/>
+      {% endfor %}
+    </g>
+    {{ _brume(uid, 404, 110) }}
+    {# la canopée du premier plan, en houppiers de tailles inégales #}
+    <path d="M-20 512 {% for x in range(0, 1680, 70) %}q{{ 35 }} -{{ 30 + (x % 4) * 9 }} 70 0 {% endfor %}V600 H-20Z" fill="url(#{{ uid }}-p3)"/>
+    <path d="M-20 552 {% for x in range(0, 1700, 100) %}q50 -{{ 24 + (x % 5) * 7 }} 100 0 {% endfor %}V600 H-20Z" fill="url(#{{ uid }}-sol)"/>
+  {% endif %}
+
+  {# la branche de pin qui cadre l'image en haut à droite : un tronc qui
+     s'infléchit, et des bouquets d'aiguilles en éventail #}
+  <g class="branche" stroke="{{ P.p4 }}" stroke-linecap="round" fill="none">
+    <path d="M1640 30 C1560 44 1500 70 1440 118 C1420 134 1404 150 1392 170" stroke-width="10"/>
+    <path d="M1500 72 C1486 96 1480 116 1482 136" stroke-width="5"/>
+    {% for b in [[1392,170,150],[1436,124,120],[1482,138,160],[1488,88,110],[1540,62,120],[1590,46,100]] %}
+    <g transform="translate({{ b[0] }} {{ b[1] }}) rotate({{ b[2] }})" stroke-width="2.4">
+      {% for a in range(-60, 61, 12) %}
+      <path d="M0 0 h{{ 26 + (a|abs) % 9 }}" transform="rotate({{ a }})"/>
+      {% endfor %}
+    </g>
+    {% endfor %}
+  </g>
+
+  <rect width="1600" height="600" filter="url(#{{ uid }}-grain)"/>
+</svg>
+{% endmacro %}

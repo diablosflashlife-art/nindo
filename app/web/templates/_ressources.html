@@ -1,0 +1,46 @@
+{# ==========================================================================
+   Points de vie, chakra, expérience, états — et la soupape de repos.
+
+   Renvoyé en hx-swap-oob après chaque tour : pendant un affrontement les
+   ressources changent à chaque échange, et les voir figées jusqu'au prochain
+   rechargement de page était le défaut le plus visible de la table.
+
+   On parcourt la DÉCLARATION du ruleset, pas le dictionnaire du personnage :
+   celui-ci contient aussi des valeurs de service (`pv_max`) qui n'ont rien à
+   faire sous une jauge.
+   ========================================================================== #}
+<div id="ressources" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% set maxi = pj.ressources.get('pv_max') or res_cfg.get('pv', {}).get('default', 40) %}
+  {% for cle, cfg in res_cfg.items() %}
+  {% set val = pj.ressources.get(cle, 0) %}
+  {% set plafond = maxi if cle == 'pv' else (cfg.get('default', 30)) %}
+  <div class="stat">
+    <span class="nom">{{ cfg.get('label', cle) }}</span>
+    <span class="valeur">{{ val }} <span class="petit muted">/ {{ plafond }}</span></span>
+    <span class="jauge {{ 'jade' if cle == 'pv' else 'chakra' }}">
+      <i style="width:{{ (val * 100 / plafond)|round|int if plafond else 0 }}%"></i></span>
+  </div>
+  {% endfor %}
+
+  <div class="stat">
+    <span class="nom">Expérience</span>
+    <span class="valeur">{{ pj.xp }} / {{ xp_requis }}</span>
+    <span class="jauge or">
+      <i style="width:{{ ((pj.xp / xp_requis * 100) if xp_requis else 0)|round|int }}%"></i></span>
+  </div>
+
+  {% if pj.etats %}
+  <div class="tags" style="margin-top:12px">
+    {% for e in pj.etats %}<span class="tag vermillon">{{ e }}</span>{% endfor %}</div>
+  {% endif %}
+
+  {# Hors modèle et hors narration : cette soupape doit marcher même quand
+     Ollama ne répond plus. Sans elle, une rencontre perdue condamne la
+     campagne — les blessures s'accumulent et la puissance ne remonte jamais. #}
+  {% if not rencontre and (pj.etats or (pj.ressources.get('pv', 0) < maxi)) %}
+  <form method="post" action="/campagnes/{{ camp.id }}/repos" style="margin-top:.7rem">
+    <input type="hidden" name="character_id" value="{{ pj.id }}">
+    <button type="submit" class="proposition">Souffler et panser tes blessures</button>
+  </form>
+  {% endif %}
+</div>

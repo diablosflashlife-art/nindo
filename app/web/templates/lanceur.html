@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% from "_logo.html" import logo %}
+{% from "_estampe.html" import estampe %}
+{# ==========================================================================
+   LE LANCEUR DE NINDŌ.EXE.
+
+   Ce que l'application montre en s'ouvrant : de quoi jouer tout de suite, ce
+   qui a changé depuis la dernière fois, et l'état du conteur. Tout ce qui
+   interroge le réseau (GitHub, Mistral) arrive EN FOND : la fenêtre s'affiche
+   instantanément, et « Jouer » marche même hors ligne.
+   ========================================================================== #}
+{% block titre %}{{ jeu.nom }}{% endblock %}
+{% block cle_page %}{{ village_heros }}{% endblock %}
+{% block barre %}<span class="tag">version {{ version }}</span>{% endblock %}
+{% block contenu %}
+<section class="lanceur">
+  <div class="lanceur-heros cadre-paysage">
+    {{ estampe(village_heros, 'lanceur') }}
+    <div class="heros-voile"></div>
+    <div class="lanceur-marque">
+      {{ logo(132, 'lanceur', 'blason-logo') }}
+      <div>
+        <h1 class="lanceur-nom">{{ jeu.nom }}<span class="nom-kanji" aria-hidden="true">{{ jeu.kanji }}</span></h1>
+        <p class="lanceur-slogan">{{ jeu.slogan }}</p>
+        <div class="lanceur-actions">
+          <a href="/#nouvelle" class="bouton lanceur-jouer">Jouer</a>
+          {% if derniere and pj_recent %}
+          <a href="/campagnes/{{ derniere.id }}?pj={{ pj_recent.id }}" class="bouton discret">
+            Reprendre « {{ derniere.nom|truncate(26, true, '…') }} »</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# La mise à jour : cachée tant que GitHub n'a rien proposé. #}
+  <div class="panneau lanceur-maj" id="maj" hidden>
+    <div>
+      <strong id="maj-titre">Une nouvelle version est disponible</strong>
+      <span class="petit muted" id="maj-detail"></span>
+    </div>
+    <button type="button" class="plein" id="maj-installer">Installer la mise à jour</button>
+  </div>
+
+  <div class="lanceur-grille">
+    <div class="panneau">
+      <p class="legende">Nouveautés</p>
+      <div id="nouveautes"><p class="petit muted">Chargement…</p></div>
+    </div>
+
+    <div class="lanceur-cote">
+      <div class="panneau">
+        <p class="legende">Le conteur</p>
+        <div class="etat-ligne"><span class="point" id="pt-mistral"></span>
+          <span><strong>Mistral</strong> <span class="petit muted" id="etat-mistral">vérification…</span></span></div>
+        <div class="etat-ligne"><span class="point" id="pt-ollama"></span>
+          <span><strong>Ollama</strong> (secours sur ta machine) <span class="petit muted" id="etat-ollama">vérification…</span></span></div>
+        <p class="petit muted" id="etat-conseil" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="panneau">
+        <p class="legende">Ta clé Mistral</p>
+        <p class="petit muted" style="margin:0 0 10px">Gratuite sur
+          <strong>console.mistral.ai</strong> (offre « Experiment »). Elle reste sur
+          ton ordinateur.{% if cle_masquee %} Clé actuelle : <strong>{{ cle_masquee }}</strong>.{% endif %}</p>
+        <form id="form-cle" class="rangee" style="gap:8px">
+          <input type="password" name="cle" id="cle" placeholder="Colle ta clé ici"
+                 autocomplete="off" style="flex:1">
+          <button type="submit" class="discret">Enregistrer</button>
+        </form>
+        <p class="petit" id="cle-message" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  function el(id) { return document.getElementById(id); }
+
+  /* Les nouveautés et la mise à jour */
+  fetch('/lanceur/etat').then(function (r) { return r.json(); }).then(function (e) {
+    var bloc = el('nouveautes');
+    bloc.innerHTML = '';
+    (e.nouveautes || []).slice(0, 3).forEach(function (v, i) {
+      var d = document.createElement('div');
+      d.className = 'version' + (i === 0 ? ' recente' : '');
+      var titre = document.createElement('p');
+      titre.className = 'version-titre';
+      titre.textContent = 'v' + v.version + (v.nom ? ' — ' + v.nom : '') + (v.date ? '  ·  ' + v.date : '');
+      d.appendChild(titre);
+      var ul = document.createElement('ul');
+      (v.points || []).forEach(function (p) {
+        var li = document.createElement('li');
+        li.innerHTML = p;            /* déjà échappé côté serveur, gras seulement */
+        ul.appendChild(li);
+      });
+      d.appendChild(ul);
+      bloc.appendChild(d);
+    });
+    if (!bloc.children.length) bloc.innerHTML = '<p class="petit muted">Rien de neuf.</p>';
+
+    if (e.maj && e.derniere) {
+      el('maj').hidden = false;
+      el('maj-titre').textContent = 'Nindō ' + e.derniere.version + ' est disponible';
+      el('maj-detail').textContent = ' — tu as la ' + e.version +
+        (e.derniere.taille ? ' · ' + Math.round(e.derniere.taille / 1048576) + ' Mo' : '');
+    }
+  }).catch(function () {
+    el('nouveautes').innerHTML = '<p class="petit muted">Hors ligne : pas de nouvelles pour l\'instant.</p>';
+  });
+
+  el('maj-installer').addEventListener('click', function () {
+    var b = this;
+    b.disabled = true;
+    b.textContent = 'Téléchargement…';
+    fetch('/lanceur/maj', { method: 'POST' }).then(function (r) { return r.json(); })
+      .then(function (e) {
+        if (e.ok) {
+          el('maj-titre').textContent = 'Installation de la ' + e.version + '…';
+          el('maj-detail').textContent = ' Nindō va se fermer et se rouvrir tout seul.';
+          b.hidden = true;
+        } else {
+          b.disabled = false;
+          b.textContent = 'Réessayer';
+          el('maj-detail').textContent = ' ' + e.message;
+        }
+      }).catch(function () { b.disabled = false; b.textContent = 'Réessayer'; });
+  });
+
+  /* L'état du conteur */
+  fetch('/sante').then(function (r) { return r.json(); }).then(function (s) {
+    var m = s.en_ligne || {}, o = s.secours_ollama || {};
+    var okM = m.etat === 'joignable';
+    var okO = o.pret || s.ollama === 'joignable';
+    el('pt-mistral').className = 'point ' + (okM ? 'ok' : 'ko');
+    el('etat-mistral').textContent = okM ? '— prêt' : '— ' + (m.etat || 'non configuré').toLowerCase();
+    el('pt-ollama').className = 'point ' + (okO ? 'ok' : 'ko');
+    el('etat-ollama').textContent = okO ? '— prêt' : '— ' + (o.ollama || s.ollama || 'absent').toLowerCase();
+    el('etat-conseil').textContent = okM ? 'Mistral racontera. Ollama prend le relais s\'il refuse.'
+      : okO ? 'Ollama racontera. Ajoute ta clé Mistral pour un meilleur récit.'
+      : 'Aucun conteur prêt : ajoute ta clé Mistral, ou installe Ollama (ollama.com).';
+  }).catch(function () {});
+
+  /* La clé Mistral */
+  el('form-cle').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var donnees = new FormData(this);
+    fetch('/lanceur/cle', { method: 'POST', body: donnees })
+      .then(function (r) { return r.json(); }).then(function (e) {
+        el('cle-message').textContent = e.ok ? 'Clé enregistrée (' + e.cle + '). Mistral est prêt.' : e.message;
+        el('cle-message').className = 'petit ' + (e.ok ? 'jade' : 'vermillon');
+        if (e.ok) { el('cle').value = ''; setTimeout(function () { location.reload(); }, 900); }
+      });
+  });
+})();
+</script>
+{% endblock %}

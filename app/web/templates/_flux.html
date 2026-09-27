@@ -1,0 +1,31 @@
+{# ==========================================================================
+   LA COQUILLE D'UN TOUR EN COURS D'ÉCRITURE.
+
+   Renvoyée immédiatement après l'envoi de l'action, avant même que l'arbitre
+   ait lu quoi que ce soit. Le navigateur ouvre ensuite `data-flux` et remplit
+   cette coquille au fur et à mesure ; à la fin, le serveur envoie le vrai bloc
+   de tour, qui la remplace entièrement.
+
+   Le joueur voit donc quelque chose bouger dans la demi-seconde, au lieu de
+   fixer un écran figé pendant que le modèle écrit.
+   ========================================================================== #}
+<div class="tour en-cours" data-flux="/campagnes/{{ camp.id }}/flux/{{ jeton }}">
+  <div class="tour-tete">
+    <span class="tour-num">tour {{ camp.tour + 1 }}</span>
+  </div>
+
+  <div class="bloc-action">
+    <span class="tour-acteur">{{ pj.nom }}</span>
+    <p class="tour-action">{{ action }}</p>
+  </div>
+
+  {# Remplacé par le vrai bloc de jet dès que la résolution est faite. #}
+  <div class="bloc-etape" data-role="etape">
+    <span class="fanal"></span>
+    <span data-role="etape-texte">Le maître du jeu prend connaissance de ton action…</span>
+  </div>
+
+  <div class="bloc-narration">
+    <div class="tour-narration" data-role="narration"></div>
+  </div>
+</div>

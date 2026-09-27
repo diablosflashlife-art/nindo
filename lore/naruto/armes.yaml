@@ -1,0 +1,488 @@
+# ==========================================================================
+# ARMEMENT, OUTILS ET MATÉRIEL
+# ==========================================================================
+# Ce fichier existe pour une raison simple : un MJ qui ne connaît pas
+# l'équipement décrit des combats abstraits. « Tu attaques » au lieu de
+# « tu lances trois shuriken pour le forcer à découvert, puis tu passes le
+# fil d'acier ». Le matériel est ce qui rend une scène de ninja concrète.
+#
+# Chaque entrée porte :
+#   usage        jet | melee | piege | utilitaire | soin | invocation
+#   stat         la caractéristique que le moteur utilisera pour le jet
+#   effets       bonus_jet / bonus_degats / portee / requis / chakra
+#   disponibilite courant | standard | rare | restreint | interdit
+#   cout_ryo     prix indicatif — le ryô est la monnaie du monde
+#   tactique     À QUOI ÇA SERT EN SCÈNE. C'est ce que le MJ lit vraiment.
+#
+# `tactique` est le champ le plus important du fichier : il ne décrit pas
+# l'objet, il décrit la manœuvre. C'est ce qui fait la différence entre un
+# MJ qui nomme une arme et un MJ qui sait s'en servir.
+# ==========================================================================
+
+armes:
+
+  # ---------------------------------------------------------------- de jet
+  - id: kunai
+    nom: "Kunai"
+    fr: "Couteau de lancer"
+    categorie: arme
+    usage: jet
+    rang: E
+    stat: vitesse
+    prononciation: "Kou-naï"
+    effets: {bonus_degats: 2, portee: moyenne}
+    disponibilite: courant
+    cout_ryo: 15
+    particularite: "Lame courte à anneau. Sert autant au corps à corps qu'au lancer, et l'anneau permet de l'attacher à un fil ou à un parchemin."
+    tactique: "L'outil universel. On y noue un parchemin explosif, on s'en sert pour grimper, pour couper un lien, pour parer une lame. Un ninja sans kunai est un ninja désarmé."
+
+  - id: shuriken
+    nom: "Shuriken"
+    fr: "Étoile de jet"
+    categorie: arme
+    usage: jet
+    rang: E
+    stat: vitesse
+    prononciation: "Chou-ri-kène"
+    effets: {bonus_degats: 1, portee: moyenne}
+    disponibilite: courant
+    cout_ryo: 8
+    particularite: "Léger, se lance par volées. Blesse rarement gravement seul."
+    tactique: "Ne sert pas à tuer, sert à contraindre : on lance pour forcer l'adversaire à esquiver là où on veut qu'il aille. Se combine avec le Kage Bunshin pour multiplier les angles."
+
+  - id: fuma_shuriken
+    nom: "Fûma Shuriken"
+    fr: "Grand shuriken"
+    categorie: arme
+    usage: jet
+    rang: C
+    stat: taijutsu
+    prononciation: "Fou-ma Chou-ri-kène"
+    effets: {bonus_degats: 5, portee: longue, requis: {endurance: 14}}
+    disponibilite: standard
+    cout_ryo: 350
+    particularite: "Repliable en quatre lames, de la taille d'un torse. Se porte sur le dos."
+    tactique: "Une seule ouverture, un seul lancer. On l'utilise pour trancher un tronc, couper une invocation en vol, ou obliger un groupe à se disperser. Trop lourd pour la finesse."
+
+  - id: senbon
+    nom: "Senbon"
+    fr: "Aiguille"
+    categorie: arme
+    usage: jet
+    rang: D
+    stat: perception
+    prononciation: "Sène-bone"
+    effets: {bonus_degats: 1, portee: courte, bonus_jet: 2}
+    disponibilite: standard
+    cout_ryo: 25
+    particularite: "Aiguille longue, sans tranchant. Blesse peu et précisément — les médecins et les tueurs s'en servent pour les mêmes raisons opposées."
+    tactique: "L'arme de celui qui connaît le corps : on vise un nerf, un point de pression, la gorge pour simuler la mort. Inutile contre une armure, décisive contre un adversaire qu'on veut neutraliser sans tuer."
+
+  - id: makibishi
+    nom: "Makibishi"
+    fr: "Chausse-trappes"
+    categorie: outil
+    usage: piege
+    rang: E
+    stat: intelligence
+    prononciation: "Ma-ki-bi-chi"
+    effets: {bonus_degats: 1, portee: contact}
+    disponibilite: courant
+    cout_ryo: 20
+    particularite: "Pointes semées au sol. On les jette derrière soi en fuyant."
+    tactique: "Ne gagne jamais un combat, gagne une fuite. Trois secondes d'hésitation chez le poursuivant, et trois secondes suffisent."
+
+  # --------------------------------------------------------------- de mêlée
+  - id: tanto
+    nom: "Tantô"
+    fr: "Sabre court"
+    categorie: arme
+    usage: melee
+    rang: D
+    stat: vitesse
+    prononciation: "Tane-toh"
+    effets: {bonus_degats: 3}
+    disponibilite: standard
+    cout_ryo: 200
+    particularite: "Lame droite d'un empan et demi, portée dans le dos. L'arme réglementaire des ANBU."
+    tactique: "Faite pour les espaces fermés et les gestes courts : un couloir, une tente, un dos tourné. Dégainer un tantô, c'est annoncer qu'on ne compte pas discuter."
+
+  - id: ninjato
+    nom: "Ninjatô"
+    fr: "Sabre de ninja"
+    categorie: arme
+    usage: melee
+    rang: C
+    stat: vitesse
+    prononciation: "Nine-ja-toh"
+    effets: {bonus_degats: 4, requis: {vitesse: 12}}
+    disponibilite: standard
+    cout_ryo: 600
+    particularite: "Lame droite, garde carrée. Moins noble qu'un katana, plus rapide à sortir."
+    tactique: "L'arme du kenjutsu de village : on frappe pendant que l'autre finit son incantation. Conduit le raiton sans peine, ce qui en fait le support favori des Kumo."
+
+  - id: katana
+    nom: "Katana"
+    fr: "Sabre long"
+    categorie: arme
+    usage: melee
+    rang: C
+    stat: taijutsu
+    prononciation: "Ka-ta-na"
+    effets: {bonus_degats: 5, requis: {taijutsu: 13}}
+    disponibilite: standard
+    cout_ryo: 1200
+    particularite: "Arme d'école, souvent héritée. Sa lame porte le nom de son forgeron, et ce nom engage."
+    tactique: "Portée et tranchant, au prix de l'encombrement. En forêt dense ou en intérieur, un porteur de katana est désavantagé — et le sait."
+
+  - id: kusarigama
+    nom: "Kusarigama"
+    fr: "Faucille et chaîne"
+    categorie: arme
+    usage: melee
+    rang: C
+    stat: taijutsu
+    prononciation: "Kou-sa-ri-ga-ma"
+    effets: {bonus_degats: 4, portee: courte, requis: {taijutsu: 12}}
+    disponibilite: rare
+    cout_ryo: 500
+    particularite: "Une lame courbe au bout d'une chaîne lestée. Demande de la place et de l'entraînement."
+    tactique: "On ne frappe pas avec, on capture : la chaîne prend une jambe, un poignet, une lame, et la faucille arrive après. Redoutable contre un adversaire plus rapide, inutile contre un groupe."
+
+  - id: tessen
+    nom: "Tessen"
+    fr: "Éventail de fer"
+    categorie: arme
+    usage: melee
+    rang: C
+    stat: controle_chakra
+    prononciation: "Tès-sène"
+    effets: {bonus_degats: 3, portee: moyenne, chakra: 3}
+    disponibilite: rare
+    cout_ryo: 800
+    particularite: "Armature d'acier, toile renforcée. Sert de bouclier fermé et d'amplificateur ouvert."
+    tactique: "Le support du Fûton : chaque coup d'éventail met en forme le vent qu'on y injecte. Un porteur de tessen qui n'a pas d'affinité pour le vent s'encombre d'une plaque de fer."
+
+  - id: bo
+    nom: "Bô"
+    fr: "Bâton long"
+    categorie: arme
+    usage: melee
+    rang: D
+    stat: taijutsu
+    prononciation: "Boh"
+    effets: {bonus_degats: 2, portee: courte}
+    disponibilite: courant
+    cout_ryo: 40
+    particularite: "Bois cerclé. Ne tue pas facilement, ce qui est parfois exactement ce qu'on veut."
+    tactique: "L'arme des missions où il faut arrêter quelqu'un sans le mutiler : garde de village, escorte, dispersion d'une rixe. Aussi la seule arme qu'on peut porter sans inquiéter personne."
+
+  - id: marionnette
+    nom: "Marionnette de combat"
+    fr: "Kugutsu"
+    categorie: arme
+    usage: invocation
+    rang: B
+    stat: controle_chakra
+    prononciation: "Kou-gou-tsou"
+    effets: {bonus_degats: 6, portee: moyenne, chakra: 6, requis: {controle_chakra: 16}}
+    requiert_technique: kugutsu_base
+    disponibilite: rare
+    village: suna
+    cout_ryo: 4000
+    particularite: "Corps articulé relié aux doigts par des fils de chakra. Chaque marionnettiste construit les siennes et les modifie toute sa vie."
+    tactique: "Le marionnettiste ne s'expose jamais : il combat à dix mètres, derrière un corps qui ne saigne pas. Sa faiblesse est le fil — qui le coupe le désarme, et un adversaire qui a compris cherche la main, pas la marionnette."
+
+  # ------------------------------------------------------------- utilitaire
+  - id: fil_acier
+    nom: "Fil d'acier"
+    fr: "Fil ninja"
+    categorie: outil
+    usage: piege
+    rang: D
+    stat: controle_chakra
+    prononciation: "Fil d'a-cier"
+    effets: {portee: moyenne}
+    disponibilite: courant
+    cout_ryo: 60
+    particularite: "Bobine de fil fin, presque invisible, très résistant. Conduit le feu et la foudre."
+    tactique: "Le multiplicateur du projet : on relie ses kunai plantés pour dessiner une cage, on immobilise, puis on envoie un Katon le long du fil. C'est l'outil qui transforme trois lancers ratés en piège réussi."
+
+  - id: bombe_fumigene
+    nom: "Bombe fumigène"
+    categorie: outil
+    usage: utilitaire
+    rang: D
+    stat: intelligence
+    prononciation: "Bombe fu-mi-gène"
+    effets: {portee: courte}
+    disponibilite: courant
+    cout_ryo: 50
+    particularite: "Sphère de papier compressé. Emplit une pièce en deux respirations."
+    tactique: "Sert à rompre le contact visuel — donc à annuler un dôjutsu qui suit les mouvements, à couvrir une substitution, à disparaître. Inutile contre un Byakugan ou un capteur de chakra, et un adversaire expérimenté le sait et attend."
+
+  - id: corde_grappin
+    nom: "Grappin et corde"
+    categorie: outil
+    usage: utilitaire
+    rang: E
+    stat: vitesse
+    disponibilite: courant
+    cout_ryo: 70
+    particularite: "Crochet à trois branches sur douze mètres de corde tressée."
+    tactique: "Un toit, un ravin, un puits. La moitié des missions d'infiltration se joue sur la capacité à monter sans bruit."
+
+  - id: crampons
+    nom: "Crampons d'escalade"
+    categorie: outil
+    usage: utilitaire
+    rang: E
+    stat: endurance
+    disponibilite: courant
+    cout_ryo: 45
+    particularite: "Griffes de main et de pied. Ce que l'on prend quand on ne maîtrise pas encore la marche au chakra."
+    tactique: "Signe le débutant : un genin qui les porte annonce qu'il n'a pas le contrôle du chakra pour s'en passer."
+
+  - id: masque_respiratoire
+    nom: "Masque respiratoire"
+    categorie: outil
+    usage: utilitaire
+    rang: D
+    stat: endurance
+    disponibilite: standard
+    cout_ryo: 180
+    particularite: "Filtre de charbon et de tissu huilé. Tient une dizaine de minutes."
+    tactique: "Indispensable dans la brume empoisonnée de Kiri et dans toute mission où l'adversaire est un utilisateur de poison. L'oublier, c'est perdre avant le premier échange."
+
+  - id: rouleau_vierge
+    nom: "Rouleau de scellement vierge"
+    categorie: outil
+    usage: utilitaire
+    rang: E
+    stat: controle_chakra
+    prononciation: "Rou-leau"
+    effets: {chakra: 2}
+    requiert_technique: fuin_base
+    disponibilite: courant
+    cout_ryo: 90
+    particularite: "Papier de riz apprêté. Contient ce qu'on y scelle, et rien de plus que ce que le sceau permet."
+    tactique: "Transporter l'intransportable : une arme trop grande, un corps, des documents. Un ninja qui sort un rouleau en pleine scène change la donne, et tout adversaire un peu sérieux tentera de le brûler avant l'ouverture."
+
+  - id: bandeau_frontal
+    nom: "Bandeau frontal"
+    fr: "Hitai-ate"
+    categorie: insigne
+    usage: utilitaire
+    rang: E
+    prononciation: "Hi-taï-a-té"
+    disponibilite: courant
+    cout_ryo: 0
+    particularite: "Plaque de métal frappée du symbole du village, sur bande de tissu. Remis à la sortie de l'Académie."
+    tactique: "Ce n'est pas un équipement, c'est une déclaration. Le porter en pays étranger, c'est se présenter comme soldat. Le rayer, c'est se déclarer déserteur — et ce geste ne se défait pas."
+
+  - id: trousse_medicale
+    nom: "Trousse médicale de terrain"
+    categorie: outil
+    usage: soin
+    rang: D
+    stat: intelligence
+    disponibilite: standard
+    cout_ryo: 220
+    particularite: "Bandages, fil de suture, attelles, garrot, alcool."
+    tactique: "Ce qui remplace un médecin quand il n'y en a pas. Stabilise, ne guérit pas : l'équipe gagne des heures, pas une résurrection."
+
+
+# ==========================================================================
+# CONSOMMABLES — l'usage unique, donc la décision
+# ==========================================================================
+consommables:
+
+  - id: parchemin_explosif
+    nom: "Parchemin explosif"
+    fr: "Fuda explosif"
+    usage: piege
+    rang: D
+    stat: controle_chakra
+    prononciation: "Par-che-min"
+    effets: {bonus_degats: 6, portee: contact, chakra: 1}
+    disponibilite: courant
+    cout_ryo: 120
+    particularite: "Papier marqué d'un sceau d'expansion. S'amorce au chakra, détone après un délai court et réglable."
+    tactique: "La solution à un mur, à une invocation massive, à une poursuite. On le noue à un kunai pour l'envoyer, on l'empile pour abattre un pont, on le laisse derrière soi amorcé. Le délai est l'arme réelle : un adversaire qui esquive au bon moment esquive dans le vide."
+
+  - id: soldat_pilule
+    nom: "Pilule du soldat"
+    fr: "Hyôrôgan"
+    usage: soin
+    rang: C
+    stat: endurance
+    prononciation: "Hyoh-roh-gane"
+    effets: {rend_chakra: 15, cout_persistant: epuisement_differe}
+    disponibilite: restreint
+    cout_ryo: 400
+    particularite: "Concentré de nutriments et de stimulants. Rend trois jours d'endurance en une heure — et les reprend ensuite."
+    tactique: "Ce qu'on avale quand le combat doit finir maintenant. Le prix se paie après : un ninja sous pilule est dangereux pendant une heure et inutile pendant deux jours. Un adversaire qui reconnaît les signes n'a plus qu'à durer."
+
+  - id: pilule_sang
+    nom: "Pilule de sang"
+    fr: "Ketsugan"
+    usage: soin
+    rang: D
+    stat: endurance
+    effets: {rend_pv: 8}
+    disponibilite: restreint
+    cout_ryo: 250
+    particularite: "Reconstitue la masse sanguine. Utilisée par les lignées qui paient leurs techniques en sang."
+    tactique: "Permet un second usage d'une technique à prix de sang là où il n'y en aurait eu qu'un. Ne referme aucune plaie."
+
+  - id: antidote
+    nom: "Antidote à large spectre"
+    usage: soin
+    rang: C
+    stat: intelligence
+    effets: {annule: poison}
+    disponibilite: restreint
+    cout_ryo: 500
+    particularite: "Neutralise les poisons courants. Contre un poison composé, il ne fait que ralentir."
+    tactique: "Contre Suna et contre tout marionnettiste, c'est la différence entre une blessure et une mort. Se prépare avant la mission, jamais pendant."
+
+  - id: bombe_aveuglante
+    nom: "Bombe aveuglante"
+    usage: utilitaire
+    rang: D
+    stat: intelligence
+    effets: {portee: courte}
+    disponibilite: standard
+    cout_ryo: 150
+    particularite: "Éclat de magnésium. Aveugle quelques secondes, et davantage un œil entraîné à voir vite."
+    tactique: "Retourne l'avantage d'un dôjutsu contre son porteur : plus l'œil est sensible, plus l'éblouissement dure. La contre-mesure préférée de quiconque affronte un Uchiha."
+
+  - id: ration_campagne
+    nom: "Rations de campagne"
+    usage: utilitaire
+    rang: E
+    disponibilite: courant
+    cout_ryo: 30
+    particularite: "Riz pressé, poisson séché, sel. Sept jours pour une personne."
+    tactique: "Ce qui décide de la durée réelle d'une mission hors les murs. Les équipes qui en manquent rentrent tôt ou volent."
+
+
+# ==========================================================================
+# ARMES LÉGENDAIRES — complément des Sept Épées (les autres sont dans clans.yaml)
+# ==========================================================================
+objets:
+
+  - id: nuibari
+    nom: "Nuibari"
+    categorie: arme_legendaire
+    ensemble: sept_epees
+    prononciation: "Nou-i-ba-ri"
+    effets: {bonus_degats: 4, requis: {vitesse: 20}}
+    particularite: "Lame-aiguille prolongée d'un fil. Coud ses victimes les unes aux autres."
+    tactique: "Ne tranche pas, transperce et relie. Contre un groupe, elle transforme la formation adverse en un seul obstacle empêtré."
+
+  - id: kabutowari
+    nom: "Kabutowari"
+    categorie: arme_legendaire
+    ensemble: sept_epees
+    prononciation: "Ka-bou-to-wa-ri"
+    effets: {bonus_degats: 7, requis: {endurance: 22}}
+    particularite: "Hache et marteau reliés par une chaîne. Brise ce qui protège avant de frapper ce qui vit."
+    tactique: "Faite contre les défenses : un mur de terre, une armure de chakra, un bouclier. Contre un adversaire nu et rapide, elle est trop lente."
+
+  - id: shibuki
+    nom: "Shibuki"
+    categorie: arme_legendaire
+    ensemble: sept_epees
+    prononciation: "Chi-bou-ki"
+    effets: {bonus_degats: 6, requis: {endurance: 18}}
+    particularite: "Large lame doublée d'un rouleau de parchemins explosifs qui se réamorce à chaque coup."
+    tactique: "Chaque frappe est une détonation. Interdit le corps à corps prolongé — y compris à son porteur, qui doit compter ses charges."
+
+  - id: kiba
+    nom: "Kiba"
+    categorie: arme_legendaire
+    ensemble: sept_epees
+    prononciation: "Ki-ba"
+    effets: {bonus_degats: 5, element: raiton}
+    particularite: "Paire de sabres dentelés qui amplifient la foudre qu'on y fait passer."
+    tactique: "Portée réelle bien au-delà de la lame : l'arc électrique frappe avant l'acier. Neutralisées par la terre, redoutables sous la pluie."
+
+  - id: hiramekarei
+    nom: "Hiramekarei"
+    categorie: arme_legendaire
+    ensemble: sept_epees
+    prononciation: "Hi-ra-mé-ka-ré"
+    effets: {bonus_degats: 5, chakra: 8}
+    particularite: "Masse plate creuse qui stocke le chakra et lui donne la forme qu'on veut."
+    tactique: "Change de nature à chaque échange : marteau, lance, double lame. Un adversaire ne peut pas s'adapter à une arme qui n'a pas de forme — mais chaque forme coûte du chakra."
+
+
+# ==========================================================================
+# ÉCOLES D'ARMES — ce qui distingue un porteur de sabre d'un escrimeur
+# ==========================================================================
+styles_armes:
+
+  - id: ecole_konoha_sabre
+    nom: "Escrime de la Feuille"
+    village: konoha
+    arme: ninjato
+    principe: "Une seule frappe décidée, après avoir laissé venir. On apprend à attendre plus qu'à attaquer."
+    marque: "Garde basse, lame le long de l'avant-bras."
+
+  - id: ecole_kiri_sept
+    nom: "Tradition des Sept Épées"
+    village: kiri
+    arme: null
+    principe: "L'arme choisit le porteur et le porteur devient l'arme. On hérite d'une lame en prenant la vie de celui qui la portait."
+    marque: "Aucune garde. On avance."
+
+  - id: ecole_kumo_double
+    nom: "Double lame de Kumo"
+    village: kumo
+    arme: ninjato
+    principe: "Deux sabres, deux rythmes désaccordés, le raiton dans les deux. On sature la lecture de l'adversaire."
+    marque: "Lames croisées dans le dos, dégainées ensemble."
+
+  - id: ecole_suna_fils
+    nom: "Art des fils"
+    village: suna
+    arme: marionnette
+    principe: "Ne jamais être là où l'adversaire frappe. Le corps du marionnettiste est le dernier recours, pas le premier."
+    marque: "Doigts toujours en mouvement, même au repos."
+
+
+# ==========================================================================
+# LEXIQUE — vocabulaire et prononciation
+# ==========================================================================
+# `termes` est lu par LorePack.lexique : c'est ce qui permettra au moteur
+# vocal de lire « jônin » et « Hokage » sans les massacrer. Et en attendant
+# la voix, cette liste donne au MJ le vocabulaire juste.
+termes:
+  - {terme: "chakra", fr: "cha-kra"}
+  - {terme: "genin", fr: "gué-nine"}
+  - {terme: "chûnin", fr: "tchou-nine"}
+  - {terme: "jônin", fr: "djoh-nine"}
+  - {terme: "Hokage", fr: "Ho-ka-gué"}
+  - {terme: "Kazekage", fr: "Ka-zé-ka-gué"}
+  - {terme: "Mizukage", fr: "Mi-zou-ka-gué"}
+  - {terme: "Raikage", fr: "Raï-ka-gué"}
+  - {terme: "Tsuchikage", fr: "Tsou-tchi-ka-gué"}
+  - {terme: "ANBU", fr: "ane-bou"}
+  - {terme: "jinchûriki", fr: "djine-tchou-ri-ki"}
+  - {terme: "bijû", fr: "bi-djou"}
+  - {terme: "kekkei genkai", fr: "kèk-kéï guène-kaï"}
+  - {terme: "dôjutsu", fr: "doh-djout-sou"}
+  - {terme: "ninjutsu", fr: "nine-djout-sou"}
+  - {terme: "taijutsu", fr: "taï-djout-sou"}
+  - {terme: "genjutsu", fr: "guène-djout-sou"}
+  - {terme: "fûinjutsu", fr: "fou-ine-djout-sou"}
+  - {terme: "kenjutsu", fr: "kène-djout-sou"}
+  - {terme: "kugutsu", fr: "kou-gout-sou"}
+  - {terme: "iryô ninjutsu", fr: "i-ryoh nine-djout-sou"}
+  - {terme: "ryô", fr: "ryoh"}
+  - {terme: "sensei", fr: "sène-séï"}
+  - {terme: "shinobi", fr: "chi-no-bi"}
+  - {terme: "kunoichi", fr: "kou-no-i-tchi"}
+  - {terme: "nukenin", fr: "nou-ké-nine"}
+  - {terme: "Akatsuki", fr: "A-kat-sou-ki"}

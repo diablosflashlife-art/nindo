@@ -1,0 +1,63 @@
+{# ==========================================================================
+   « PRÉCÉDEMMENT » — le rappel qu'on lit en s'installant.
+
+   POURQUOI. Ce jeu se joue une soirée par semaine, à plusieurs, sur un écran
+   partagé. En rouvrant la table sept jours plus tard, on trouvait un mur de
+   tours et une horloge à 34 : le premier geste de la séance était de faire
+   défiler l'historique en disant « attends, on en était où ».
+
+   Chargé à part (hx-trigger="load") pour que la page s'affiche tout de suite.
+   Le texte est écrit une fois par tour puis mis en cache ; le relevé sous le
+   texte est déterministe et marche avec Ollama éteint.
+
+   Il se referme d'un clic, et il ne revient pas avant la prochaine pause.
+   ========================================================================== #}
+{% from "_emblemes.html" import icone as icone_reprise %}
+<div class="panneau reprise" id="reprise">
+  <div class="rangee espace" style="justify-content:space-between;align-items:flex-start">
+    <p class="legende" style="margin-bottom:10px">
+      {{ icone_reprise('journal', 13) }} Précédemment</p>
+    {# On retire l'ENVELOPPE quand il y en a une : elle porte le hx-get qui va
+       chercher la version racontée, et la laisser en place ferait revenir le
+       panneau que le joueur vient de fermer. #}
+    <button type="button" class="ferme-reprise" aria-label="Fermer le rappel"
+            onclick="(this.closest('[data-rappel]') || this.closest('#reprise')).remove()"
+            >✕</button>
+  </div>
+
+  <p class="reprise-texte">{{ rappel.texte }}</p>
+
+  {# Le relevé : ce que le texte peut avoir laissé de côté, et qu'on veut
+     pouvoir vérifier d'un coup d'œil. Chiffré, sec, non narratif. #}
+  {% set r = rappel.releve %}
+  <div class="reprise-releve">
+    <span class="reprise-jeton">tour {{ r.tour }}</span>
+    <span class="reprise-jeton">absent {{ r.depuis }}</span>
+    {% if r.lieu %}<span class="reprise-jeton">{{ r.lieu }}</span>{% endif %}
+    {% for e in r.echeances[:3] %}
+      {% if e.reste is not none and e.reste <= 3 %}
+      <span class="reprise-jeton urgent">{{ e.titre|truncate(34, true, '…') }}
+        — {{ [0, e.reste]|max }} tour{{ 's' if e.reste > 1 }}</span>
+      {% else %}
+      <span class="reprise-jeton">{{ e.titre|truncate(34, true, '…') }}</span>
+      {% endif %}
+    {% endfor %}
+    {% for e in r.etats %}<span class="reprise-jeton urgent">{{ e }}</span>{% endfor %}
+    {% if r.points_libres %}
+    <span class="reprise-jeton ouvert">{{ r.points_libres }} point{{ 's' if r.points_libres > 1 }} à placer</span>
+    {% endif %}
+    {% for q in r.questions[:2] %}
+    <span class="reprise-jeton ouvert">{{ q|truncate(46, true, '…') }}</span>
+    {% endfor %}
+  </div>
+
+  {% if r.compagnie %}
+  <p class="petit muted" style="margin:.7rem 0 0">
+    Avec toi : {{ r.compagnie|join(', ') }}.</p>
+  {% endif %}
+
+  {% if not rappel.du_modele %}
+  <p class="petit muted" style="margin:.55rem 0 0;opacity:.6">
+    Rappel assemblé sans le modèle — il dit l'essentiel, pas plus.</p>
+  {% endif %}
+</div>

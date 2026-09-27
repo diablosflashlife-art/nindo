@@ -1,0 +1,210 @@
+# ==========================================================================
+# SITES D'INVOCATION, CULTES, DÉSERTEURS ET RUMEURS
+# ==========================================================================
+# Ce fichier ajoute au monde ce qui donne des ADVERSAIRES et des BUTS à long
+# terme. Un monde sans antagonistes durables produit des missions
+# interchangeables ; un monde qui a des cultes, des déserteurs recherchés et
+# des lieux qu'on ne visite pas deux fois produit des arcs.
+#
+# `organisations` prolonge la liste de monde.yaml — le pack fusionne les
+# listes de même clé. Les entrées marquées `secrete: true` ne sont JAMAIS
+# injectées dans le contexte du narrateur tant que le groupe ne les a pas
+# découvertes.
+# ==========================================================================
+
+sites_invocation:
+
+  - id: myoboku
+    nom: "Mont Myôboku"
+    animal: "Crapauds"
+    pays: feu
+    acces: "Invocation inverse, jamais par la route. On n'y va pas : on y est appelé."
+    enseigne: "Senjutsu de l'ermite, fûinjutsu ancien, huile de combat"
+    epreuve: "Tenir l'équilibre sur l'huile brûlante sans puiser dans le chakra du site."
+    prix: "Le corps garde une marque de l'énergie naturelle. On ne redevient pas tout à fait ordinaire."
+    accroche: "Un vieux parchemin de contrat a été volé aux archives. Celui qui l'ouvrira sans préparation sera invoqué là-bas, et n'en reviendra pas seul."
+
+  - id: shikkotsu
+    nom: "Forêt de Shikkotsu"
+    animal: "Limaces"
+    pays: feu
+    acces: "Contrat de clan, transmis de médecin en médecin."
+    enseigne: "Iryô ninjutsu avancé, régénération, senjutsu de conservation"
+    epreuve: "Soigner sans jamais blesser, y compris pour se défendre, pendant tout le séjour."
+    prix: "L'interdiction reste après le départ. Beaucoup la rompent, et la forêt le sait."
+    accroche: "Le seul médecin capable d'opérer l'héritier du clan a été formé là-bas — et en a été renvoyé."
+
+  - id: ryuchi
+    nom: "Grotte Ryûchi"
+    animal: "Serpents"
+    pays: herbe
+    acces: "On entre en se faisant mordre. Une personne sur cent survit à la morsure."
+    enseigne: "Senjutsu de mue, poisons, techniques de longévité"
+    epreuve: "La morsure elle-même. Il n'y en a pas d'autre."
+    prix: "Ce qui survit à la mue n'est plus exactement ce qui est entré."
+    secrete: true
+    accroche: "Trois genin du village sont partis vers l'Herbe sans autorisation. L'un est rentré."
+
+  - id: mont_hayate
+    nom: "Mont Hayate"
+    animal: "Aigles"
+    pays: foudre
+    acces: "Gravir la face nord seul, sans matériel."
+    enseigne: "Vol porté, perception à longue distance, combat en altitude"
+    epreuve: "Se laisser tomber depuis la crête et attendre d'être rattrapé — ou non."
+    prix: "L'aigle choisit. Il ne se reprend pas."
+    accroche: "Kumo interdit l'ascension depuis deux ans. La raison est en haut."
+
+  - id: desert_rengeki
+    nom: "Désert de Rengeki"
+    animal: "Scorpions"
+    pays: vent
+    acces: "Sept jours de marche sans eau, guidé par les cactus-outres."
+    enseigne: "Poisons composés, patience, frappe unique"
+    epreuve: "Rester immobile une nuit entière au milieu du nid."
+    prix: "Le venin ne quitte plus le sang. Il protège et il use."
+    accroche: "Suna paie très cher pour savoir qui a passé le contrat du scorpion cette année."
+
+
+# ==========================================================================
+# CULTES ET FACTIONS RELIGIEUSES
+# ==========================================================================
+organisations:
+
+  - id: monastere_du_feu
+    nom: "Monastère du Pays du Feu"
+    village: null
+    pays: feu
+    puissance: 45
+    objectifs:
+      - "Préserver l'équilibre, y compris contre les villages"
+      - "Garder les textes que personne ne doit lire"
+    note: "Moines combattants. Neutres officiellement, jamais neutres en pratique — ils accueillent ceux que les villages rejettent."
+    accroche: "Le monastère abrite un déserteur et refuse de le livrer. Négocier, ou entrer."
+
+  - id: culte_jashin
+    nom: "Culte de Jashin"
+    village: null
+    puissance: 35
+    secrete: true
+    objectifs:
+      - "Offrir la douleur comme prière"
+      - "Recruter parmi ceux qui n'ont plus rien à perdre"
+    note: "Cellules de trois ou quatre, jamais plus. Leurs rites laissent des traces reconnaissables — cercles tracés au sang, victimes exsangues sans plaie mortelle."
+    accroche: "Trois corps en trois semaines, tous avec le même cercle tracé au sol. Le troisième est un chûnin du village."
+
+  - id: culte_soleil
+    nom: "Culte du Soleil"
+    village: null
+    pays: vent
+    puissance: 40
+    secrete: true
+    objectifs:
+      - "Purifier le monde de ce qui a été souillé par le chakra"
+      - "Infiltrer les conseils de village"
+    note: "Prêche la fin des lignées. Populaire là où les clans ont abusé de leur pouvoir — donc partout, un peu."
+    accroche: "Un conseiller du village répète des formules qui ne sont pas les siennes."
+
+  - id: theatre_de_la_brume
+    nom: "Théâtre de la Brume"
+    village: kiri
+    puissance: 30
+    secrete: true
+    objectifs:
+      - "Tenir le rôle qu'on a reçu, jusqu'au bout"
+      - "Écrire la pièce que les Kage croient improviser"
+    note: "Praticiens de genjutsu qui considèrent l'existence comme une représentation. Se reconnaissent à une réplique, jamais à un signe."
+    accroche: "Un témoin raconte trois versions d'une même nuit, toutes cohérentes, toutes fausses."
+
+  - id: guilde_marchande
+    nom: "Guilde des routes"
+    village: null
+    puissance: 50
+    objectifs:
+      - "Garder les routes ouvertes quoi qu'il en coûte"
+      - "Ne dépendre d'aucun village"
+    note: "Finance les missions d'escorte des cinq villages à la fois, et sait donc tout ce qui circule. Le seul pouvoir que la guerre appauvrit."
+    accroche: "La guilde propose une mission qu'aucun village n'a validée, et paie le double."
+
+
+# ==========================================================================
+# BINGO BOOK — les déserteurs recherchés
+# ==========================================================================
+# Des antagonistes nommés, réutilisables, avec un tier et une raison d'être
+# là. Le générateur de missions y puise pour les rangs B et au-dessus.
+bingo_book:
+
+  - id: nukenin_kaede
+    nom: "Kaede l'Éteignoir"
+    origine: kiri
+    grade_ancien: jonin
+    tier: 4
+    prime_ryo: 8000
+    specialite: "Suiton et brume. Étouffe les feux et les cris."
+    signe: "Ne parle jamais pendant un combat."
+    motif: "A déserté après les purges. Tue les recruteurs de Kiri, et personne d'autre."
+    accroche: "Un recruteur de Kiri est en ville, officiellement pour un traité. Kaede le sait déjà."
+
+  - id: nukenin_genzo
+    nom: "Genzô aux Mains Vides"
+    origine: iwa
+    grade_ancien: chunin
+    tier: 3
+    prime_ryo: 3500
+    specialite: "Doton et démolition. N'utilise aucune arme."
+    signe: "Laisse toujours un mur debout."
+    motif: "Détruit les ponts et les routes militaires. Prétend rendre la guerre impossible."
+    accroche: "Le pont du col a sauté. Le suivant est à quatre jours, et le convoi médical part demain."
+
+  - id: nukenin_shiori
+    nom: "Shiori la Deuxième Voix"
+    origine: konoha
+    grade_ancien: jonin
+    tier: 4
+    prime_ryo: 9500
+    specialite: "Genjutsu de substitution d'identité."
+    signe: "Répète la dernière phrase de son interlocuteur avant de répondre."
+    motif: "A été effacée des archives. Cherche qui a signé l'ordre."
+    accroche: "Quelqu'un a consulté ton dossier aux archives, avec ton visage."
+
+  - id: nukenin_batsu
+    nom: "Batsu le Collectionneur"
+    origine: inconnue
+    grade_ancien: inconnu
+    tier: 5
+    prime_ryo: 20000
+    specialite: "Kenjutsu. Prend une arme à chaque victime."
+    signe: "Ne porte jamais deux fois la même lame."
+    motif: "Reconstitue un ensemble d'armes dont personne ne connaît la liste complète."
+    accroche: "Une lame des Sept Épées a changé de main. La rumeur donne trois villages différents."
+
+  - id: nukenin_uzuri
+    nom: "Uzuri des Rizières"
+    origine: kusa
+    grade_ancien: genin
+    tier: 2
+    prime_ryo: 900
+    specialite: "Pièges, poisons de plante, connaissance du terrain."
+    signe: "Ne tue pas. Mutile et libère."
+    motif: "Rançonne les collecteurs d'impôts. Les paysans la protègent."
+    accroche: "Le village te charge de l'arrêter. Le hameau où elle se cache te nourrira et te mentira."
+
+
+# ==========================================================================
+# RUMEURS — de quoi peupler une taverne et amorcer un arc
+# ==========================================================================
+# Le MJ en reçoit une ou deux par scène sociale. Certaines sont vraies,
+# certaines sont fausses, et c'est le jeu qui tranche.
+rumeurs:
+  - {texte: "Un siège de Commandant Jônin serait vacant depuis plus longtemps que l'annonce officielle.", portee: village, fiable: false}
+  - {texte: "Les archives ont refusé l'accès à un jônin la semaine dernière. Personne ne sait sur l'ordre de qui.", portee: village, fiable: true}
+  - {texte: "Une équipe est rentrée de mission avec un membre de moins et un rapport de trois lignes.", portee: village, fiable: true}
+  - {texte: "Des marchands parlent d'un village de pêcheurs abandonné du jour au lendemain, sans traces de combat.", portee: pays, fiable: true}
+  - {texte: "Quelqu'un rachète en discret tous les rouleaux de scellement vierges du quartier marchand.", portee: village, fiable: true}
+  - {texte: "Un enfant du quartier aurait arrêté un kunai sans le toucher. Tout le monde raconte l'histoire différemment.", portee: village, fiable: false}
+  - {texte: "Les patrouilles de la frontière nord ont reçu l'ordre de ne plus signaler ce qu'elles voient.", portee: village, fiable: true}
+  - {texte: "Une lignée qu'on croyait éteinte aurait réapparu dans un village mineur.", portee: monde, fiable: false}
+  - {texte: "Le prix du soufre a triplé en deux mois. Quelqu'un stocke.", portee: pays, fiable: true}
+  - {texte: "Un déserteur aurait été vu au monastère, et le monastère dit n'avoir vu personne.", portee: pays, fiable: false}
+  - {texte: "Les chiens des Inuzuka refusent d'entrer dans un secteur précis de la forêt.", portee: village, fiable: true}
+  - {texte: "Deux membres du Conseil ne se parlent plus depuis une réunion dont il n'existe aucun compte rendu.", portee: village, fiable: true}

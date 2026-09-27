@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% from "_emblemes.html" import embleme, icone %}
+{% from "_paysages.html" import paysage %}
+{% from "_estampe.html" import estampe %}
+{% block cle_page %}{{ pj.village_ref or 'konoha' }}{% endblock %}
+{% block titre %}{{ pj.nom }}{% endblock %}
+{% block barre %}<a href="/campagnes/{{ camp.id }}" class="petit">← retour à la table</a>{% endblock %}
+{% block contenu %}
+
+{# Le personnage devant son pays. Une fiche n'est pas un formulaire : c'est
+   quelqu'un, et il vient de quelque part. #}
+<section class="fiche-entete cadre-paysage" data-parallaxe>
+  {{ estampe(pj.village_ref or 'konoha', 'fe') }}
+  <div class="heros-voile"></div>
+  <div class="heros-contenu">
+    <div class="portrait">
+      <div class="medaillon grand" data-cle="{{ pj.clan_ref or pj.village_ref or 'sans_clan' }}">
+        {{ embleme(pj.clan_ref or pj.village_ref or 'sans_clan', 112) }}</div>
+      <div class="ident">
+        <h1>{{ pj.nom }}</h1>
+        <div class="sous">
+          {{ pj.age }} ans · {{ pj.clan }} · {{ pj.village }}
+        </div>
+        <div class="tags" style="margin-top:9px">
+          <span class="tag vermillon">{{ titre_grade }}</span>
+          <span class="tag or">niveau {{ pj.niveau }}</span>
+          <span class="tag pourpre" title="puissance effective {{ pj.pe }}">{{ tier_label }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="duo">
+  <div>
+
+    {% if presage or archetype %}
+    <div class="panneau">
+      <p class="legende">{{ icone('destinee', 13) }} Ce que tu sais de toi</p>
+      {% if archetype %}
+      <div class="archetype-ligne">
+        <span class="archetype-nom">{{ archetype.nom }}</span>
+        <span class="archetype-accroche">{{ archetype.accroche }}</span>
+      </div>
+      {% endif %}
+      {% if presage %}<div class="presage">{{ presage }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if pj.apparence or pj.origine %}
+    <div class="panneau">
+      <p class="legende">{{ icone('identite', 13) }} Portrait</p>
+      {% if pj.apparence %}<p style="margin:0 0 10px">{{ pj.apparence }}</p>{% endif %}
+      {% if pj.origine %}<p class="muted" style="margin:0">{{ pj.origine }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="panneau">
+      <p class="legende">{{ icone('technique', 13) }} Techniques</p>
+      {% for t in techniques %}
+      <div style="margin-bottom:18px">
+        <div class="rangee" style="justify-content:space-between;align-items:baseline">
+          <span>
+            <strong>{{ t.nom }}</strong>
+            {% if t.fr %}<span class="muted petit"> — {{ t.fr }}</span>{% endif %}
+          </span>
+          <span class="tags">
+            <span class="tag">{{ t.categorie }}</span>
+            {% if t.element %}<span class="tag jade">{{ t.element }}</span>{% endif %}
+            <span class="tag or">rang {{ t.rang }}</span>
+          </span>
+        </div>
+        <div class="jauge {{ 'or' if t.maitrise >= 75 else '' }}" style="margin:8px 0 6px">
+          <i style="width:{{ t.maitrise }}%"></i></div>
+        <p class="petit muted" style="margin:0">
+          {{ t.effet }}
+          <span style="opacity:.65">· {{ t.palier }} ({{ t.maitrise }}) ·
+          {{ t.usages }} usage{{ 's' if t.usages > 1 }}</span></p>
+      </div>
+      {% else %}<p class="muted" style="margin:0">Aucune technique apprise.</p>{% endfor %}
+    </div>
+
+    {# Ce que le répertoire permet DE PLUS que ses techniques une à une. On
+       montre aussi ce qui n'est pas encore prêt : un combo qu'on ignore ne
+       sera jamais tenté, et ce qui manque devient un objectif
+       d'entraînement. #}
+    {% if synergies %}
+    {# Tout ce qui est ouvert, sans limite : c'est ici qu'on prépare la suite. #}
+    {% include "_apprentissage.html" %}
+
+    <div class="panneau">
+      <p class="legende">{{ icone('combat', 13) }} Ce que tu peux enchaîner</p>
+      {% for s in synergies %}
+      <div class="synergie {{ 'prete' if s.prete else 'en-attente' }}">
+        <div class="rangee" style="justify-content:space-between;align-items:baseline">
+          <strong>{{ s.nom }}</strong>
+          <span class="tags">
+            <span class="tag">{{ s.type }}</span>
+            {% if s.prete %}<span class="tag jade">prêt</span>
+            {% else %}<span class="tag">incomplet</span>{% endif %}
+          </span>
+        </div>
+        <p class="petit muted" style="margin:6px 0 0">
+          {% if s.type == 'prerequis' %}
+            Ouvre <strong>{{ s.debloque }}</strong> — demande {{ s.requiert|join(', ') }}.
+          {% elif s.type == 'contre' %}
+            Neutralise {{ s.contre|join(', ') }} — demande {{ s.requiert|join(', ') }}.
+          {% else %}
+            {{ s.requiert|join(' + ') }}{% if s.seuil %}, maîtrise {{ s.seuil }} minimum{% endif %}.
+          {% endif %}
+        </p>
+        {% if s.manque %}
+        <p class="petit" style="margin:4px 0 0;color:var(--vermillon-vif)">
+          Il te manque : {{ s.manque|join(', ') }}</p>
+        {% elif s.trop_verts %}
+        <p class="petit" style="margin:4px 0 0;color:var(--or)">
+          Pas encore assez sûr : {{ s.trop_verts|join(', ') }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="panneau">
+      <p class="legende">{{ icone('sceau', 13) }} Inventaire</p>
+      <div class="tags">
+        {% for o in pj.inventaire %}<span class="tag">{{ o }}</span>
+        {% else %}<span class="muted petit">Sac vide.</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="colonne">
+    <div class="panneau serre">
+      <p class="legende">{{ icone('chakra', 13) }} Condition</p>
+      {# On parcourt la déclaration du ruleset, pas le dictionnaire du
+         personnage : celui-ci porte aussi `pv_max`, une valeur de service qui
+         n'a rien à faire sous une jauge. #}
+      {% set maxi = pj.ressources.get('pv_max') or res_cfg.get('pv', {}).get('default', 40) %}
+      {% for cle, cfg in res_cfg.items() %}
+      {% set val = pj.ressources.get(cle, 0) %}
+      {% set plafond = maxi if cle == 'pv' else cfg.get('default', 30) %}
+      <div class="stat">
+        <span class="nom">{{ cfg.get('label', cle) }}</span>
+        <span class="valeur">{{ val }} <span class="petit muted">/ {{ plafond }}</span></span>
+        <span class="jauge {{ 'jade' if cle == 'pv' else 'chakra' }}">
+          <i style="width:{{ (val * 100 / plafond)|round|int if plafond else 0 }}%"></i></span>
+      </div>
+      {% endfor %}
+      <div class="stat" style="margin-top:12px">
+        <span class="nom">Expérience</span>
+        <span class="valeur">{{ pj.xp }} / {{ xp_requis }}</span>
+        <span class="jauge or">
+          <i style="width:{{ ((pj.xp / xp_requis * 100) if xp_requis else 0)|round|int }}%"></i></span>
+      </div>
+      {% if pj.etats %}
+      <div class="tags" style="margin-top:12px">
+        {% for e in pj.etats %}<span class="tag vermillon">{{ e }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Les points gagnés se placent depuis la fiche aussi : c'est là qu'on
+       relit ses caractéristiques, donc là qu'on décide laquelle monter. #}
+    {% include "_progression.html" %}
+
+    {% for gid, g in groupes.items() %}
+    <div class="panneau serre groupe-stat" data-cle="{{ gid }}" style="margin-bottom:22px">
+      <div class="groupe-tete">
+        <span class="titre rangee" style="gap:8px">
+          <span class="marque-groupe">{{ icone(gid, 15) }}</span>
+          {{ g.label }}</span>
+      </div>
+      <p class="note-famille">{{ g.note }}</p>
+      {% for k, v in stats_cfg.items() %}{% if v.get('groupe') == gid %}
+      <div class="stat">
+        <span class="nom">{{ v.label }}</span>
+        <span class="valeur">{{ pj.stats.get(k, v.default) }}</span>
+        {# La jauge se mesure au PLAFOND du ruleset, pas à une constante : avec
+           un 24 en dur, une caractéristique montée à 26 rendait une barre
+           pleine et le joueur ne voyait plus ce qui lui restait à gagner. #}
+        <span class="jauge crans">
+          <i style="width:{{ [100, (pj.stats.get(k, v.default) * 100 / stat_max)|round|int]|min }}%"></i></span>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="panneau serre">
+      <p class="legende">{{ icone('relation', 13) }} Relations</p>
+      {% for r in relations %}
+      <div class="stat">
+        <span class="nom">{{ r.nom }} <span class="muted minuscule">{{ r.nature }}</span></span>
+        <span class="valeur {{ 'ok' if r.valeur > 0 else ('ko' if r.valeur < 0 else '') }}">
+          {{ r.valeur }}</span>
+        <span class="jauge {{ 'jade' if r.valeur > 0 else '' }}">
+          <i style="width:{{ (r.valeur|abs) }}%"></i></span>
+      </div>
+      {% else %}<p class="petit muted" style="margin:0">Aucune relation établie.</p>{% endfor %}
+    </div>
+
+    {% if lieu %}
+    <div class="panneau serre">
+      <p class="legende">{{ icone('lieu', 13) }} Position</p>
+      <p style="margin:0 0 5px"><strong>{{ lieu.nom }}</strong>
+        <span class="tag vermillon" style="margin-left:6px">danger {{ lieu.danger }}</span></p>
+      <p class="petit muted" style="margin:0">{{ lieu.description }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,778 @@
+{# ==========================================================================
+   LES PLANS DE VILLAGE — la carte du jeu, dessinée.
+
+   CE QU'IL Y AVAIT AVANT. La carte posait des points sur un PAYSAGE flouté :
+   une vignette de colline vue de face, utilisée comme si c'était un plan. Le
+   joueur lisait donc des coordonnées sur une image qui ne les portait pas. Un
+   lieu « au nord-est » tombait sur un morceau de ciel.
+
+   CE QU'IL Y A MAINTENANT. Un vrai plan par village, vu de dessus, dessiné
+   à l'encre sur papier : la muraille, les toits, les routes, la rivière, le
+   relief. Les positions des lieux ont été choisies pour ce plan — la Tour du
+   Kage tombe au pied du rocher, les terrains d'entraînement en lisière, le
+   poste frontière sur la route du nord.
+
+   LA GÉOGRAPHIE VIENT DU CANON, LE DESSIN EST D'ICI. On ne recopie aucune
+   image : on lit ce que le monde dit de chaque village — Konoha dans une
+   forêt au pied du Rocher des Hokage et ceinte de hautes murailles, Suna dans
+   une vallée fortifiée derrière des falaises, avec une SEULE faille pour
+   entrer, Kiri et ses tours cylindriques dans la brume et l'eau, Kumo bâti
+   sur des aiguilles de roche au-dessus des nuages, Iwa et ses tours de pierre
+   reliées par des ponts — et on le dessine.
+
+   TOUT EST EN VECTORIEL, DANS CE FICHIER. Aucune image à télécharger, aucun
+   CDN, aucune dépendance : le jeu tourne hors ligne. Le repère est un
+   viewBox 0 0 100 100, exactement celui des coordonnées `Location.x/y`, donc
+   une épingle posée à (53, 49) tombe où le plan dit qu'elle tombe.
+   ========================================================================== #}
+
+{# --- les matières communes, déclarées une fois -------------------------- #}
+{% macro plan_defs() %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- le papier : un fond chaud, sali aux bords -->
+    <radialGradient id="pl-papier" cx="45%" cy="40%" r="78%">
+      <stop offset="0" stop-color="#2a2a26"/>
+      <stop offset="0.62" stop-color="#20201e"/>
+      <stop offset="1" stop-color="#15151a"/>
+    </radialGradient>
+
+    <!-- La forêt. Le piège d'un motif, c'est la GRILLE : sept arbres
+         identiques sur une trame régulière ne se lisent pas comme des arbres,
+         ils se lisent comme du papier millimétré. La tuile est donc grande,
+         les houppiers de trois tailles, posés hors alignement, et l'ensemble
+         reste très sombre : une forêt vue de haut est une masse, pas un
+         semis. -->
+    <pattern id="pl-foret" width="6.5" height="6.5" patternUnits="userSpaceOnUse"
+             patternTransform="rotate(9)">
+      <circle cx="1.2" cy="1.5" r=".72" fill="#2a4e34" opacity=".5"/>
+      <circle cx="3.9" cy=".8" r=".5" fill="#2f5a3b" opacity=".38"/>
+      <circle cx="5.4" cy="2.7" r=".82" fill="#26482f" opacity=".5"/>
+      <circle cx="2.3" cy="3.6" r=".58" fill="#2f5a3b" opacity=".34"/>
+      <circle cx="4.3" cy="4.9" r=".74" fill="#2a4e34" opacity=".44"/>
+      <circle cx=".7" cy="5.6" r=".5" fill="#26482f" opacity=".34"/>
+    </pattern>
+
+    <!-- Le bâti. Même principe : des toits de tailles inégales, décalés, et
+         la tuile tournée pour qu'aucune rangée ne s'aligne sur une rue. -->
+    <pattern id="pl-toits" width="4.5" height="4.5" patternUnits="userSpaceOnUse"
+             patternTransform="rotate(7)">
+      <rect x=".2" y=".25" width="1.3" height=".85" rx=".1" fill="#6b5a4a" opacity=".75"/>
+      <rect x="1.95" y=".55" width=".85" height="1.2" rx=".1" fill="#5c4d40" opacity=".7"/>
+      <rect x="3.25" y=".15" width="1.05" height=".75" rx=".1" fill="#63533f" opacity=".65"/>
+      <rect x=".55" y="1.7" width=".9" height="1.1" rx=".1" fill="#57493d" opacity=".68"/>
+      <rect x="2.15" y="2.2" width="1.4" height=".8" rx=".1" fill="#665647" opacity=".72"/>
+      <rect x="3.7" y="1.9" width=".7" height=".95" rx=".1" fill="#5a4b3e" opacity=".62"/>
+      <rect x=".3" y="3.3" width="1.15" height=".9" rx=".1" fill="#63533f" opacity=".7"/>
+      <rect x="1.8" y="3.55" width=".8" height=".75" rx=".1" fill="#57493d" opacity=".6"/>
+      <rect x="3.05" y="3.15" width="1.25" height="1.05" rx=".1" fill="#6b5a4a" opacity=".7"/>
+    </pattern>
+
+    <!-- le sable : des rides de dune -->
+    <pattern id="pl-sable" width="9" height="9" patternUnits="userSpaceOnUse">
+      <path d="M0 3 Q4.5 1.2 9 3" fill="none" stroke="#c7a76a"
+            stroke-width=".28" opacity=".35"/>
+      <path d="M0 7 Q4.5 5.2 9 7" fill="none" stroke="#c7a76a"
+            stroke-width=".28" opacity=".25"/>
+    </pattern>
+
+    <!-- la roche : des strates -->
+    <pattern id="pl-roche" width="8" height="6" patternUnits="userSpaceOnUse">
+      <path d="M0 2 H8 M0 4.4 H8" stroke="#7d6a58" stroke-width=".25"
+            opacity=".4" fill="none"/>
+    </pattern>
+
+    <!-- l'eau : une houle courte -->
+    <pattern id="pl-eau" width="8" height="6" patternUnits="userSpaceOnUse">
+      <path d="M0 2.4 q2 -1.2 4 0 t4 0" fill="none" stroke="#4d7f9c"
+            stroke-width=".3" opacity=".45"/>
+      <path d="M0 4.8 q2 -1.2 4 0 t4 0" fill="none" stroke="#4d7f9c"
+            stroke-width=".3" opacity=".3"/>
+    </pattern>
+
+    <!-- la brume de Kiri, et les nuages de Kumo -->
+    <filter id="pl-brume" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="7"/>
+      <feColorMatrix type="matrix"
+        values="0 0 0 0 .78  0 0 0 0 .84  0 0 0 0 .88  0 0 0 .6 0"/>
+    </filter>
+  </defs>
+</svg>
+{% endmacro %}
+
+{# --- la rose des vents, identique partout ------------------------------- #}
+{% macro _boussole(x, y) %}
+<g transform="translate({{ x }},{{ y }})" opacity=".5">
+  <circle r="4.6" fill="none" stroke="#c9b48a" stroke-width=".25"/>
+  <path d="M0 -5.6 L1.3 -1 L0 0 L-1.3 -1 Z" fill="#d9452f" opacity=".9"/>
+  <path d="M0 5.6 L1 1 L0 0 L-1 1 Z" fill="#c9b48a" opacity=".55"/>
+  <text x="0" y="-6.6" text-anchor="middle" font-size="2.6"
+        fill="#c9b48a" font-family="Georgia,serif">N</text>
+</g>
+{% endmacro %}
+
+{# --- le cartouche : le nom du village, à l'encre ------------------------ #}
+{% macro _cartouche(nom, kanji) %}
+<g opacity=".72">
+  <rect x="3" y="3" width="30" height="8.4" rx="1.2"
+        fill="#12120f" opacity=".55" stroke="#c9b48a" stroke-width=".2"/>
+  <text x="5.4" y="9" font-size="4.2" fill="#e9dfc8"
+        font-family="Georgia,serif" letter-spacing=".2">{{ nom }}</text>
+  <text x="30.2" y="9.4" font-size="5" fill="#d9452f" text-anchor="end"
+        opacity=".8" font-family="Georgia,serif">{{ kanji }}</text>
+</g>
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# KONOHA — une forêt, une muraille ronde, un rocher gravé au nord          #}
+{# ======================================================================== #}
+{% macro _konoha() %}
+<rect width="100" height="100" fill="url(#pl-papier)"/>
+
+{# LA FORÊT. Des masses irrégulières plutôt qu'un semis uniforme : vue de
+   haut, une futaie est un relief, et ses clairières font autant que ses
+   arbres. Les positions sont écrites à la main — une trame régulière se
+   reconnaît immédiatement et tue le dessin. #}
+<g opacity=".85">
+  <path d="M0 0 H100 V100 H0 Z" fill="#1b2318"/>
+  <path d="M0 0 H100 V100 H0 Z" fill="url(#pl-foret)"/>
+  <g fill="#162014" opacity=".55">
+    <path d="M-4 18 C10 10 24 16 30 8 C38 0 52 2 58 10 C66 20 58 30 44 32
+             C28 34 6 30 -4 18 Z"/>
+    <path d="M62 8 C76 2 94 6 104 18 C104 32 88 38 74 34 C62 30 56 18 62 8 Z"/>
+    <path d="M-4 52 C6 44 18 46 22 54 C26 64 16 72 4 70 C-4 68 -8 58 -4 52 Z"/>
+    <path d="M80 58 C94 52 106 60 104 74 C102 86 88 90 80 82 C74 76 74 62 80 58 Z"/>
+  </g>
+</g>
+
+{# LE ROCHER DES HOKAGE. Une masse, pas un triangle : une crête dentelée,
+   une paroi hachurée qui tombe vers le village, et cinq visages taillés —
+   petits, et suggérés par un front, un nez, un menton. Vus de si haut, ils
+   ne peuvent être que des entailles dans la falaise. #}
+<path d="M8 47 C14 39 19 41 23 34 C27 27 33 30 38 24 C43 18 50 21 55 17
+         C61 13 67 19 73 20 C80 21 85 29 90 32 C95 35 96 42 94 47 Z"
+      fill="#2a2621" stroke="#8a7a63" stroke-width=".35"/>
+{# la paroi : de courtes hachures verticales sous la crête, régulières et
+   discrètes. C'est le seul signe qui dise « falaise » plutôt que « colline ». #}
+<g stroke="#6f6152" stroke-width=".17" opacity=".45">
+  {% for x in range(11, 93, 2) %}
+  <path d="M{{ x }} 47 V{{ 43.4 if loop.index0 % 2 else 42.2 }}"/>
+  {% endfor %}
+</g>
+{# LES VISAGES. Vus de si haut, ce ne peut être que cinq entailles dans la
+   falaise : un pan plus clair, une ombre à gauche. Tout détail de trait
+   deviendrait du bruit à la taille où cette carte se regarde vraiment. #}
+<g>
+  {% for fx in [28, 37.5, 47, 56.5, 66] %}
+  <g transform="translate({{ fx }},41.4)">
+    <path d="M0 0 h4.6 v5.6 h-4.6 Z" fill="#413a31"/>
+    <path d="M0 0 h1.1 v5.6 h-1.1 Z" fill="#292521" opacity=".85"/>
+    <path d="M0 0 h4.6 v5.6 h-4.6 Z" fill="none" stroke="#a08d70"
+          stroke-width=".14" opacity=".75"/>
+  </g>
+  {% endfor %}
+</g>
+{# la crête, reprise d'un trait clair : c'est elle qu'on voit de loin #}
+<path d="M8 47 C14 39 19 41 23 34 C27 27 33 30 38 24 C43 18 50 21 55 17
+         C61 13 67 19 73 20 C80 21 85 29 90 32 C95 35 96 42 94 47"
+      fill="none" stroke="#c2ad8a" stroke-width=".3" opacity=".5"/>
+
+{# LA MURAILLE. Irrégulière, et percée d'une seule grande porte au sud. On
+   la dessine en deux arcs pour que le passage soit un vrai trou, pas un
+   rectangle posé par-dessus. #}
+<clipPath id="pl-k-mur">
+  <path d="M48 45 C62 45 73 49 78 57 C82 63 82 72 79 79
+           C75 87 62 92 48 92 C34 92 21 87 17 79
+           C14 72 14 63 18 57 C23 49 34 45 48 45 Z"/>
+</clipPath>
+
+{# l'intérieur : d'abord le sol nu, puis les îlots #}
+<g clip-path="url(#pl-k-mur)">
+  <rect x="10" y="42" width="80" height="54" fill="#211f1b"/>
+
+  {# les îlots de maisons. Des quadrilatères irréguliers séparés par les
+     rues : c'est ce découpage qui fait lire « ville » avant toute texture. #}
+  <g>
+    {% for p in [
+      "M23 55 L38 52 L41 61 L25 63 Z",
+      "M42 51 L54 49 L57 58 L44 60 Z",
+      "M59 53 L70 56 L69 64 L58 62 Z",
+      "M18 66 L36 65 L37 75 L20 74 Z",
+      "M40 64 L53 64 L53 75 L40 75 Z",
+      "M57 67 L68 69 L66 77 L57 75 Z",
+      "M22 78 L37 78 L36 88 L24 86 Z",
+      "M41 78 L54 78 L54 89 L41 89 Z",
+      "M71 60 L79 62 L78 71 L70 69 Z" ] %}
+    <path d="{{ p }}" fill="#272420"/>
+    <path d="{{ p }}" fill="url(#pl-toits)" opacity=".92"/>
+    <path d="{{ p }}" fill="none" stroke="#5f5346" stroke-width=".2"/>
+    {% endfor %}
+  </g>
+
+  {# LA NAKA. Elle entre au nord-est, serpente, et sort au sud. Trois
+     courbures : une rivière droite est un canal. #}
+  <path d="M80 48 C73 54 74 60 69 65 C64 70 65 76 60 81 C56 86 55 90 54 96"
+        fill="none" stroke="#2f5670" stroke-width="2.6" opacity=".9"/>
+  <path d="M80 48 C73 54 74 60 69 65 C64 70 65 76 60 81 C56 86 55 90 54 96"
+        fill="none" stroke="url(#pl-eau)" stroke-width="2.6"/>
+
+  {# les artères : une venue de la porte sud, une ceinture, deux radiales #}
+  <g stroke="#a3906f" fill="none" opacity=".5" stroke-linecap="round">
+    <path d="M47.5 92 C47 84 48 76 49 68 C50 60 51 54 52 50" stroke-width=".95"/>
+    <path d="M17 68 C28 64 40 63 52 64 C62 65 72 67 80 70" stroke-width=".75"/>
+    <path d="M22 52 C30 58 38 62 48 65" stroke-width=".55"/>
+    <path d="M74 54 C66 59 58 62 50 65" stroke-width=".55"/>
+    <path d="M30 88 C36 80 40 74 44 68" stroke-width=".45" opacity=".7"/>
+  </g>
+  {# les ponts : deux traits en travers de la rivière #}
+  <g stroke="#c2ad8a" stroke-width=".45" opacity=".7">
+    <path d="M67 63 L72 67"/><path d="M58 79 L63 83"/>
+  </g>
+
+  {# la place centrale, au pied du rocher : le cœur administratif #}
+  <path d="M48.4 46.6 L56 47.4 L57 53 L49.6 54 Z" fill="#332e27"
+        stroke="#c2ad8a" stroke-width=".3" opacity=".95"/>
+
+  {# le terrain d'entraînement : une clairière battue, trois poteaux #}
+  <ellipse cx="64" cy="71" rx="6.2" ry="4.6" fill="#312c24" opacity=".95"/>
+  <ellipse cx="64" cy="71" rx="6.2" ry="4.6" fill="none" stroke="#7b6b56"
+           stroke-width=".22" stroke-dasharray=".8 .8"/>
+  <g fill="#c2ad8a" opacity=".8">
+    <rect x="61.6" y="69.4" width=".7" height="3"/>
+    <rect x="63.6" y="68.9" width=".7" height="3.5"/>
+    <rect x="65.6" y="69.4" width=".7" height="3"/>
+  </g>
+
+  {# le quartier Uchiha, de l'autre côté de la rivière, et son éventail :
+     demi-disque rouge, demi-disque clair, un manche. #}
+  <path d="M58 79 L72 80 L70 90 L58 89 Z" fill="#241f1d"/>
+  <path d="M58 79 L72 80 L70 90 L58 89 Z" fill="url(#pl-toits)" opacity=".6"/>
+  <path d="M58 79 L72 80 L70 90 L58 89 Z" fill="none" stroke="#6a4b42"
+        stroke-width=".22"/>
+  <g transform="translate(65,84.6) scale(.85)">
+    <path d="M-2.2 0 a2.2 2.2 0 0 1 4.4 0 Z" fill="#d9452f" opacity=".85"/>
+    <path d="M-2.2 0 a2.2 2.2 0 0 0 4.4 0 Z" fill="#e6dccb" opacity=".7"/>
+    <path d="M0 2.2 v1.8" stroke="#e6dccb" stroke-width=".4" opacity=".7"/>
+  </g>
+</g>
+
+{# le trait de muraille, par-dessus l'intérieur, coupé au sud pour la porte #}
+<path d="M48 45 C62 45 73 49 78 57 C82 63 82 72 79 79 C77 84 71 88 63 90"
+      fill="none" stroke="#9c8a6e" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M33 90 C25 88 19 84 17 79 C14 72 14 63 18 57 C23 49 34 45 48 45"
+      fill="none" stroke="#9c8a6e" stroke-width="1.2" stroke-linecap="round"/>
+{# les tours de guet, posées le long du rempart #}
+<g fill="#b8a482" opacity=".8">
+  {% for t in [[78,57],[81,70],[70,86],[26,86],[16,70],[20,55],[34,46],[62,46]] %}
+  <circle cx="{{ t[0] }}" cy="{{ t[1] }}" r=".9"/>
+  {% endfor %}
+</g>
+
+{# LA PORTE SUD : deux battants ouverts et la route qui s'en va #}
+<g stroke="#c9b48a" fill="none" opacity=".9">
+  <path d="M33 90 L33 93.4" stroke-width=".55"/>
+  <path d="M63 90 L63 93.4" stroke-width=".55"/>
+  <path d="M36 91.4 L44 92.6 M60 91.4 L52 92.6" stroke-width=".4" opacity=".7"/>
+</g>
+<path d="M48 93 C48 96 48 98 48 100" stroke="#a3906f" stroke-width="1"
+      opacity=".5" stroke-dasharray="1.8 1.5" fill="none"/>
+
+{# la route du nord, vers le poste frontière : elle contourne le rocher #}
+<path d="M52 47 C53 40 54 32 56 24 C57 18 58 15 58 12" fill="none"
+      stroke="#a3906f" stroke-width=".8" opacity=".45"
+      stroke-dasharray="2 1.6"/>
+
+{# la forêt frontalière, au nord-est : plus dense, plus sombre, sans route #}
+<path d="M64 20 C72 12 86 12 94 20 C100 27 96 38 86 40 C74 42 62 34 62 28
+         C62 24 62 22 64 20 Z" fill="#101a10" opacity=".75"/>
+<path d="M64 20 C72 12 86 12 94 20 C100 27 96 38 86 40 C74 42 62 34 62 28
+         C62 24 62 22 64 20 Z" fill="url(#pl-foret)" opacity=".8"/>
+
+{# les libellés fixes : ce que le village EST, et qui ne change jamais #}
+<g font-family="Georgia,serif" fill="#c9b48a" opacity=".42"
+   letter-spacing=".26">
+  <text x="30" y="31" font-size="2.4">ROCHER DES HOKAGE</text>
+  <text x="76" y="52" font-size="2.1" text-anchor="middle">Naka</text>
+  <text x="48" y="98.6" font-size="2.2" text-anchor="middle">PORTE SUD</text>
+</g>
+{{ _boussole(90, 88) }}
+{{ _cartouche("Konoha", "木") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# SUNA — une vallée fortifiée, une seule faille pour entrer                #}
+{# ======================================================================== #}
+{% macro _dome(x, y, r) %}
+{# Un dôme d'argile vu de haut : la lumière vient du nord-ouest, donc un
+   croissant clair en haut à gauche et une ombre portée en bas à droite.
+   Sans cette ombre, dix-huit cercles beiges ne sont que des bulles. #}
+<ellipse cx="{{ x + r * 0.34 }}" cy="{{ y + r * 0.42 }}" rx="{{ r }}"
+         ry="{{ r * 0.82 }}" fill="#14100a" opacity=".5"/>
+<circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="#6a553a"/>
+<path d="M{{ x - r * 0.78 }} {{ y - r * 0.32 }}
+         a{{ r }} {{ r }} 0 0 1 {{ r * 1.1 }} {{ -r * 0.62 }}
+         a{{ r * 0.66 }} {{ r * 0.66 }} 0 0 0 {{ -r * 1.1 }} {{ r * 0.62 }} Z"
+      fill="#8f7549" opacity=".8"/>
+<circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="none" stroke="#4a3a22"
+        stroke-width=".18"/>
+{% endmacro %}
+
+{% macro _suna() %}
+<rect width="100" height="100" fill="#221c13"/>
+<rect width="100" height="100" fill="url(#pl-sable)" opacity=".8"/>
+{# quelques grandes dunes, pour que le désert ait un relief #}
+<g fill="#2b2317" opacity=".55">
+  <path d="M-4 22 C14 12 34 18 44 10 C30 2 6 4 -4 12 Z"/>
+  <path d="M60 6 C74 14 90 10 104 16 L104 -2 L58 -2 Z"/>
+  <path d="M-4 86 C12 78 26 84 40 92 C24 100 4 98 -4 94 Z"/>
+  <path d="M74 96 C86 88 96 92 104 88 L104 104 L70 104 Z"/>
+</g>
+
+{# LES FALAISES. Un massif percé d'une SEULE faille, à l'est : c'est toute
+   la défense de Suna, et c'est ce qu'il faut voir en premier. Le contour est
+   irrégulier — une ellipse parfaite se lirait comme un anneau décoratif. #}
+<path d="M50 14 C68 14 82 26 88 42 C93 55 91 70 82 80 C76 86 70 89 64 90
+         L64 79 C71 76 76 70 78 62 C81 50 76 36 66 28 C58 22 46 21 38 25
+         C27 31 21 44 22 56 C23 70 32 82 45 86 L45 96
+         C28 92 14 78 11 60 C8 42 18 24 34 17 C39 15 45 14 50 14 Z"
+      fill="#2a2317" stroke="#8a7048" stroke-width=".35"/>
+<path d="M50 14 C68 14 82 26 88 42 C93 55 91 70 82 80 C76 86 70 89 64 90
+         L64 79 C71 76 76 70 78 62 C81 50 76 36 66 28 C58 22 46 21 38 25
+         C27 31 21 44 22 56 C23 70 32 82 45 86 L45 96
+         C28 92 14 78 11 60 C8 42 18 24 34 17 C39 15 45 14 50 14 Z"
+      fill="url(#pl-roche)" opacity=".7"/>
+
+{# la cuvette : le fond de la vallée, dans l'ombre de ses propres falaises #}
+<clipPath id="pl-s-cuvette">
+  <path d="M50 22 C64 22 74 31 77 44 C80 56 76 70 66 78 C56 86 42 86 32 78
+           C22 70 19 56 22 44 C26 31 36 22 50 22 Z"/>
+</clipPath>
+<g clip-path="url(#pl-s-cuvette)">
+  <rect x="14" y="18" width="72" height="74" fill="#241c12"/>
+  {# l'ombre de la falaise sur le fond, du côté nord-ouest #}
+  <path d="M14 18 H86 V32 C70 24 40 26 22 40 L14 46 Z" fill="#191308"
+        opacity=".4"/>
+
+  {# les venelles : sinueuses, comme une médina. Rien d'orthogonal ici. #}
+  <g stroke="#c2a878" stroke-width=".45" fill="none" opacity=".3">
+    <path d="M22 52 C32 48 42 54 52 50 C62 46 70 52 78 50"/>
+    <path d="M26 66 C38 62 48 68 60 64 C68 61 74 64 78 62"/>
+    <path d="M40 24 C42 38 38 50 42 62 C45 72 44 80 42 86"/>
+    <path d="M62 24 C60 36 64 48 60 60 C57 70 58 78 60 84"/>
+  </g>
+
+  {# les dômes d'argile, par grappes et de tailles inégales #}
+  {% for c in [[32,40,2.2],[38,36,1.6],[45,38,2.6],[52,34,1.8],[59,38,2.2],
+               [66,42,1.7],[28,50,2.4],[35,48,1.8],[64,50,2.2],[71,52,1.6],
+               [30,60,2.0],[37,64,2.6],[45,68,1.9],[53,70,2.4],[61,66,2.0],
+               [68,60,1.7],[33,72,2.2],[44,78,1.8],[55,80,2.2],[64,74,1.6]] %}
+  {{ _dome(c[0], c[1], c[2]) }}
+  {% endfor %}
+
+  {# le bâtiment du Kazekage : le plus grand dôme, au centre, marqué 風 #}
+  <ellipse cx="52" cy="56" rx="6" ry="5" fill="#14100a" opacity=".5"/>
+  <circle cx="50" cy="54" r="6.2" fill="#8a7046"/>
+  <path d="M45.2 52 a6.2 6.2 0 0 1 6.8 -3.9 a4.1 4.1 0 0 0 -6.8 3.9 Z"
+        fill="#c4a56f" opacity=".85"/>
+  <circle cx="50" cy="54" r="6.2" fill="none" stroke="#e6d3a6" stroke-width=".3"/>
+  <text x="50" y="56.4" font-size="4.6" text-anchor="middle" fill="#241d12"
+        font-family="Georgia,serif">風</text>
+</g>
+
+{# LA FAILLE : deux parois qui se frôlent, et la piste qui s'en va #}
+<g stroke="#e6d3a6" stroke-width=".5" opacity=".75" fill="none">
+  <path d="M64 79 L64 90"/><path d="M78 62 C78 70 74 76 68 80"/>
+</g>
+<path d="M66 86 C76 84 84 78 96 72" fill="none" stroke="#c2a878"
+      stroke-width=".85" opacity=".45" stroke-dasharray="2 1.6"/>
+
+<g font-family="Georgia,serif" fill="#e6d3a6" opacity=".42" letter-spacing=".26">
+  <text x="50" y="9" font-size="2.4" text-anchor="middle">DÉSERT DU VENT</text>
+  <text x="84" y="92" font-size="2.2" text-anchor="middle">LA FAILLE</text>
+</g>
+{{ _boussole(12, 88) }}
+{{ _cartouche("Suna", "風") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# KIRI — des tours cylindriques, de l'eau partout, de la brume             #}
+{# ======================================================================== #}
+{% macro _tour_kiri(x, y, r) %}
+{# Une tour cylindrique vue de dessus : l'ombre portée, le fût, la lèvre du
+   toit, et la végétation qui pousse dessus — c'est ce que Kiri a de
+   reconnaissable entre tous. #}
+<ellipse cx="{{ x + r * 0.42 }}" cy="{{ y + r * 0.48 }}" rx="{{ r * 1.02 }}"
+         ry="{{ r * 0.8 }}" fill="#070c10" opacity=".55"/>
+<circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="#2b3a3c"/>
+<circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="none" stroke="#9db8b2"
+        stroke-width=".2" opacity=".8"/>
+<circle cx="{{ x - r * 0.1 }}" cy="{{ y - r * 0.12 }}" r="{{ r * 0.72 }}"
+        fill="#33513f"/>
+<circle cx="{{ x - r * 0.28 }}" cy="{{ y - r * 0.3 }}" r="{{ r * 0.3 }}"
+        fill="#3f6249" opacity=".6"/>
+{% endmacro %}
+
+{% macro _kiri() %}
+<rect width="100" height="100" fill="#0e161c"/>
+<rect width="100" height="100" fill="url(#pl-eau)" opacity=".75"/>
+{# la houle du large, plus marquée loin des terres #}
+<g stroke="#3f7590" stroke-width=".22" fill="none" opacity=".3">
+  {% for y in [14, 24, 84, 92] %}
+  <path d="M-4 {{ y }} q6 -2 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0"/>
+  {% endfor %}
+</g>
+
+{# LES MONTAGNES DU FOND, au nord : Kiri est cernée de sommets, et c'est
+   avec la brume ce qui la rend introuvable. #}
+<path d="M0 26 L10 10 L18 18 L28 4 L38 15 L48 6 L58 17 L70 8 L82 19
+         L92 11 L100 22 L100 0 L0 0 Z" fill="#0d1620"/>
+<path d="M0 26 L10 10 L18 18 L28 4 L38 15 L48 6 L58 17 L70 8 L82 19
+         L92 11 L100 22" fill="none" stroke="#3f6b84" stroke-width=".2"
+      opacity=".3"/>
+
+{# LES ÎLES. Des masses de terre irrégulières, cernées d'un liseré d'écume. #}
+<g>
+  {% for p in [
+    "M28 42 C38 33 56 33 66 42 C74 49 72 62 62 68 C50 75 34 71 28 61 C24 54 24 46 28 42 Z",
+    "M10 76 C18 69 32 70 37 78 C41 85 34 93 22 93 C12 93 6 84 10 76 Z",
+    "M66 74 C76 67 92 70 95 79 C97 88 86 95 74 93 C64 91 60 80 66 74 Z",
+    "M62 24 C70 19 82 21 85 27 C88 34 79 40 70 38 C62 36 58 29 62 24 Z" ] %}
+  <path d="{{ p }}" fill="#14211f" stroke="#5f8f96" stroke-width=".25"
+        stroke-opacity=".22"/>
+  <path d="{{ p }}" fill="none" stroke="#9fd0d6" stroke-width=".18"
+        opacity=".35" transform="translate(0,-.6)"/>
+  {% endfor %}
+</g>
+
+{# les ruelles de l'île principale #}
+<g stroke="#8fa8a0" stroke-width=".35" fill="none" opacity=".25">
+  <path d="M30 52 C40 48 54 50 66 48"/>
+  <path d="M34 62 C44 60 56 62 66 58"/>
+  <path d="M46 36 C44 46 48 58 46 70"/>
+</g>
+
+{# les tours : serrées sur l'île principale, éparses sur les autres #}
+{% for t in [[34,44,1.9],[39,40,1.5],[45,42,1.8],[51,39,1.4],[56,43,1.7],
+             [61,47,1.5],[30,51,1.7],[36,49,1.3],[42,48,1.6],[48,47,1.4],
+             [54,49,1.8],[60,53,1.5],[31,58,1.6],[38,57,1.4],[45,56,1.7],
+             [57,59,1.6],[63,57,1.3],[35,65,1.7],[42,64,1.4],[49,66,1.6],
+             [55,64,1.5],[60,62,1.3],
+             [15,79,1.6],[20,82,1.3],[25,79,1.5],[30,83,1.2],
+             [71,80,1.7],[77,78,1.3],[83,82,1.5],[88,79,1.2],
+             [67,29,1.4],[73,27,1.6],[79,30,1.2]] %}
+{{ _tour_kiri(t[0], t[1], t[2]) }}
+{% endfor %}
+
+{# le bâtiment du Mizukage : la plus large des tours, au centre, marqué 水 #}
+<ellipse cx="50.6" cy="53.4" rx="7" ry="5.6" fill="#070c10" opacity=".55"/>
+<circle cx="49" cy="52" r="6.8" fill="#334446"/>
+<circle cx="49" cy="52" r="6.8" fill="none" stroke="#cfe0da" stroke-width=".32"/>
+<circle cx="48.6" cy="51.4" r="5.2" fill="#3a5d47"/>
+<text x="49" y="54.2" font-size="4.6" text-anchor="middle" fill="#0b1114"
+      font-family="Georgia,serif">水</text>
+
+{# les ponts : deux traits parallèles, comme un tablier #}
+<g stroke="#9fd0d6" stroke-width=".22" fill="none" opacity=".6">
+  <path d="M30 66 C27 70 25 73 22 75 M32 68 C29 72 27 75 24 77"/>
+  <path d="M64 66 C68 70 71 73 74 75 M62 68 C66 72 69 75 72 77"/>
+  <path d="M62 38 C64 35 66 33 68 32 M64 40 C66 37 68 35 70 34"/>
+</g>
+
+{# LA BRUME : la signature du village, posée par-dessus tout le reste. #}
+<rect width="100" height="100" filter="url(#pl-brume)" opacity=".26"
+      style="mix-blend-mode:screen"/>
+<rect width="100" height="100" fill="none"/>
+
+<g font-family="Georgia,serif" fill="#cfe0da" opacity=".42" letter-spacing=".26">
+  <text x="50" y="98" font-size="2.3" text-anchor="middle">MER INTÉRIEURE</text>
+</g>
+{{ _boussole(90, 60) }}
+{{ _cartouche("Kiri", "水") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# KUMO — des aiguilles de roche, des ponts, et les nuages en dessous       #}
+{# ======================================================================== #}
+{% macro _aiguille(x, base, sommet, demi) %}
+{# Une aiguille de roche, de face : deux pans — l'un dans la lumière, l'autre
+   dans l'ombre — et des strates. Sans ces deux pans, une silhouette pleine
+   ressemble à un découpage de papier. #}
+<path d="M{{ x }} {{ sommet }} L{{ x + demi }} {{ base - 4 }}
+         L{{ x + demi * 0.92 }} {{ base }} L{{ x - demi * 0.92 }} {{ base }}
+         L{{ x - demi }} {{ base - 4 }} Z" fill="#191d29"/>
+<path d="M{{ x }} {{ sommet }} L{{ x + demi }} {{ base - 4 }}
+         L{{ x + demi * 0.92 }} {{ base }} L{{ x }} {{ base }} Z"
+      fill="#2c3244"/>
+<path d="M{{ x }} {{ sommet }} L{{ x + demi }} {{ base - 4 }}
+         L{{ x + demi * 0.92 }} {{ base }} L{{ x - demi * 0.92 }} {{ base }}
+         L{{ x - demi }} {{ base - 4 }} Z" fill="url(#pl-roche)" opacity=".2"/>
+<path d="M{{ x }} {{ sommet }} L{{ x + demi }} {{ base - 4 }}
+         L{{ x + demi * 0.92 }} {{ base }} L{{ x - demi * 0.92 }} {{ base }}
+         L{{ x - demi }} {{ base - 4 }} Z" fill="none" stroke="#8a93ad"
+      stroke-width=".2" opacity=".35"/>
+{% endmacro %}
+
+{% macro _kumo() %}
+<defs>
+  <linearGradient id="pl-ciel-kumo" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1c2236"/>
+    <stop offset="0.55" stop-color="#171b27"/>
+    <stop offset="1" stop-color="#111420"/>
+  </linearGradient>
+</defs>
+<rect width="100" height="100" fill="url(#pl-ciel-kumo)"/>
+
+{# l'éclair, loin, dans le ciel du haut — la signature du pays de la Foudre #}
+<path d="M86 6 L81 15 L84.4 15 L79 26" fill="none" stroke="#e6d36a"
+      stroke-width=".45" opacity=".45"/>
+<path d="M18 10 L15 17 L17.4 17 L14 24" fill="none" stroke="#e6d36a"
+      stroke-width=".3" opacity=".25"/>
+
+{# LES AIGUILLES. Kumo est bâtie sur des pitons, au-dessus des nuages : les
+   plus lointaines d'abord, plus pâles, puis les plus proches. #}
+<g opacity=".45">
+  {{ _aiguille(12, 82, 46, 6) }}
+  {{ _aiguille(88, 80, 42, 6.5) }}
+</g>
+{{ _aiguille(26, 88, 34, 9) }}
+{{ _aiguille(74, 88, 32, 9.5) }}
+{{ _aiguille(50, 94, 16, 12) }}
+{{ _aiguille(38, 92, 46, 6.5) }}
+{{ _aiguille(62, 92, 48, 6) }}
+
+{# LE BÂTIMENT DU RAIKAGE : bâti DANS la plus haute aiguille, pas posé
+   dessus. Une façade bleue encastrée, marquée 雷. #}
+<path d="M43 26 L57 26 L57 44 L43 44 Z" fill="#16253f"/>
+<path d="M43 26 L57 26 L57 44 L50 44 Z" fill="#20375c"/>
+<path d="M43 26 L57 26 L57 44 L43 44 Z" fill="none" stroke="#a8c4e6"
+      stroke-width=".35"/>
+<g fill="#6a86ad" opacity=".38">
+  {% for w in [[45,29],[48.5,29],[52,29],[45,33],[48.5,33],[52,33],
+               [45,37],[48.5,37],[52,37]] %}
+  <rect x="{{ w[0] }}" y="{{ w[1] }}" width="2.4" height="1.8" rx=".2"/>
+  {% endfor %}
+</g>
+<text x="50" y="23" font-size="4.6" text-anchor="middle" fill="#dbe7f5"
+      font-family="Georgia,serif" opacity=".6">雷</text>
+
+{# les maisons accrochées aux paliers : petits toits plats, deux par deux #}
+<g fill="#2b3145" stroke="#6b7591" stroke-width=".12" opacity=".85">
+  {% for r in [[21,62],[25,66],[29,70],[19,72],
+               [69,60],[73,64],[77,68],[81,72],
+               [45,50],[49,54],[53,50],[44,60],[52,62],
+               [35,58],[36,66],[61,58],[63,66]] %}
+  <rect x="{{ r[0] }}" y="{{ r[1] }}" width="3.2" height="2" rx=".3"/>
+  {% endfor %}
+</g>
+
+{# LES PONTS SUSPENDUS : une chaînette, et ses suspentes. C'est ce qui relie
+   la ville à elle-même. #}
+<g stroke="#a8c4e6" fill="none" opacity=".6">
+  <path d="M33 56 Q40 62 44 57" stroke-width=".35"/>
+  <path d="M56 57 Q62 63 68 56" stroke-width=".35"/>
+  <path d="M30 70 Q40 77 44 69" stroke-width=".3"/>
+  <path d="M56 69 Q64 77 72 70" stroke-width=".3"/>
+  <g stroke-width=".14" opacity=".7">
+    <path d="M36 57.6 v2 M39 59.2 v2 M42 58.6 v2"/>
+    <path d="M59 58.6 v2 M62 60.4 v2 M65 59 v2"/>
+  </g>
+</g>
+
+{# LES NUAGES : ils passent DEVANT le bas des aiguilles. C'est ce qui dit
+   qu'on est au-dessus d'eux, et pas sur une plaine. #}
+<g>
+  {% for c in [[18,80,20,5.5],[52,88,26,7],[82,78,18,5],
+               [34,95,24,7],[72,96,22,6]] %}
+  <ellipse cx="{{ c[0] }}" cy="{{ c[1] }}" rx="{{ c[2] }}" ry="{{ c[3] }}"
+           fill="#aab2cc" opacity=".22"/>
+  {% endfor %}
+</g>
+<rect y="70" width="100" height="30" filter="url(#pl-brume)" opacity=".22"
+      style="mix-blend-mode:screen"/>
+
+<g font-family="Georgia,serif" fill="#c9d2e6" opacity=".4" letter-spacing=".26">
+  <text x="50" y="98.6" font-size="2.3" text-anchor="middle">AU-DESSUS DES NUAGES</text>
+</g>
+{{ _boussole(12, 88) }}
+{{ _cartouche("Kumo", "雷") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# IWA — des tours de pierre reliées par un réseau de ponts                 #}
+{# ======================================================================== #}
+{# Une tour d'Iwa : un fût de pierre strié, coiffé d'un cône. Déclarée au
+   niveau du fichier — Jinja ne garantit pas la visibilité d'une macro
+   définie dans le corps d'une autre. #}
+{% macro _tour_iwa(x, y, h, r) %}
+<path d="M{{ x - r }} {{ y }} L{{ x - r }} {{ y - h }}
+         L{{ x }} {{ y - h - r * 0.9 }} L{{ x + r }} {{ y - h }}
+         L{{ x + r }} {{ y }} Z" fill="#3a3129" stroke="#a9744f"
+      stroke-width=".28"/>
+<path d="M{{ x - r }} {{ y - h }} L{{ x }} {{ y - h - r * 0.9 }}
+         L{{ x + r }} {{ y - h }} Z" fill="#6b4a33" opacity=".85"/>
+<g stroke="#a9744f" stroke-width=".18" opacity=".5">
+  <path d="M{{ x - r }} {{ y - h * 0.4 }} H{{ x + r }}"/>
+  <path d="M{{ x - r }} {{ y - h * 0.72 }} H{{ x + r }}"/>
+</g>
+{% endmacro %}
+
+{% macro _iwa() %}
+<rect width="100" height="100" fill="#1d1a16"/>
+<rect width="100" height="100" fill="url(#pl-roche)" opacity=".7"/>
+
+{# le socle rocheux, et les gorges qui le fendent #}
+<path d="M0 62 L14 50 L26 58 L38 44 L52 52 L64 40 L78 50 L92 44 L100 54
+         L100 100 L0 100 Z" fill="#26211b" stroke="#8a7355" stroke-width=".3"/>
+
+{# les tours de pierre : cylindres trapus, toit conique — voir _tour_iwa #}
+{{ _tour_iwa(22, 74, 16, 4.4) }}
+{{ _tour_iwa(34, 80, 12, 3.6) }}
+{{ _tour_iwa(66, 78, 14, 4.0) }}
+{{ _tour_iwa(80, 72, 18, 4.6) }}
+{{ _tour_iwa(44, 86, 10, 3.2) }}
+{{ _tour_iwa(56, 84, 13, 3.8) }}
+
+{# la résidence du Tsuchikage : la plus haute, toit conique marqué, kanji 土 #}
+<path d="M44 62 L44 40 L50 31 L56 40 L56 62 Z" fill="#4a3d31"
+      stroke="#d8b98a" stroke-width=".4"/>
+<path d="M44 40 L50 31 L56 40 Z" fill="#8a5a38"/>
+<text x="50" y="52" font-size="4.6" text-anchor="middle" fill="#e8d5b5"
+      font-family="Georgia,serif">土</text>
+
+{# le réseau de ponts — c'est la signature d'Iwa #}
+<g stroke="#d8b98a" stroke-width=".45" fill="none" opacity=".6">
+  <path d="M26 62 Q36 56 44 52"/>
+  <path d="M56 52 Q64 58 70 64"/>
+  <path d="M26 70 Q40 66 44 72"/>
+  <path d="M56 70 Q66 66 76 62"/>
+  <path d="M38 74 Q48 78 54 76"/>
+  <path d="M70 70 Q76 66 80 58"/>
+</g>
+
+{# les blocs erratiques, ceux qui flottent presque #}
+<g fill="#332b23" stroke="#8a7355" stroke-width=".22" opacity=".8">
+  <path d="M12 38 l6 -3 l5 4 l-4 5 l-6 -1 Z"/>
+  <path d="M86 32 l7 -2 l3 5 l-5 4 l-6 -2 Z"/>
+  <path d="M60 22 l5 -3 l5 3 l-2 5 l-6 1 Z"/>
+</g>
+
+<g font-family="Georgia,serif" fill="#e8d5b5" opacity=".45" letter-spacing=".22">
+  <text x="50" y="16" font-size="2.6" text-anchor="middle">MASSIF DE LA TERRE</text>
+</g>
+{{ _boussole(12, 88) }}
+{{ _cartouche("Iwa", "土") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# OTO — des collines creusées, des rizières en terrasses, des marais       #}
+{# Le village se cache SOUS la colline : de la surface, on ne voit que des  #}
+{# portes rondes, des digues et l'eau des rizières. D'après le wiki Solve : #}
+{# une nation née entre les Rizières et le Fer.                              #}
+{# ======================================================================== #}
+{% macro _oto() %}
+<rect width="100" height="100" fill="#15111c"/>
+
+{# les rizières : des terrasses d'eau, des lignes claires qui suivent le relief #}
+<g fill="none" stroke="#6d5a8c" stroke-width=".35" opacity=".45">
+  {% for i in range(12) %}
+  <path d="M-2 {{ 62 + i * 3.4 }} C22 {{ 58 + i * 3.4 }} 44 {{ 66 + i * 3.4 }} 64 {{ 61 + i * 3.4 }} S92 {{ 63 + i * 3.4 }} 102 {{ 60 + i * 3.4 }}"/>
+  {% endfor %}
+</g>
+{# l'eau des terrasses : une bande sur deux prend le reflet du ciel #}
+<g fill="none" stroke="#3b3058" stroke-width="2.4" opacity=".45">
+  {% for i in range(0, 12, 2) %}
+  <path d="M-2 {{ 63.7 + i * 3.4 }} C22 {{ 59.7 + i * 3.4 }} 44 {{ 67.7 + i * 3.4 }} 64 {{ 62.7 + i * 3.4 }} S92 {{ 64.7 + i * 3.4 }} 102 {{ 61.7 + i * 3.4 }}"/>
+  {% endfor %}
+</g>
+
+{# le marais d'entraînement, à l'est : de l'eau sombre et des roseaux #}
+<path d="M56 60 C64 54 80 56 84 64 C88 72 80 80 68 80 C58 80 50 70 56 60 Z"
+      fill="#1b2230" stroke="#4d6a86" stroke-width=".3" opacity=".9"/>
+<g stroke="#7a8f6a" stroke-width=".35" opacity=".6">
+  {% for r in [[60,64],[63,70],[70,62],[74,74],[79,66],[66,76],[58,72],[77,59]] %}
+  <path d="M{{ r[0] }} {{ r[1] }} v-2.6 M{{ r[0]+0.8 }} {{ r[1] }} v-1.8"/>
+  {% endfor %}
+</g>
+
+{# la colline creusée : le cœur du village, et ses portes rondes #}
+<path d="M26 58 C30 40 44 32 54 34 C66 36 74 46 72 58 C62 62 40 62 26 58 Z"
+      fill="#2c2340" stroke="#9a7fc4" stroke-width=".35"/>
+<path d="M30 55 C34 44 46 38 54 39 C64 41 70 48 68 56" fill="none"
+      stroke="#9a7fc4" stroke-width=".22" opacity=".45"/>
+<g>
+  {% for p in [[52,48,3.2],[38,56,2.4],[62,54,2.2],[46,41,1.8],[58,42,1.6]] %}
+  <circle cx="{{ p[0] }}" cy="{{ p[1] }}" r="{{ p[2] }}" fill="#120e18" stroke="#c9a6ff" stroke-width=".3"/>
+  <circle cx="{{ p[0] }}" cy="{{ p[1] }}" r="{{ p[2] * 0.45 }}" fill="#e38fd3" opacity=".35"/>
+  {% endfor %}
+</g>
+{# la note gravée au-dessus de la grande porte : le Son #}
+<text x="52" y="43.4" font-size="3.6" text-anchor="middle" fill="#e6c6ff"
+      font-family="Georgia,serif" opacity=".85">音</text>
+
+{# les digues et le chemin vers la frontière du Riz, au nord-ouest #}
+<path d="M40 40 C32 32 24 26 18 22" fill="none" stroke="#b8a6d6" stroke-width=".7"
+      stroke-dasharray="1.8 1.4" opacity=".55"/>
+<path d="M8 26 L30 16" stroke="#8c7aa8" stroke-width="1.4" opacity=".7"/>
+
+{# la forêt des laboratoires, au nord-est : des arbres morts, des toits crevés #}
+<path d="M64 14 C72 8 90 10 96 20 C100 30 90 36 80 34 C70 32 62 24 64 14 Z"
+      fill="#1a1422" opacity=".9"/>
+<g stroke="#5c4a6e" stroke-width=".4" fill="none" opacity=".8">
+  {% for t in [[70,20],[76,16],[84,18],[90,24],[74,28],[86,30]] %}
+  <path d="M{{ t[0] }} {{ t[1] + 3 }} v-3 l-1.4 -1.6 M{{ t[0] }} {{ t[1] }} l1.4 -1.6"/>
+  {% endfor %}
+</g>
+<g fill="#2a2036" stroke="#7a6690" stroke-width=".2">
+  <rect x="78" y="22" width="5" height="3.2"/><rect x="72" y="25" width="4" height="2.6"/>
+</g>
+
+<g font-family="Georgia,serif" fill="#d8c6ee" opacity=".42" letter-spacing=".26">
+  <text x="50" y="97.6" font-size="2.2" text-anchor="middle">RIZIÈRES DU SON</text>
+  <text x="81" y="8" font-size="2" text-anchor="middle">LABORATOIRES</text>
+</g>
+{{ _boussole(90, 88) }}
+{{ _cartouche("Oto", "音") }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# LE PLAN GÉNÉRIQUE — pour un village qu'on n'a pas dessiné                #}
+{# ======================================================================== #}
+{% macro _generique() %}
+<rect width="100" height="100" fill="url(#pl-papier)"/>
+<rect width="100" height="100" fill="url(#pl-foret)" opacity=".5"/>
+<path d="M50 40 C66 40 78 50 78 64 C78 78 66 88 50 88
+         C34 88 22 78 22 64 C22 50 34 40 50 40 Z"
+      fill="#232320" stroke="#9c8a6e" stroke-width=".9"/>
+<path d="M30 60 H70 M50 42 V86" stroke="#b09a76" stroke-width=".6"
+      opacity=".4" fill="none"/>
+<circle cx="50" cy="60" r="4" fill="#2b2822" stroke="#c9b48a" stroke-width=".3"/>
+<path d="M0 28 L16 14 L30 24 L44 10 L58 22 L74 12 L90 24 L100 16 L100 0 L0 0 Z"
+      fill="#20201e" opacity=".85"/>
+{{ _boussole(90, 12) }}
+{% endmacro %}
+
+
+{# ======================================================================== #}
+{# LE POINT D'ENTRÉE                                                         #}
+{# ======================================================================== #}
+{% macro plan(cle) %}
+{% set c = (cle or 'konoha')|lower %}
+<svg class="plan" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"
+     xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
+     data-village="{{ c }}">
+  {% if c in ('konoha', 'konohagakure') %}{{ _konoha() }}
+  {% elif c in ('suna', 'sunagakure') %}{{ _suna() }}
+  {% elif c in ('kiri', 'kirigakure') %}{{ _kiri() }}
+  {% elif c in ('kumo', 'kumogakure') %}{{ _kumo() }}
+  {% elif c in ('iwa', 'iwagakure') %}{{ _iwa() }}
+  {% elif c in ('oto', 'otogakure') %}{{ _oto() }}
+  {% else %}{{ _generique() }}{% endif %}
+</svg>
+{% endmacro %}
