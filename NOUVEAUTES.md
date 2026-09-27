@@ -3,6 +3,13 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 2.0.1 — Un français de table
+
+- **Plus aucun code brut à l'écran** : « réussite critique », « oui, mais… », « échec », « gagnée », « touché net », « risque élevé », « coéquipier », « ninjutsu médical » — à la place de `reussite critique`, `gagnee`, `eleve`, `coequipier`, `iryo`.
+- **Les effets d'un tour se lisent** : « Chakra −3 (reste 7) », « Maîtrise de Konoha Senpû : assurée » (plus d'identifiant technique), « Ryô +1200 pour chacun », « Réputation +2 ».
+- **La typographie du récit** : guillemets « », espaces insécables avant ? ! ; :, apostrophes typographiques, points de suspension — quel que soit le conteur, y compris Ollama.
+- **Le conteur écrit en français soigné** : aucun anglicisme, aucun mot japonais hors du vocabulaire du monde, pas de clins d'œil ni de comparaisons déplacées.
+
 ## 2.0.0 — Nindō, le jeu de rôle
 
 La 2.0 clôt la refonte du cœur (voir `docs/NINDO-2.md`) : Nindō se joue maintenant comme à une vraie table. Ce que les cinq chantiers ont apporté depuis la 1.1 :

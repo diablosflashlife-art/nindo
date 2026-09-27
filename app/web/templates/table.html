@@ -155,7 +155,7 @@
                   onclick="remplir(this.getAttribute('data-texte'))"
                   data-texte="{{ p.texte }}">
             {{ p.texte }}
-            <span class="risque {{ p.risque }}">risque {{ p.risque }}</span>
+            <span class="risque {{ p.risque }}">risque {{ p.risque|fr }}</span>
           </button>
           {% endfor %}
         {% endif %}
@@ -362,9 +362,9 @@
           <span class="titre">
             {{ r.nom }}
             {% if r.pj %}<span class="tag vermillon">joueur</span>
-            {% elif r.role %}<span class="tag">{{ r.role }}</span>{% endif %}
+            {% elif r.role %}<span class="tag">{{ r.role|fr }}</span>{% endif %}
           </span>
-          <span class="sous">{{ r.nature }}</span>
+          <span class="sous">{{ r.nature|fr }}</span>
           <span class="jauge {{ 'jade' if r.valeur > 0 else '' }}" style="margin-top:6px">
             <i style="width:{{ r.valeur|abs }}%"></i></span>
         </span>
@@ -465,7 +465,7 @@
       <p class="legende">{{ icone('journal', 13) }} Journal</p>
       {% for e in evenements %}
       <div class="ligne" style="align-items:flex-start">
-        <span class="petit">{{ e.resume }}</span>
+        <span class="petit">{{ e.resume|fr_texte }}</span>
         <span class="val">T{{ e.tour }}</span>
       </div>
       {% else %}<p class="petit muted" style="margin:0">Rien ne s'est encore produit.</p>{% endfor %}

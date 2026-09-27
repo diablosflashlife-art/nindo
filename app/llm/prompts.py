@@ -117,7 +117,16 @@ STYLE
   d'options : le joueur les reçoit ailleurs.
 - Aucun titre, aucune liste, aucun méta-commentaire, aucune mention des règles.
 - Texte simple : aucun astérisque, ni gras ni italique. Les répliques se
-  mettent entre guillemets « », rien de plus."""
+  mettent entre guillemets « », rien de plus.
+
+LA LANGUE
+- Un français soigné et naturel, celui d'un bon roman : phrases complètes,
+  accords justes, aucune faute d'accent. Tutoiement constant envers le joueur.
+- Aucun anglicisme (« tricks », « boss », « skill », « cool », « ok ») et aucun
+  mot japonais hors du vocabulaire du monde (chakra, kunai, jutsu, les noms
+  de techniques et de grades). Pas de comparaisons de cuisine ni de clins
+  d'œil au lecteur : le ton reste celui de la scène.
+- Ponctuation française : espace avant ? ! ; : et guillemets « »."""
 
 
 # La scène à plusieurs (tour de table, voir engine/table.py). Même prompt, un

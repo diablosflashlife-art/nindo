@@ -16,7 +16,7 @@
 <div class="bloc-jet {{ cls }}" data-de="{{ c.des[0] if c.des else c.de }}">
   <span class="de" aria-label="dé {{ c.des[0] if c.des else c.de }}">{{ c.des[0] if c.des else c.de }}</span>
   <span class="jet-corps">
-    <span class="jet-issue">{{ c.issue|replace('_', ' ') }}</span>
+    <span class="jet-issue">{{ c.issue|fr }}</span>
     <span class="jet-detail">
       {%- if a %}{{ a.stat_label }} · {{ a.difficulte|lower }} {{ a.dc }} · {% endif -%}
       total {{ c.total }} contre {{ c.difficulte }}
@@ -34,15 +34,15 @@
 {% if cb %}
   {% set fini = cb.get('statut') not in (None, 'en_cours') %}
 <div class="bloc-jet {{ 'ok' if cb.get('reussi') else 'ko' }}">
-  <span class="jet-issue">échange {{ cb.get('echange') }}</span>
+  <span class="jet-issue">round {{ cb.get('echange') }}</span>
   <span class="jet-detail">
     {{ cb.get('titre', '') }}
-    {%- if fini %} · {{ cb.get('statut')|replace('_', ' ') }}{% endif %}</span>
+    {%- if fini %} · {{ cb.get('statut')|fr }}{% endif %}</span>
 </div>
 {% if cb.get('lignes') %}
 <details class="echange">
   <summary>le détail des jets</summary>
-  {% for l in cb.get('lignes') %}<span class="echange-ligne">{{ l }}</span>{% endfor %}
+  {% for l in cb.get('lignes') %}<span class="echange-ligne">{{ l|fr_texte }}</span>{% endfor %}
 </details>
 {% endif %}
 {% endif %}

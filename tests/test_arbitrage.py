@@ -123,7 +123,7 @@ def test_la_technique_choisie_ajoute_son_bonus_et_coute_son_chakra(rs, pack, par
     prep = moteur.resoudre(session, camp, pj, a, rs, pack, technique="konoha_senpuu")
     assert prep.resolution["check"]["bonus"] == 2
     # Le solde remonte ensuite de 2 (récupération hors combat) : on lit l'effet.
-    assert any(e.startswith("chakra -3 → 7") for e in prep.effets_combat)
+    assert any(e.startswith("Chakra -3 (reste 7)") for e in prep.effets_combat)
     assert [ct.technique_ref for ct in prep.liens_techniques] == ["konoha_senpuu"]
     assert prep.resolution["arbitrage"]["technique"] == "Konoha Senpû"
 
@@ -144,7 +144,7 @@ def test_forcer_est_un_pari(rs, pack, partie, monkeypatch):
     prep = moteur.resoudre(session, camp, pj, a, rs, pack, forcer=True)
     c = prep.resolution["check"]
     assert c["bonus"] == 3 and c["issue"] == "echec_critique"
-    assert any(e.startswith("forcé : chakra -2 → 8") for e in prep.effets_combat)
+    assert any(e.startswith("Forcé : chakra -2 (reste 8)") for e in prep.effets_combat)
     assert "FORCÉ" in prep.bloc and prep.resolution["arbitrage"]["forcer"]
 
 
@@ -154,7 +154,7 @@ def test_forcer_qui_reussit_ne_coute_que_le_chakra(rs, pack, partie, monkeypatch
     monkeypatch.setattr(regles, "roll_dice", lambda expr, rng=None: (15, [15]))
     prep = moteur.resoudre(session, camp, pj, a, rs, pack, forcer=True)
     assert prep.resolution["check"]["issue"] == "reussite"
-    assert any(e.startswith("forcé : chakra -2 → 8") for e in prep.effets_combat)
+    assert any(e.startswith("Forcé : chakra -2 (reste 8)") for e in prep.effets_combat)
 
 
 def test_preparer_reste_le_chemin_d_un_seul_trait(rs, pack, partie):

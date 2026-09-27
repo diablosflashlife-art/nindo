@@ -68,13 +68,16 @@ def achever(texte: str) -> str:
     """Un récit coupé par le plafond de génération finit sur « près d'un ».
     On le ramène à sa dernière phrase complète — tant qu'on ne perd pas plus
     du tiers du texte ; sinon on le laisse en suspens, avec des points."""
+    from app.engine.francais import typographie
     texte = (texte or "").rstrip()
-    if not texte or re.search(r"[.!?…»”\"')\]]$", texte):
+    if not texte:
         return texte
+    if re.search(r"[.!?…»”\"')\]]$", texte):
+        return typographie(texte)
     fins = list(_FIN_DE_PHRASE.finditer(texte))
     if fins and fins[-1].end() >= len(texte) * 2 / 3:
-        return texte[:fins[-1].end()].rstrip()
-    return texte + "…"
+        return typographie(texte[:fins[-1].end()].rstrip())
+    return typographie(texte + "…")
 
 
 _OUVERTURES = ("<think>", "<thinking>", "<reasoning>")

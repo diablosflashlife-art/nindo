@@ -336,8 +336,8 @@ def debriefer(session: Session, camp: Campaign, rs: Ruleset, quete: Quest,
         texte=f"Débrief de « {quete.titre} » : note {note}, réputation {reput:+d}."))
     effets = [f"Débrief : note {note}"]
     if ryo:
-        effets.append(f"ryô +{ryo} (chacun)")
-    effets.append(f"réputation {reput:+d}")
+        effets.append(f"Ryô +{ryo} pour chacun")
+    effets.append(f"Réputation {reput:+d}")
     return effets
 
 

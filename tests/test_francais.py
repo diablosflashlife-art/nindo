@@ -108,3 +108,66 @@ def test_la_majuscule_ne_detruit_pas_le_reste():
     assert fr.majuscule("la Tour du Kage") == "La Tour du Kage"
     assert fr.majuscule("l'Académie") == "L'Académie"
     assert fr.majuscule("") == ""
+
+
+# ==========================================================================
+# LES CODES DU MOTEUR, DITS EN FRANÇAIS — et la typographie du récit
+# ==========================================================================
+@pytest.mark.parametrize("code,attendu", [
+    ("reussite_critique", "réussite critique"),
+    ("reussite_partielle", "oui, mais…"),
+    ("echec", "échec"),
+    ("gagnee", "gagnée"),
+    ("objectif_atteint", "objectif atteint"),
+    ("touche_net", "touché net"),
+    ("eleve", "élevé"),
+    ("en_eveil", "en éveil"),
+    ("un_code_inconnu", "un code inconnu"),
+])
+def test_aucun_code_ne_s_affiche_brut(code, attendu):
+    assert fr.libelle(code) == attendu
+
+
+def test_la_typographie_francaise_du_recit():
+    brut = 'Il sourit. "Tu viens?" Elle hésite... puis : "Non!" Kaito l\'attend.'
+    net = fr.typographie(brut)
+    assert "«\u00a0Tu viens\u202f?\u00a0»" in net
+    assert "hésite…" in net
+    assert "puis\u00a0:" in net
+    assert "«\u00a0Non\u202f!\u00a0»" in net
+    assert "l’attend" in net
+    assert '"' not in net
+
+
+def test_la_typographie_ne_touche_pas_a_ce_qui_est_deja_juste():
+    juste = "« Tu viens\u202f? » demande-t-il. Il est 12:30."
+    assert fr.typographie(juste) == juste.replace("« ", "«\u00a0").replace(" »", "\u00a0»")
+
+
+def test_le_moteur_ne_montre_plus_d_identifiant_de_technique():
+    from sqlmodel import Session, SQLModel, create_engine
+    from app.engine import turn as moteur
+    from app.lore.pack import charger as charger_pack
+    from app.models import Campaign, Character, CharacterTechnique
+    from app.rules.loader import charger
+    rs, pack = charger("naruto"), charger_pack("naruto")
+    bd = create_engine("sqlite://")
+    SQLModel.metadata.create_all(bd)
+    with Session(bd) as s:
+        camp = Campaign(nom="t", ruleset=rs.data); s.add(camp); s.commit()
+        pj = Character(campaign_id=camp.id, nom="K", is_pc=True, stats=rs.stats_defaut(),
+                       ressources=rs.ressources_defaut()); s.add(pj); s.commit()
+        ct = CharacterTechnique(campaign_id=camp.id, character_id=pj.id,
+                                technique_ref="konoha_senpuu", maitrise=24)
+        s.add(ct); s.commit()
+        effets = moteur._crediter_maitrise(s, rs, [ct], True, pack)
+        assert effets == ["Maîtrise de Konoha Senpû : fonctionnelle"]
+
+
+def test_les_codes_restes_dans_un_texte_conserve_sont_traduits():
+    assert fr.texte_fr("Kaito attaque Goro — 14 contre 9 : touche_net.") == \
+        "Kaito attaque Goro — 14 contre 9 : touché net."
+    assert fr.texte_fr("Embuscade : gagnee") == "Embuscade : gagnée"
+    assert fr.texte_fr("Un contre-jour sans rapport") == "Un contre-jour sans rapport"
+    assert fr.texte_fr("Goro attaque Kaito — pare.") == "Goro attaque Kaito — pare."
+    assert fr.texte_fr("Goro attaque Kaito : contre.") == "Goro attaque Kaito : contré."

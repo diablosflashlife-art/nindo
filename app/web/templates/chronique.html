@@ -160,7 +160,7 @@
         <p class="legende">{{ icone('journal', 13) }} Les moments qui ont compté</p>
         {% for e in jalons %}
         <div class="ligne" style="align-items:flex-start">
-          <span class="petit">{{ e.resume }}</span>
+          <span class="petit">{{ e.resume|fr_texte }}</span>
           <span class="val">T{{ e.tour }}</span>
         </div>
         {% endfor %}
@@ -177,10 +177,10 @@
             <span class="titre">{{ r.titre }}
               <span class="tag {{ 'jade' if r.statut in ('gagnee','objectif_atteint')
                                  else ('vermillon' if r.statut == 'perdue' else '') }}">
-                {{ r.statut|replace('_', ' ') }}</span></span>
+                {{ r.statut|fr }}</span></span>
             <span class="sous">
               tour {{ r.tour_debut }}{% if r.tour_fin and r.tour_fin != r.tour_debut %} à {{ r.tour_fin }}{% endif %}
-              · {{ r.echange }} échange{{ 's' if r.echange > 1 }}
+              · {{ r.echange }} round{{ 's' if r.echange > 1 }}
               {%- if r.butin %} · butin : {{ r.butin|join(', ')|truncate(60, true, '…') }}{% endif %}
             </span>
           </span>
@@ -198,7 +198,7 @@
           <span class="av">{{ {'pressenti':'?', 'en_eveil':'~', 'eveille':'✦'}.get(t.etat, '·') }}</span>
           <span class="corps">
             <span class="titre">{{ t.libelle or t.trait_ref }}
-              <span class="tag {{ 'or' if t.etat == 'eveille' else '' }}">{{ t.etat|replace('_', ' ') }}</span></span>
+              <span class="tag {{ 'or' if t.etat == 'eveille' else '' }}">{{ t.etat|fr }}</span></span>
             {% if t.revelation_initiale %}
             <span class="sous">{{ t.revelation_initiale }}</span>
             {% endif %}

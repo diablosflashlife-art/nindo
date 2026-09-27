@@ -72,7 +72,7 @@
           onclick="remplir(this.getAttribute('data-texte'))"
           data-texte="{{ p.texte }}">
     {{ p.texte }}
-    <span class="risque {{ p.risque }}">risque {{ p.risque }}</span>
+    <span class="risque {{ p.risque }}">risque {{ p.risque|fr }}</span>
   </button>
   {% endfor %}
 </div>

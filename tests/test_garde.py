@@ -34,13 +34,15 @@ def test_un_adulte_garde_sa_description():
 def test_un_recit_coupe_revient_a_sa_derniere_phrase():
     coupe = ("Kiyomi s'appuie contre la rambarde. « Tu sens ça ? » Un rire lui échappe. "
              "Plus loin, près d'un")
-    assert achever(coupe) == ("Kiyomi s'appuie contre la rambarde. « Tu sens ça ? » "
+    # …et il ressort en typographie française : apostrophe et espaces
+    # insécables (voir francais.typographie).
+    assert achever(coupe) == ("Kiyomi s’appuie contre la rambarde. «\u00a0Tu sens ça\u202f?\u00a0» "
                               "Un rire lui échappe.")
 
 
 def test_un_recit_complet_n_est_pas_touche():
     assert achever("La Brume ne pardonne pas. « Personne. »") == \
-        "La Brume ne pardonne pas. « Personne. »"
+        "La Brume ne pardonne pas. «\u00a0Personne.\u00a0»"
 
 
 def test_la_mise_en_forme_disparait():

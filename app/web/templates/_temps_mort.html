@@ -18,7 +18,7 @@
     <button type="button" class="proposition tm"
             onclick="remplir(this.getAttribute('data-texte'))"
             data-texte="Je passe un moment avec {{ l.nom }}, sans mission ni urgence, pour mieux le connaître.">
-      Un moment avec {{ l.nom }}<span class="risque faible">{{ l.role }}</span></button>
+      Un moment avec {{ l.nom }}<span class="risque faible">{{ l.role|fr }}</span></button>
     {% endfor %}
     {% for q in temps_mort.fils %}
     <button type="button" class="proposition tm"

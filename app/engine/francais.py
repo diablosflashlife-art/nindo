@@ -209,6 +209,106 @@ def majuscule(texte: str) -> str:
     return texte[:1].upper() + texte[1:]
 
 
+# --------------------------------------------------------------------------
+# Les codes du moteur, dits en français
+# --------------------------------------------------------------------------
+# Le moteur parle en codes (`reussite_critique`, `gagnee`, `touche_net`) ; le
+# joueur lisait ces codes à peine maquillés — « reussite critique », sans
+# accent, « gagnee ». Chaque code affiché passe désormais par ici. Une entrée
+# manquante rend le code lisible (souligné → espace), jamais une erreur.
+LIBELLES = {
+    # issues d'un jet
+    "reussite_critique": "réussite critique", "reussite": "réussite",
+    "reussite_partielle": "oui, mais…", "echec": "échec",
+    "echec_critique": "échec critique",
+    # issues d'un jet opposé
+    "touche_net": "touché net", "touche": "touché", "effleure": "effleuré",
+    "pare": "paré", "contre": "contré",
+    # issues d'une rencontre
+    "en_cours": "en cours", "gagnee": "gagnée", "perdue": "perdue",
+    "rompue": "rompue", "objectif_atteint": "objectif atteint",
+    "dispersee": "dispersée",
+    # risque d'une piste
+    "faible": "faible", "moyen": "moyen", "eleve": "élevé",
+    # états de destinée
+    "latent": "latent", "pressenti": "pressenti", "en_eveil": "en éveil",
+    "eveille": "éveillé", "refuse": "refusé",
+    # postures
+    "offensive": "offensive", "mesuree": "mesurée", "defensive": "défensive",
+    "technique": "technique", "manoeuvre": "manœuvre",
+    "desengagement": "désengagement",
+    # difficultés
+    "triviale": "triviale", "facile": "facile", "normal": "normale",
+    "difficile": "difficile", "ardue": "ardue", "legendaire": "légendaire",
+    # catégories de techniques
+    "ninjutsu": "ninjutsu", "taijutsu": "taijutsu", "genjutsu": "genjutsu",
+    "kenjutsu": "kenjutsu", "kugutsu": "kugutsu", "fuinjutsu": "fûinjutsu",
+    "iryo": "ninjutsu médical", "espionnage": "espionnage", "arme": "arme",
+    # rôles dans l'entourage
+    "sensei": "instructeur", "coequipier": "coéquipier", "rival": "rival",
+    "antagoniste": "adversaire", "joueur": "joueur", "figurant": "figurant",
+    "connaissance": "connaissance",
+}
+
+
+def libelle(code: str) -> str:
+    """« reussite_critique » → « réussite critique »."""
+    code = str(code or "")
+    return LIBELLES.get(code, code.replace("_", " "))
+
+
+# Les codes qui ont pu se glisser dans un TEXTE conservé (le journal d'une
+# rencontre, un événement d'avant la 2.0.1). On les traduit à l'affichage :
+# une sauvegarde d'hier ne doit pas parler moins bien qu'une partie neuve.
+_CODES_DANS_TEXTE = re.compile(
+    r"\b(reussite_critique|reussite_partielle|reussite critique|reussite partielle|reussite|"
+    r"echec_critique|echec critique|echec|touche_net|touche net|effleure|"
+    r"gagnee|dispersee|objectif_atteint|objectif atteint|en_cours)\b")
+# « pare » et « contre » sont aussi des mots ordinaires (« 14 contre 9 ») :
+# on ne les traduit qu'en position d'issue, après un deux-points, en fin.
+_ISSUES_AMBIGUES = re.compile(r"(?<=: )(pare|contre)(?=\.?$)", re.MULTILINE)
+
+
+def texte_fr(texte: str) -> str:
+    """Traduit les codes restés dans une phrase du moteur."""
+    t = _CODES_DANS_TEXTE.sub(
+        lambda m: libelle(m.group(0).replace(" ", "_")), str(texte or ""))
+    return _ISSUES_AMBIGUES.sub(lambda m: libelle(m.group(0)), t)
+
+
+# --------------------------------------------------------------------------
+# La typographie française du récit
+# --------------------------------------------------------------------------
+# Un modèle écrit « "Tu viens?" » ou « Tu viens ? » selon l'humeur. Le récit
+# affiché suit la règle française : guillemets « », espace insécable avant
+# ; : ! ? et à l'intérieur des guillemets, points de suspension en un seul
+# caractère. On ne réécrit pas les mots — seulement les signes.
+_INSECABLE = " "          # avant « : » et dans les guillemets
+_FINE = " "               # avant « ; ! ? »
+
+
+def typographie(texte: str) -> str:
+    t = texte or ""
+    if not t:
+        return t
+    t = t.replace("...", "…")
+    # Les guillemets droits, par paires, deviennent des guillemets français.
+    if t.count('"') >= 2:
+        t = re.sub(r'"([^"\n]{1,400}?)"', "« \\1 »", t)
+    # L'apostrophe dactylographique devient typographique dans les mots.
+    t = re.sub(r"(?<=\w)'(?=\w)", "’", t)
+    # Espaces insécables : on retire l'espace ordinaire ou absent devant le
+    # signe et on met la bonne. Jamais devant un « ? » ou « ! » qui ouvre une
+    # ligne, ni dans une URL (aucune dans un récit).
+    t = re.sub(r"[   ]*([;!?])(?!\w)", _FINE + r"\1", t)
+    t = re.sub(r"(?<=\S)[   ]*:(?!\d)", _INSECABLE + ":", t)
+    t = re.sub(r"«[   ]*", "«" + _INSECABLE, t)
+    t = re.sub(r"[   ]*»", _INSECABLE + "»", t)
+    # « ?! » et « !? » ne prennent qu'une espace, au début.
+    t = re.sub(_FINE + r"([!?])" + _FINE + r"([!?])", _FINE + r"\1\2", t)
+    return re.sub(r"[ ]{2,}", " ", t)
+
+
 def enumerer(mots: list[str], liaison: str = "et") -> str:
     """« a, b et c ». Une liste jointe par des virgules jusqu'au bout se lit
     comme une énumération technique, pas comme une phrase."""

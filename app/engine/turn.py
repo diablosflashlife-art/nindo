@@ -35,6 +35,7 @@ from sqlmodel import Session, select
 
 from app.config import settings
 from app.engine import combat
+from app.engine import francais as fr
 from app.engine import liens
 from app.engine import missions as gen_missions
 from app.engine import monde, reprise, reveal, rythme, secrets
@@ -531,7 +532,7 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
                 if choisie["cout"]:
                     pj.ressources = {**pj.ressources,
                                      "chakra": int(pj.ressources.get("chakra", 0)) - choisie["cout"]}
-                    effets_combat.append(f"chakra -{choisie['cout']} → {pj.ressources['chakra']}")
+                    effets_combat.append(f"Chakra -{choisie['cout']} (reste {pj.ressources['chakra']})")
                 ct = session.exec(select(CharacterTechnique).where(
                     CharacterTechnique.character_id == pj.id,
                     CharacterTechnique.technique_ref == choisie["ref"])).first()
@@ -548,7 +549,7 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
                 bonus += int(arb.forcer["bonus"])
                 pj.ressources = {**pj.ressources,
                                  "chakra": int(pj.ressources.get("chakra", 0)) - int(arb.forcer["chakra"])}
-                effets_combat.append(f"forcé : chakra -{arb.forcer['chakra']} → {pj.ressources['chakra']}")
+                effets_combat.append(f"Forcé : chakra -{arb.forcer['chakra']} (reste {pj.ressources['chakra']})")
                 annonce["forcer"] = True
                 annonce["bonus"] = annonce["bonus"] + [
                     {"libelle": "forcé", "valeur": int(arb.forcer["bonus"])}]
@@ -561,7 +562,7 @@ def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
             resolution["arbitrage"] = annonce
             bloc = (f"Jet de {arb.stat_label} : dé {check.des} → total {check.total} "
                     f"contre difficulté {check.difficulte}. Marge {check.marge:+d}.\n"
-                    f"RÉSULTAT IMPOSÉ : {check.issue.replace('_', ' ').upper()}.")
+                    f"RÉSULTAT IMPOSÉ : {fr.libelle(check.issue).upper()}.")
             if bonus:
                 bloc += f"\n(bonus appliqué : {bonus:+d})"
             if arb.enjeu_echec and not check.reussi:
@@ -666,7 +667,7 @@ def conclure(session: Session, camp: Campaign, pj: Character,
     llm = get_llm()
     # Le flux arrive brut : on le ramène à du texte simple et à une dernière
     # phrase complète avant de l'enregistrer (voir `achever`).
-    narration = achever(epurer(narration))
+    narration = fr.typographie(achever(epurer(narration)))
     action, intent = prep.action, prep.intent
     resolution, effets_combat = prep.resolution, prep.effets_combat
     liens_techniques, en_combat = prep.liens_techniques, prep.en_combat
@@ -702,7 +703,7 @@ def conclure(session: Session, camp: Campaign, pj: Character,
     # reprise n'avait aucun moyen de savoir depuis quand on avait lâché.
     camp.joue_le = maintenant()
     effets = effets_combat + _appliquer(session, camp, pj, net, rs, resolution,
-                                        liens_techniques)
+                                        liens_techniques, pack)
     from app.engine import fils
     effets += fils.appliquer(session, camp, net)
     # Tour de table : l'expérience de la scène revient à chaque joueur.
@@ -864,7 +865,8 @@ def _technique_utilisee(session: Session, pj: Character, intent: dict,
 
 
 def _crediter_maitrise(session: Session, rs: Ruleset,
-                       liens: list[CharacterTechnique], reussi: bool) -> list[str]:
+                       liens: list[CharacterTechnique], reussi: bool,
+                       pack: LorePack | None = None) -> list[str]:
     """La progression par l'usage, enfin asymétrique.
 
     Le ruleset distingue `gain_par_reussite` (3) et `gain_par_echec` (1) : une
@@ -884,13 +886,18 @@ def _crediter_maitrise(session: Session, rs: Ruleset,
         session.add(ct)
         apres = rs.palier_maitrise(ct.maitrise).get("nom", "")
         if apres and apres != avant:
-            effets.append(f"Maîtrise : {ct.technique_ref} → {apres}")
+            # Le nom de la technique, jamais son identifiant : « Maîtrise :
+            # konoha_senpuu → Assurée » se lisait dans la liste des effets.
+            nom = ((pack.technique(ct.technique_ref) or {}).get("nom") if pack else None) \
+                or ct.technique_ref.replace("_", " ")
+            effets.append(f"Maîtrise de {nom} : {apres.lower()}")
     return effets
 
 
 def _appliquer(session: Session, camp: Campaign, pj: Character, net: dict,
                rs: Ruleset, resolution: dict,
-               liens_techniques: list[CharacterTechnique]) -> list[str]:
+               liens_techniques: list[CharacterTechnique],
+               pack: LorePack | None = None) -> list[str]:
     """Applique les deltas validés. Chaque effet est tracé en clair pour que le
     joueur voie ce que sa décision a réellement changé."""
     effets: list[str] = []
@@ -910,7 +917,7 @@ def _appliquer(session: Session, camp: Campaign, pj: Character, net: dict,
         rel.valeur = max(-100, min(100, rel.valeur + r["delta"]))
         rel.note = r["raison"]
         session.add(rel)
-        effets.append(f"{pnj.nom} : relation {r['delta']:+d} → {rel.valeur}")
+        effets.append(f"{pnj.nom} : relation {r['delta']:+d} (désormais {rel.valeur:+d})")
 
     for q in net["quetes"]:
         quete = session.get(Quest, q["quest_id"])
@@ -921,13 +928,13 @@ def _appliquer(session: Session, camp: Campaign, pj: Character, net: dict,
         if r["nom"] in pj.ressources:
             avant = pj.ressources[r["nom"]]
             pj.ressources = {**pj.ressources, r["nom"]: max(0, avant + r["delta"])}
-            effets.append(f"{r['nom']} {r['delta']:+d} → {pj.ressources[r['nom']]}")
+            effets.append(f"{fr.majuscule(r['nom'])} {r['delta']:+d} (reste {pj.ressources[r['nom']]})")
 
     if liens_techniques:
         # Sans jet, l'usage compte comme un entraînement : gain minimal.
         reussi = bool((resolution.get("check") or {}).get("reussi")
                       or (resolution.get("combat") or {}).get("reussi"))
-        effets += _crediter_maitrise(session, rs, liens_techniques, reussi)
+        effets += _crediter_maitrise(session, rs, liens_techniques, reussi, pack)
 
     if net["xp"]:
         from app.engine import progression

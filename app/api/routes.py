@@ -86,6 +86,11 @@ def statique(chemin: str) -> str:
 
 templates.env.globals["statique"] = statique
 templates.env.globals["conteur"] = conteur
+# Tout code du moteur affiché au joueur passe par `|fr` : « réussite
+# critique », « gagnée », « touché net » — jamais un code brut.
+from app.engine.francais import libelle as _libelle_fr, texte_fr as _texte_fr  # noqa: E402
+templates.env.filters["fr"] = _libelle_fr
+templates.env.filters["fr_texte"] = _texte_fr
 
 # Le nom du jeu, défini UNE fois : barre, titres d'onglet, accueil.
 JEU = {"nom": "Nindō", "kanji": "忍道", "sens": "la voie du ninja",

@@ -45,6 +45,7 @@ import re
 
 from sqlmodel import Session, select
 
+from app.engine import francais as fr
 from app.models import (Campaign, Character, CharacterTechnique, Condition,
                         Encounter, Event, Location, MemoryFact, Relation)
 from app.rules.engine import Ruleset
@@ -784,7 +785,7 @@ def _encaisser(session: Session, camp: Campaign, rs: Ruleset,
     """Applique les dégâts et produit les lignes du journal mécanique."""
     pv, etat = _appliquer_degats(session, camp, rs, cible, degats)
     lignes = [f"Dégâts {degats} → {cible.nom} à {pv} PV."]
-    effets.append(f"{cible.nom} : -{degats} PV")
+    effets.append(f"{cible.nom} : {degats} PV de moins")
     if etat is not None:
         effets.append(f"{cible.nom} : {etat.get('libelle')}")
     if pv <= 0:
@@ -1066,7 +1067,7 @@ def _riposte(session: Session, camp: Campaign, rs: Ruleset, renc: Encounter,
                    defense + garde + _bonus_fosse(renc, "a"))
     if not op.touche:
         lignes.append(f"{pnj.nom} attaque {victime.nom} — "
-                      f"{op.issue.replace('_', ' ')}"
+                      f"{fr.libelle(op.issue)}"
                       + (" (garde levée)" if garde else "") + ".")
         return
     if _encaisse_par_doublure(renc, victime, lignes, effets):
@@ -1101,7 +1102,7 @@ def _frapper(session: Session, camp: Campaign, rs: Ruleset, pack, renc: Encounte
     libelle = rs.stats.get(stat, {}).get("label", stat)
     lignes.append(f"{pj.nom} attaque {cible.nom} ({libelle}) — {op.total_a} "
                   f"contre {op.total_b}, marge {op.marge:+d} : "
-                  f"{op.issue.replace('_', ' ')}.")
+                  f"{fr.libelle(op.issue)}.")
     if not op.touche:
         return False
     if _encaisse_par_doublure(renc, cible, lignes, effets):
@@ -1161,7 +1162,7 @@ def _preparer_acteur(session, camp, rs, pack, renc, a: _Acteur, lignes, effets) 
             a.posture_nom, a.posture, a.technique, a.effet = "mesuree", rs.posture("mesuree"), None, {}
         else:
             pj.ressources = {**pj.ressources, "chakra": dispo - cout}
-            effets.append(f"{pj.nom} : chakra -{cout} → {pj.ressources['chakra']}")
+            effets.append(f"{pj.nom} : chakra -{cout} (reste {pj.ressources['chakra']})")
 
     if intent.get("objet"):
         a.objet, ligne = _objet_possede(pack, pj, intent["objet"])
@@ -1681,12 +1682,12 @@ def _clore(session: Session, camp: Campaign, rs: Ruleset, renc: Encounter,
 
     session.add(MemoryFact(
         campaign_id=camp.id, tour=camp.tour, importance=4, nature="fait",
-        texte=f"{renc.titre} — issue : {statut.replace('_', ' ')} "
+        texte=f"{renc.titre} — issue : {fr.libelle(statut)} "
               f"(tours {renc.tour_debut} à {camp.tour}).",
         entites=[pj.id]))
     session.add(Event(
         campaign_id=camp.id, tour=camp.tour, type="combat",
-        resume=f"{renc.titre} : {statut.replace('_', ' ')}", importance=4,
+        resume=f"{renc.titre} : {fr.libelle(statut)}", importance=4,
         entites=[pj.id]))
 
     renc.journal = renc.journal + [{"echange": renc.echange,
@@ -1725,7 +1726,7 @@ def soigner(session: Session, camp: Campaign, rs: Ruleset, perso: Character,
         perso.ressources = {**perso.ressources,
                             "chakra": min(max(maximum, avant), avant + chakra)}
         if perso.ressources["chakra"] > avant:
-            effets.append(f"chakra +{perso.ressources['chakra'] - avant}")
+            effets.append(f"Chakra +{perso.ressources['chakra'] - avant}")
     if lever_etats:
         for c in session.exec(select(Condition).where(
                 Condition.character_id == perso.id,

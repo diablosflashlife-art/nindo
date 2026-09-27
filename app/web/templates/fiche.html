@@ -66,7 +66,7 @@
             {% if t.fr %}<span class="muted petit"> — {{ t.fr }}</span>{% endif %}
           </span>
           <span class="tags">
-            <span class="tag">{{ t.categorie }}</span>
+            <span class="tag">{{ t.categorie|fr }}</span>
             {% if t.element %}<span class="tag jade">{{ t.element }}</span>{% endif %}
             <span class="tag or">rang {{ t.rang }}</span>
           </span>
@@ -96,7 +96,7 @@
         <div class="rangee" style="justify-content:space-between;align-items:baseline">
           <strong>{{ s.nom }}</strong>
           <span class="tags">
-            <span class="tag">{{ s.type }}</span>
+            <span class="tag">{{ {'combo': 'combinaison', 'contre': 'contre', 'prerequis': 'prérequis'}.get(s.type, s.type) }}</span>
             {% if s.prete %}<span class="tag jade">prêt</span>
             {% else %}<span class="tag">incomplet</span>{% endif %}
           </span>
@@ -191,7 +191,7 @@
       <p class="legende">{{ icone('relation', 13) }} Relations</p>
       {% for r in relations %}
       <div class="stat">
-        <span class="nom">{{ r.nom }} <span class="muted minuscule">{{ r.nature }}</span></span>
+        <span class="nom">{{ r.nom }} <span class="muted minuscule">{{ r.nature|fr }}</span></span>
         <span class="valeur {{ 'ok' if r.valeur > 0 else ('ko' if r.valeur < 0 else '') }}">
           {{ r.valeur }}</span>
         <span class="jauge {{ 'jade' if r.valeur > 0 else '' }}">
