@@ -153,16 +153,85 @@ def jouer(session: Session, camp: Campaign, pj: Character, action: str,
     return conclure(session, camp, pj, prep, narration, rs, pack)
 
 
-def preparer(session: Session, camp: Campaign, pj: Character, action: str,
+# Les difficultés, telles qu'on les annonce à la table.
+DIFFICULTE_LIBELLES = {
+    "triviale": "Triviale", "facile": "Facile", "normal": "Normale",
+    "difficile": "Difficile", "ardue": "Ardue", "legendaire": "Légendaire",
+}
+
+
+@dataclass
+class Arbitrage:
+    """Ce que le maître du jeu annonce AVANT que le dé roule.
+
+    C'est la pièce qui manquait pour ressembler à une table : « c'est un jet
+    de Perception, difficile, tu as +2, ça se tente — et si ça rate, la
+    patrouille te voit ». Le joueur lit, choisit une technique, décide de
+    forcer ou de reformuler, PUIS lance. Voir docs/NINDO-2.md, pilier 1.
+
+    Rien ici n'est écrit en base : un arbitrage attend le clic du joueur entre
+    deux requêtes, et un joueur qui se ravise n'a rien à défaire. D'où des
+    identifiants plutôt que des objets de session.
+    """
+
+    action: str
+    intent: dict
+    requiert_jet: bool = False
+    stat: str = ""
+    stat_label: str = ""
+    stat_valeur: int = 10
+    difficulte: str = "normal"
+    dc: int = 12
+    modificateur: int = 0                           # (caractéristique - 10) // 2, déjà dans la formule
+    bonus: list = field(default_factory=list)       # en PLUS de la formule : [{"libelle", "valeur"}]
+    chances: dict = field(default_factory=dict)     # reussite / partielle / echec, en %
+    enjeu_echec: str = ""
+    impossible: str = ""                            # l'obstacle, si l'action ne peut avoir lieu
+    techniques: list = field(default_factory=list)  # utilisables : {ref, nom, fr, bonus, cout, palier, dispo}
+    forcer: dict = field(default_factory=dict)      # {bonus, chakra, dispo}
+    en_combat: bool = False
+    posture: str = ""
+    levier: str = ""
+    seance: dict | None = None                      # l'offre d'entraînement vérifiée
+    liens_techniques: list = field(default_factory=list)   # ids de CharacterTechnique cités
+
+    @property
+    def annonce(self) -> bool:
+        """Y a-t-il quelque chose à montrer au joueur avant le dé ?"""
+        return self.requiert_jet and not self.impossible and not self.en_combat
+
+    @property
+    def difficulte_label(self) -> str:
+        return DIFFICULTE_LIBELLES.get(self.difficulte, self.difficulte)
+
+    @property
+    def total_bonus(self) -> int:
+        """Ce qui s'ajoute au jet, hors caractéristique : le moteur l'applique
+        tel quel, la formule du ruleset ajoute la caractéristique elle-même."""
+        return sum(int(b["valeur"]) for b in self.bonus)
+
+    def resume(self) -> dict:
+        """Ce qui reste dans le tour enregistré, pour relire l'annonce plus tard."""
+        return {"stat": self.stat, "stat_label": self.stat_label,
+                "stat_valeur": self.stat_valeur, "modificateur": self.modificateur,
+                "difficulte": self.difficulte_label, "dc": self.dc,
+                "bonus": list(self.bonus), "chances": dict(self.chances),
+                "enjeu_echec": self.enjeu_echec}
+
+
+def arbitrer(session: Session, camp: Campaign, pj: Character, action: str,
              rs: Ruleset, pack: LorePack, posture: str = "",
-             levier: str = "", entrainement: str = "") -> Preparation:
-    """Étapes 1bis à 3 : embuscade, interprétation, résolution déterministe.
+             levier: str = "", entrainement: str = "") -> Arbitrage:
+    """Étapes 1bis et 2 : embuscade, interprétation — et l'annonce du jet.
 
     `posture` et `levier` sont les choix MÉCANIQUES du joueur. Les laisser
     deviner au modèle marchait mal là où ça compte le plus : un joueur qui
     écrit « je recule en couvrant Mio » voulait une posture défensive, et se
     retrouvait parfois en offensive. Quand l'interface les fournit, ils sont
     imposés — le modèle ne lit plus que l'intention de récit.
+
+    NE LANCE AUCUN DÉ ET NE DÉPENSE RIEN : le joueur peut encore reformuler.
+    La seule chose qui change le monde ici est l'embuscade, et c'est voulu.
     """
     llm = get_llm()
 
@@ -175,108 +244,240 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
     if renc is None:
         renc = combat.tirer_embuscade(session, camp, pack, rs, pj)
 
-    def ctx(role: str) -> str:
-        return construire(session, camp, pj, action, rs, pack, role=role)
-
-    resolution: dict = {}
+    contexte = construire(session, camp, pj, action, rs, pack, role="arbitre")
 
     if renc is not None:
-        # ---------------- régime de combat : l'action est un échange
+        # ---------------- régime de combat : l'action sera un échange
         intent = llm.json(
             ARBITRE_COMBAT,
-            f"{ctx('arbitre')}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
+            f"{contexte}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
             INTENT_COMBAT)
         if posture in rs.postures:
             intent["posture"] = posture
         if levier in rs.leviers():
             intent["levier"] = levier
-        bonus, liens_techniques = _technique_citee(
+        bonus, liens = _technique_citee(
             session, pj, f"{intent.get('technique', '')} "
                          f"{intent.get('resume', '')} {action}", rs, pack)
+        return Arbitrage(action=action, intent=intent, en_combat=True,
+                         posture=intent.get("posture", ""), levier=intent.get("levier", ""),
+                         bonus=[{"libelle": "maîtrise", "valeur": bonus}] if bonus else [],
+                         liens_techniques=[ct.id for ct in liens])
+
+    # ---------------- régime ordinaire : un jet contre une difficulté
+    intent = llm.json(
+        ARBITRE,
+        f"{contexte}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
+        INTENT)
+
+    # Une cible nommée qui n'est pas dans la scène rend l'attaque
+    # impossible, quoi qu'en ait dit l'arbitre. L'arbitre précise parfois la
+    # cible entre parenthèses (« Raiden (appuis et équilibre) ») : on ne garde
+    # que le nom. Et un AUTRE JOUEUR présent est une cible qui existe — un duel
+    # amical entre coéquipiers se joue au jet, il ne se refuse pas.
+    intent["cible"] = re.sub(r"\s*\(.*?\)", "", str(intent.get("cible") or "")).strip()
+    if intent.get("action_type") == "combat" and intent["cible"] \
+            and not combat.adversaires_designes(session, camp, pj, intent["cible"]) \
+            and not [p for p in _autres_pj(session, camp, pj) if _designe(intent["cible"], p)]:
+        intent["faisable"] = "non"
+        intent["obstacle"] = (intent.get("obstacle")
+                              or f"{intent['cible']} n'est pas ici.")
+
+    # La technique employée est identifiée AVANT le jet pour en tirer le
+    # bonus, mais sa maîtrise n'est créditée qu'APRÈS, selon le résultat.
+    bonus_technique, liens = _technique_utilisee(session, pj, intent, rs, pack)
+
+    # UNE SÉANCE D'ENTRAÎNEMENT. Le joueur a cliqué « S'entraîner » : le
+    # tour est une séance, avec son jet et sa progression.
+    seance_offre = None
+    if entrainement:
+        from app.engine import apprentissage
+        try:
+            seance_offre = apprentissage.verifier_seance(
+                session, camp, pack, rs, pj, entrainement)
+            intent.update({
+                "action_type": "technique", "requiert_jet": True,
+                "faisable": "oui",
+                "stat": seance_offre["stat"] if seance_offre["stat"] in rs.stats
+                else intent.get("stat"),
+                "difficulte": apprentissage.DIFFICULTE_PAR_RANG.get(
+                    seance_offre["rang"], "normal")})
+        except apprentissage.ApprentissageRefuse as exc:
+            intent["faisable"] = "non"
+            intent["obstacle"] = str(exc)
+
+    arb = Arbitrage(action=action, intent=intent, seance=seance_offre,
+                    liens_techniques=[ct.id for ct in liens],
+                    enjeu_echec=" ".join(str(intent.get("enjeu_echec") or "").split())[:160])
+
+    if intent.get("faisable") == "non":
+        arb.impossible = ((intent.get("obstacle") or "").strip()
+                          or "cette action n'est pas possible ici et maintenant")
+        return arb
+    if not intent.get("requiert_jet"):
+        return arb
+
+    if intent.get("faisable") == "improbable":
+        intent["difficulte"] = "legendaire"
+    stat = intent.get("stat") if intent.get("stat") in rs.stats else next(iter(rs.stats))
+    arb.requiert_jet = True
+    arb.stat, arb.stat_label = stat, rs.stats.get(stat, {}).get("label", stat)
+    arb.stat_valeur = int(pj.stats.get(stat, rs.stats.get(stat, {}).get("default", 10)))
+    arb.difficulte = intent.get("difficulte", "normal")
+    if arb.difficulte not in rs.difficultes:
+        arb.difficulte = "normal"
+    arb.dc = rs.valeur_difficulte(arb.difficulte)
+
+    # Le détail du bonus, ligne par ligne : c'est ce qu'un joueur vérifie sur
+    # sa fiche avant de lancer, et ce que le moteur ne montrait jamais.
+    arb.modificateur = (arb.stat_valeur - 10) // 2
+    if bonus_technique:
+        noms = [(pack.technique(ct.technique_ref) or {}).get("nom", ct.technique_ref)
+                for ct in liens]
+        arb.bonus.append({"libelle": "maîtrise de " + ", ".join(noms), "valeur": bonus_technique})
+    blessures = combat.malus_blessures(session, rs, pj)
+    if blessures:
+        arb.bonus.append({"libelle": "blessures", "valeur": blessures})
+
+    # Les techniques que le joueur peut engager sur CE jet : celles de son
+    # répertoire qui se jouent avec la même caractéristique. Chacune avec son
+    # coût réel et ce qu'elle apporte — un choix, pas une devinette.
+    deja = {ct.id for ct in liens}
+    chakra = int(pj.ressources.get("chakra", 0))
+    table = rs.combat.get("stat_par_categorie", {})
+    for ct in session.exec(select(CharacterTechnique).where(
+            CharacterTechnique.character_id == pj.id)).all():
+        t = pack.technique(ct.technique_ref) or {}
+        if not t or ct.id in deja:
+            continue
+        stat_t = t.get("stat") or table.get(t.get("categorie", ""), "")
+        if stat_t != stat:
+            continue
+        palier = rs.palier_maitrise(ct.maitrise)
+        cout = int(round(int((t.get("cout") or {}).get("chakra", 0))
+                         * float(palier.get("cout", 1.0))))
+        arb.techniques.append({
+            "ref": ct.technique_ref, "nom": t.get("nom", ct.technique_ref),
+            "fr": t.get("fr", ""), "bonus": int(palier.get("jet", 0)),
+            "cout": cout, "palier": palier.get("nom", ""), "dispo": chakra >= cout})
+    arb.techniques.sort(key=lambda x: (-x["bonus"], x["cout"]))
+
+    cfg_forcer = rs.data.get("check", {}).get("forcer") or {}
+    if cfg_forcer:
+        arb.forcer = {"bonus": int(cfg_forcer.get("bonus", 3)),
+                      "chakra": int(cfg_forcer.get("chakra", 2)),
+                      "dispo": chakra >= int(cfg_forcer.get("chakra", 2))}
+    arb.chances = rs.chances(pj.stats, stat, arb.difficulte,
+                             bonus_technique + blessures)
+    return arb
+
+
+def resoudre(session: Session, camp: Campaign, pj: Character, arb: Arbitrage,
+             rs: Ruleset, pack: LorePack, technique: str = "",
+             forcer: bool = False) -> Preparation:
+    """Étape 3 : le dé, et tout ce qui en découle avant la narration.
+
+    `technique` et `forcer` sont les choix faits par le joueur SUR l'annonce.
+    Ils se paient ici, jamais avant : reformuler ne coûte rien.
+    """
+    action, intent = arb.action, arb.intent
+    liens_techniques = [ct for ct in (session.get(CharacterTechnique, i)
+                                      for i in arb.liens_techniques) if ct is not None]
+    resolution: dict = {"intent": intent}
+
+    if arb.en_combat:
+        # ---------------- régime de combat : l'action est un échange
+        renc = combat.active(session, camp)
+        if renc is None:
+            # La rencontre s'est refermée entre l'annonce et le dé (un autre
+            # joueur, une reprise) : l'action se rejoue à froid.
+            return resoudre(session, camp, pj, arbitrer(
+                session, camp, pj, action, rs, pack, arb.posture, arb.levier), rs, pack)
+        bonus = arb.total_bonus
         maitrise = max((ct.maitrise for ct in liens_techniques), default=50)
         issue = combat.echanger(session, camp, pack, rs, pj, renc, intent,
                                 bonus, maitrise)
         bloc = issue["bloc"]
-        resolution = {"intent": intent, "combat": {
+        resolution["combat"] = {
             "rencontre_id": renc.id, "echange": renc.echange,
             "statut": issue["statut"], "reussi": issue["reussi"],
             "titre": renc.titre, "lignes": issue["lignes"],
             "leviers": list(renc.leviers), "objectif": renc.objectif,
-            "progres": renc.progres, "fosse": dict(renc.fosse)}}
+            "progres": renc.progres, "fosse": dict(renc.fosse)}
         effets_combat = issue["effets"]
         systeme, en_combat = NARRATEUR_COMBAT, True
     else:
         # ---------------- régime ordinaire : un jet contre une difficulté
-        intent = llm.json(
-            ARBITRE,
-            f"{ctx('arbitre')}\n\n### ACTION DÉCLARÉE PAR LE JOUEUR\n{action}",
-            INTENT)
-        resolution = {"intent": intent}
         bloc = "Aucun jet : l'action n'a pas d'enjeu mécanique."
         effets_combat, systeme, en_combat = [], NARRATEUR, False
 
-        # Une cible nommée qui n'est pas dans la scène rend l'attaque
-        # impossible, quoi qu'en ait dit l'arbitre.
-        if intent.get("action_type") == "combat" and (intent.get("cible") or "").strip() \
-                and not combat.adversaires_designes(session, camp, pj, intent["cible"]):
-            intent["faisable"] = "non"
-            intent["obstacle"] = (intent.get("obstacle")
-                                  or f"{intent['cible']} n'est pas ici.")
-
-        # La technique employée est identifiée AVANT le jet pour en tirer le
-        # bonus, mais sa maîtrise n'est créditée qu'APRÈS, selon le résultat.
-        bonus, liens_techniques = _technique_utilisee(session, pj, intent, rs, pack)
-
-        # UNE SÉANCE D'ENTRAÎNEMENT. Le joueur a cliqué « S'entraîner » : le
-        # tour est une séance, avec son jet et sa progression.
-        seance_offre = None
-        if entrainement:
-            from app.engine import apprentissage
-            try:
-                seance_offre = apprentissage.verifier_seance(
-                    session, camp, pack, rs, pj, entrainement)
-                intent.update({
-                    "action_type": "technique", "requiert_jet": True,
-                    "faisable": "oui",
-                    "stat": seance_offre["stat"] if seance_offre["stat"] in rs.stats
-                    else intent.get("stat"),
-                    "difficulte": apprentissage.DIFFICULTE_PAR_RANG.get(
-                        seance_offre["rang"], "normal")})
-            except apprentissage.ApprentissageRefuse as exc:
-                intent["faisable"] = "non"
-                intent["obstacle"] = str(exc)
-
-        if intent.get("faisable") == "non":
+        if arb.impossible:
             # PAS DE SILENCE. Mesuré en partie réelle : « je tue Madara en 1v1 »
             # et le récit continuait comme si de rien n'était. Une action
             # impossible se raconte : la tentative, puis ce qui l'arrête.
-            obstacle = (intent.get("obstacle") or "").strip() or \
-                "cette action n'est pas possible ici et maintenant"
-            bloc = (f"ACTION IMPOSSIBLE TELLE QUELLE : {obstacle}\n"
+            bloc = (f"ACTION IMPOSSIBLE TELLE QUELLE : {arb.impossible}\n"
                     f"Raconte la tentative de {pj.nom} — ce qu'il fait, dit ou ose — "
                     f"puis ce qui l'arrête, et comment les autres réagissent. Le "
                     f"joueur doit voir que sa décision a été entendue.")
-            resolution["impossible"] = obstacle
-        elif intent.get("requiert_jet"):
-            if intent.get("faisable") == "improbable":
-                intent["difficulte"] = "legendaire"
-            stat = intent.get("stat") if intent.get("stat") in rs.stats \
-                else next(iter(rs.stats))
-            check = rs.check(pj.stats, stat, intent.get("difficulte", "normal"), bonus)
+            resolution["impossible"] = arb.impossible
+        elif arb.requiert_jet:
+            bonus = arb.total_bonus
+            annonce = arb.resume()
+
+            # La technique choisie sur l'annonce : son bonus, son coût, et sa
+            # maîtrise créditée après le jet comme une technique citée.
+            choisie = next((t for t in arb.techniques
+                            if t["ref"] == technique and t["dispo"]), None)
+            if choisie is not None:
+                bonus += int(choisie["bonus"])
+                if choisie["cout"]:
+                    pj.ressources = {**pj.ressources,
+                                     "chakra": int(pj.ressources.get("chakra", 0)) - choisie["cout"]}
+                    effets_combat.append(f"chakra -{choisie['cout']} → {pj.ressources['chakra']}")
+                ct = session.exec(select(CharacterTechnique).where(
+                    CharacterTechnique.character_id == pj.id,
+                    CharacterTechnique.technique_ref == choisie["ref"])).first()
+                if ct is not None:
+                    liens_techniques.append(ct)
+                annonce["technique"] = choisie["nom"]
+                annonce["bonus"] = annonce["bonus"] + [
+                    {"libelle": choisie["nom"], "valeur": int(choisie["bonus"])}]
+
+            # Forcer : le pari. Le chakra tout de suite, et l'échec devient
+            # critique — sinon ce n'est pas un pari, c'est un bonus gratuit.
+            force = bool(forcer and arb.forcer.get("dispo"))
+            if force:
+                bonus += int(arb.forcer["bonus"])
+                pj.ressources = {**pj.ressources,
+                                 "chakra": int(pj.ressources.get("chakra", 0)) - int(arb.forcer["chakra"])}
+                effets_combat.append(f"forcé : chakra -{arb.forcer['chakra']} → {pj.ressources['chakra']}")
+                annonce["forcer"] = True
+                annonce["bonus"] = annonce["bonus"] + [
+                    {"libelle": "forcé", "valeur": int(arb.forcer["bonus"])}]
+            session.add(pj)
+
+            check = rs.check(pj.stats, arb.stat, arb.difficulte, bonus)
+            if force and not check.reussi and check.issue != "echec_critique":
+                check.issue = "echec_critique"
             resolution["check"] = check.to_dict()
-            libelle = rs.stats.get(stat, {}).get("label", stat)
-            bloc = (f"Jet de {libelle} : dé {check.des} → total {check.total} "
+            resolution["arbitrage"] = annonce
+            bloc = (f"Jet de {arb.stat_label} : dé {check.des} → total {check.total} "
                     f"contre difficulté {check.difficulte}. Marge {check.marge:+d}.\n"
                     f"RÉSULTAT IMPOSÉ : {check.issue.replace('_', ' ').upper()}.")
             if bonus:
-                bloc += f"\n(bonus de maîtrise appliqué : {bonus:+d})"
-            if seance_offre is not None:
+                bloc += f"\n(bonus appliqué : {bonus:+d})"
+            if arb.enjeu_echec and not check.reussi:
+                bloc += f"\nCe que l'échec entraîne, annoncé au joueur : {arb.enjeu_echec}"
+            if force and not check.reussi:
+                bloc += ("\nLe joueur avait FORCÉ : l'échec est critique, il coûte "
+                         "quelque chose de concret et visible.")
+            if arb.seance is not None:
                 from app.engine import apprentissage
                 suite, effets_seance = apprentissage.seance(
-                    session, camp, pack, rs, pj, seance_offre, check.issue)
+                    session, camp, pack, rs, pj, arb.seance, check.issue)
                 bloc += "\n" + suite
                 effets_combat = effets_combat + effets_seance
-                resolution["entrainement"] = seance_offre["id"]
+                resolution["entrainement"] = arb.seance["id"]
 
         # Hors combat, le corps se répare. Le goutte-à-goutte referme les
         # écorchures d'un trajet ; un repos déclaré remet vraiment debout, et
@@ -289,7 +490,12 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
         # passé vaut toujours mieux qu'un bandit fabriqué — et s'il n'y a
         # personne à combattre, il n'y a pas de combat. On ne fait surgir
         # d'adversaires que par embuscade, où c'est le lieu qui les justifie.
-        if intent.get("action_type") == "combat":
+        # Un COÉQUIPIER visé n'ouvre rien : le duel amical s'est joué au jet.
+        # Sans ce garde-fou, « je fonce sur Hana » rabattait sur « les
+        # hostiles présents » et ouvrait un affrontement contre le rival.
+        vise_un_joueur = bool(intent.get("cible")) and any(
+            _designe(intent["cible"], p) for p in _autres_pj(session, camp, pj))
+        if intent.get("action_type") == "combat" and not vise_un_joueur:
             cibles = combat.adversaires_designes(
                 session, camp, pj, intent.get("cible", ""))
             ouverte = combat.ouvrir(
@@ -300,6 +506,9 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
                          "échange à partir de maintenant.")
                 effets_combat = effets_combat + [
                     f"Affrontement engagé : {ouverte.titre}"]
+
+    def ctx(role: str) -> str:
+        return construire(session, camp, pj, action, rs, pack, role=role)
 
     # -- 4. le contexte du narrateur, prêt à servir --------------------------
     contexte_narrateur = ctx("narrateur")
@@ -331,6 +540,18 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
         en_combat=en_combat, registre=registre, entre_deux=entre_deux,
         allure=getattr(camp, "allure", None) or rythme.ALLURE_DEFAUT,
         autres_pj=[c.nom for c in _autres_pj(session, camp, pj)])
+
+
+def preparer(session: Session, camp: Campaign, pj: Character, action: str,
+             rs: Ruleset, pack: LorePack, posture: str = "",
+             levier: str = "", entrainement: str = "") -> Preparation:
+    """Étapes 1bis à 3 d'un trait : l'annonce, puis le dé sans attendre.
+
+    C'est le chemin « lancer tout seul », et celui de tous les appels qui
+    n'ont pas de joueur à qui demander (tests, scripts, tour d'un bloc).
+    """
+    arb = arbitrer(session, camp, pj, action, rs, pack, posture, levier, entrainement)
+    return resoudre(session, camp, pj, arb, rs, pack)
 
 
 def conclure(session: Session, camp: Campaign, pj: Character,
@@ -477,6 +698,13 @@ def conclure(session: Session, camp: Campaign, pj: Character,
 
 
 # --------------------------------------------------------------------------
+def _designe(cible: str, perso: Character) -> bool:
+    """« Hana », « hana yotsuki », « Yotsuki » : est-ce ce personnage ?"""
+    c = " ".join((cible or "").lower().split())
+    nom = perso.nom.lower()
+    return bool(c) and (nom in c or c in nom or c.split()[0] == nom.split()[0])
+
+
 def _autres_pj(session: Session, camp: Campaign, pj: Character) -> list[Character]:
     """Les autres personnages JOUEURS dans la même scène que celui qui agit."""
     if not pj.location_id:

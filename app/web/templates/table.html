@@ -45,7 +45,8 @@
   <a href="/campagnes/{{ camp.id }}/fiche/{{ pj.id }}" class="petit">fiche<span
      class="au-large"> complète</span> →</a>
 {% endblock %}
-{% block scripts %}<script src="{{ statique('voix.js') }}" defer></script>{% endblock %}
+{% block scripts %}<script src="{{ statique('voix.js') }}" defer></script>
+<script src="{{ statique('de.js') }}" defer></script>{% endblock %}
 {% block contenu %}
 
 {# Le décor du village sert à la fois la vignette du lieu et le fond de la
@@ -182,9 +183,14 @@
                     placeholder="{{ p.nom }} — {{ 'comment t’y prends-tu ?' if rencontre else 'que tentes-tu ?' }}">{% if p.id == pj.id %}{{ phrase_prepare or '' }}{% endif %}</textarea>
         </div>
         {% endfor %}
+        <input type="hidden" name="auto" class="de-auto-valeur" value="">
         <div class="rangee espace" style="justify-content:space-between">
           <span class="petit muted">Chacun écrit l'action de son personnage. Une case vide : il observe.</span>
-          <button type="submit">Jouer le tour</button>
+          <span class="rangee" style="gap:12px">
+            <label class="reglage-de" title="Sans l'annonce du jet : le dé roule dès que l'arbitre a lu">
+              <input type="checkbox" class="de-auto"> lancer tout seul</label>
+            <button type="submit">Jouer le tour</button>
+          </span>
         </div>
       </form>
       {% else %}
@@ -207,9 +213,16 @@
         {% include "_postures.html" %}
         <textarea name="action" id="action" rows="3" required
           placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ?{% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}">{{ phrase_prepare or '' }}</textarea>
+        <input type="hidden" name="auto" class="de-auto-valeur" value="">
         <div class="rangee espace" style="justify-content:space-between">
           <span class="petit muted">Écris librement, ou choisis une piste ci-dessus.</span>
-          <button type="submit">Agir</button>
+          <span class="rangee" style="gap:12px">
+            {% if flux %}
+            <label class="reglage-de" title="Sans l'annonce du jet : le dé roule dès que l'arbitre a lu">
+              <input type="checkbox" class="de-auto"> lancer tout seul</label>
+            {% endif %}
+            <button type="submit">Agir</button>
+          </span>
         </div>
       </form>
       {% endif %}
@@ -253,7 +266,8 @@
       </div>
       <ol class="guide-liste">
         <li><strong>Écris ce que fait ton ninja</strong>, librement — ou clique une piste proposée.</li>
-        <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué.</li>
+        <li><strong>Le maître du jeu annonce le jet</strong> : la caractéristique, la difficulté, tes chances et ce que coûte un échec. Tu peux engager une technique, <em>forcer</em> (+3 au dé, mais un échec devient critique) ou reformuler. Puis <em>Lancer le dé</em>.</li>
+        <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué. Pressé ? Coche <em>lancer tout seul</em>.</li>
         <li><strong>Les missions</strong> se prennent dans l'onglet <em>Équipe</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
         <li><strong>La carte</strong> (onglet <em>Carte</em>) : voyager coûte des tours.</li>
         <li><strong>Apprendre une technique</strong> : onglet <em>Techniques</em>, bouton <em>S'entraîner</em>. Chaque séance se joue, avec un jet de dé, jusqu'à 100 %.</li>
@@ -488,10 +502,12 @@
 
 function remplir(texte) {
   var champ = document.getElementById('action');
+  if (!champ) return;
   champ.value = texte;
   champ.focus();
   champ.setSelectionRange(texte.length, texte.length);
 }
+window.remplir = remplir;
 
 /* HTMX ajoute le nouveau tour à la suite dans #recit. On repousse alors les
    précédents dans l'historique : la scène en cours reste seule au centre.
@@ -552,10 +568,76 @@ function remplir(texte) {
      n'empêche d'envoyer une seconde action pendant que la première s'écrit.
      Deux tours joués en parallèle décalent l'horloge de campagne et mélangent
      les échanges — on ferme donc la porte tant que la scène n'est pas finie. */
+  var libelleBouton = bouton ? bouton.textContent : 'Agir';
   function occuper(oui) {
     if (!bouton) return;
     bouton.disabled = oui;
-    bouton.textContent = oui ? 'En cours…' : 'Agir';
+    bouton.textContent = oui ? 'En cours…' : libelleBouton;
+  }
+
+  /* « Lancer tout seul » : gardé par le navigateur, envoyé avec chaque action. */
+  var CLE_AUTO = 'nindo.de_auto';
+  var cases = document.querySelectorAll('.de-auto');
+  var valeurs = document.querySelectorAll('.de-auto-valeur');
+  function accorderAuto(oui) {
+    cases.forEach(function (c) { c.checked = oui; });
+    valeurs.forEach(function (v) { v.value = oui ? '1' : ''; });
+  }
+  var auto = false;
+  try { auto = localStorage.getItem(CLE_AUTO) === '1'; } catch (e) { auto = false; }
+  accorderAuto(auto);
+  cases.forEach(function (c) {
+    c.addEventListener('change', function () {
+      accorderAuto(c.checked);
+      try { localStorage.setItem(CLE_AUTO, c.checked ? '1' : '0'); } catch (e) { /* tant pis */ }
+    });
+  });
+
+  /* L'ANNONCE DU JET. Le flux s'est fermé dessus : le jeu attend. « Lancer »
+     envoie les choix (technique, forcer) et rouvre le flux sur la même
+     coquille ; « Reformuler » rend son action au joueur, sans rien dépenser. */
+  function brancherAnnonce(coquille, bloc) {
+    var lancer = bloc.querySelector('.arb-lancer');
+    var reformuler = bloc.querySelector('.arb-reformuler');
+    bloc.addEventListener('change', function (e) {
+      if (e.target.type !== 'radio') return;
+      bloc.querySelectorAll('.arb-technique').forEach(function (l) {
+        l.classList.toggle('choisie', l.querySelector('input').checked);
+      });
+    });
+    lancer.addEventListener('click', function () {
+      lancer.disabled = true;
+      lancer.textContent = 'Le dé roule…';
+      var donnees = new FormData();
+      bloc.querySelectorAll('input').forEach(function (i) {
+        if ((i.type === 'radio' || i.type === 'checkbox') && !i.checked) return;
+        if (i.name) donnees.append(i.name, i.value);
+      });
+      fetch(bloc.dataset.lancer, { method: 'POST', body: donnees })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || !d.flux) { throw new Error('annonce expirée'); }
+          bloc.classList.add('jouee');
+          bloc.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+          bloc.querySelector('.arb-boutons').remove();
+          coquille.setAttribute('data-flux', d.flux);
+          brancher(coquille);
+        })
+        .catch(function () {
+          lancer.disabled = false;
+          lancer.textContent = 'Lancer le dé';
+          var t = coquille.querySelector('[data-role="etape-texte"]');
+          if (t) t.textContent = 'L\'annonce a expiré : reformule ton action.';
+        });
+    });
+    reformuler.addEventListener('click', function () {
+      fetch(bloc.dataset.reformuler, { method: 'POST' }).catch(function () { /* rien */ });
+      var action = coquille.querySelector('.tour-action');
+      coquille.remove();
+      occuper(false);
+      if (action && window.remplir) remplir(action.textContent);
+      if (window.rangerTours) window.rangerTours();
+    });
   }
 
   function brancher(coquille) {
@@ -573,11 +655,23 @@ function remplir(texte) {
       if (etapeTexte) etapeTexte.textContent = e.data;
     });
 
+    /* Le maître du jeu annonce le jet et attend : le flux se ferme ici. */
+    source.addEventListener('arbitrage', function (e) {
+      source.close();
+      if (!etape) return;
+      etape.insertAdjacentHTML('beforebegin', e.data);
+      var bloc = coquille.querySelector('.bloc-arbitrage:not(.jouee)');
+      if (etapeTexte) etapeTexte.textContent = 'À toi de lancer.';
+      if (bloc) brancherAnnonce(coquille, bloc);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
     /* Le résultat du dé arrive AVANT la première phrase : le joueur voit de
        ses yeux que le jet a précédé le récit. */
     source.addEventListener('jet', function (e) {
       if (!etape || !e.data.trim()) return;
       etape.insertAdjacentHTML('beforebegin', e.data);
+      document.dispatchEvent(new CustomEvent('chroniques:jet', { detail: { racine: coquille } }));
     });
 
     source.addEventListener('conteur', function (e) {

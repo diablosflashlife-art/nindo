@@ -23,6 +23,9 @@ INTENT = {
         # Madara » était passé sous silence, faute de savoir quoi en faire.
         "faisable": {"type": "string", "enum": ["oui", "improbable", "non"]},
         "obstacle": {"type": "string"},
+        # Annoncé au joueur AVANT qu'il lance : le prix de l'échec. Voir
+        # docs/NINDO-2.md, pilier 1.
+        "enjeu_echec": {"type": "string"},
     },
     "required": ["action_type", "resume", "requiert_jet", "stat", "difficulte",
                  "faisable"],

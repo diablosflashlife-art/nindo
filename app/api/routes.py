@@ -13,7 +13,8 @@ import time
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
+                               Response, StreamingResponse)
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
@@ -29,7 +30,7 @@ from app.engine import missions as gen_missions
 from app.engine import progression
 from app.engine import reprise
 from app.engine.creation import ErreurCreation, Fiche, apercu_stats, creer_personnage
-from app.engine.turn import conclure, jouer, preparer
+from app.engine.turn import arbitrer, conclure, jouer
 from app.engine.verrou import CampagneOccupee, tour_exclusif
 from app.engine.voix import plan_de_lecture
 from app.llm.provider import conteur, get_llm
@@ -596,11 +597,15 @@ def action(cid: int, request: Request, action: str = Form(...),
 # il ne doit survivre ni à un redémarrage ni à une reprise de sauvegarde.
 _EN_ATTENTE: dict[str, dict] = {}
 _DELAI_JETON = 120.0          # secondes avant péremption
+# Une annonce de jet attend un humain qui lit, hésite, discute avec l'autre
+# joueur : elle a droit à plus de temps qu'une coquille qui attend un navigateur.
+_DELAI_ANNONCE = 900.0
 
 
 def _purger_jetons() -> None:
-    limite = time.monotonic() - _DELAI_JETON
-    for cle in [k for k, v in _EN_ATTENTE.items() if v["depuis"] < limite]:
+    maintenant = time.monotonic()
+    for cle in [k for k, v in _EN_ATTENTE.items()
+                if v["depuis"] < maintenant - v.get("delai", _DELAI_JETON)]:
         _EN_ATTENTE.pop(cle, None)
 
 
@@ -619,13 +624,16 @@ def _sse(evenement: str, donnees: str) -> str:
 def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
                   character_id: int | None = Form(None),
                   posture: str = Form(""), levier: str = Form(""),
-                  entrainement: str = Form(""),
+                  entrainement: str = Form(""), auto: str = Form(""),
                   session: Session = Depends(get_session)):
     """Accuse réception de l'action et rend la coquille du tour.
 
     Rien n'est calculé ici : le but est de répondre en quelques millisecondes
     pour que le joueur voie sa propre phrase s'afficher tout de suite. Le
     travail se fait dans le flux qui suit.
+
+    `auto` : le joueur a demandé que le dé roule tout seul, sans lui montrer
+    l'annonce du jet. Réglage de la table, gardé par le navigateur.
     """
     camp = _camp(session, cid)
     _exige_en_cours(camp)
@@ -640,7 +648,7 @@ def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
     jeton = secrets.token_urlsafe(12)
     _EN_ATTENTE[jeton] = {"cid": cid, "pj": pj.id, "action": texte,
                           "posture": posture, "levier": levier,
-                          "entrainement": entrainement,
+                          "entrainement": entrainement, "auto": auto == "1",
                           "depuis": time.monotonic()}
     return templates.TemplateResponse("_flux.html", {
         "request": request, "camp": camp, "pj": pj, "action": texte,
@@ -677,6 +685,7 @@ async def jouer_table(cid: int, request: Request, session: Session = Depends(get
     jeton = secrets.token_urlsafe(12)
     _EN_ATTENTE[jeton] = {"cid": cid, "pj": entrees[0]["pj"], "entrees": entrees,
                           "action": entrees[0]["action"], "posture": "", "levier": "",
+                          "auto": form.get("auto") == "1",
                           "depuis": time.monotonic()}
     return templates.TemplateResponse("_flux.html", {
         "request": request, "camp": camp, "pj": session.get(Character, entrees[0]["pj"]),
@@ -720,18 +729,44 @@ def flux(cid: int, request: Request, jeton: str):
                 yield _sse("echec", str(exc))
                 return
             try:
-                if demande.get("entrees"):
-                    from app.engine import table as tour_de_table
-                    yield _sse("etape", "L'arbitre lit vos actions…")
-                    entrees = [{**e, "pj": session.get(Character, e["pj"])}
-                               for e in demande["entrees"]]
-                    pj, prep = tour_de_table.preparer(session, camp, entrees, rs, pack)
-                else:
-                    yield _sse("etape", "L'arbitre lit ton action…")
-                    prep = preparer(session, camp, pj, demande["action"], rs, pack,
-                                    posture=demande["posture"],
-                                    levier=demande["levier"],
-                                    entrainement=demande.get("entrainement", ""))
+                from app.engine import table as tour_de_table
+
+                # -- 2. l'arbitre lit, et ANNONCE ---------------------------
+                # Sauf si le joueur a déjà lancé : la demande porte alors ses
+                # arbitrages et ses choix, et on reprend au dé.
+                arbitrages = demande.get("arbitrages")
+                if arbitrages is None:
+                    if demande.get("entrees"):
+                        yield _sse("etape", "L'arbitre lit vos actions…")
+                        entrees = [{**e, "pj": session.get(Character, e["pj"])}
+                                   for e in demande["entrees"]]
+                        arbitrages = tour_de_table.arbitrer(session, camp, entrees, rs, pack)
+                    else:
+                        yield _sse("etape", "L'arbitre lit ton action…")
+                        arbitrages = [(pj.id, arbitrer(
+                            session, camp, pj, demande["action"], rs, pack,
+                            posture=demande["posture"], levier=demande["levier"],
+                            entrainement=demande.get("entrainement", "")))]
+
+                    if not demande.get("auto") and any(a.annonce for _, a in arbitrages):
+                        # LE JOUEUR LANCE LUI-MÊME. On lui montre l'annonce et
+                        # on rend la main : le flux se ferme, le verrou aussi.
+                        # `lancer` reprendra avec ses choix, sous ce même jeton.
+                        session.commit()
+                        _EN_ATTENTE[jeton] = {
+                            **demande, "arbitrages": arbitrages, "choix": {},
+                            "depuis": time.monotonic(), "delai": _DELAI_ANNONCE}
+                        yield _sse("arbitrage", templates.get_template(
+                            "_arbitrage.html").render(
+                                request=request, camp=camp, jeton=jeton,
+                                arbitrages=[(session.get(Character, pid), a)
+                                            for pid, a in arbitrages]).strip())
+                        return
+
+                # -- 3. le dé ---------------------------------------------------
+                yield _sse("etape", "Le dé roule…")
+                pj, prep = tour_de_table.resoudre(
+                    session, camp, arbitrages, rs, pack, demande.get("choix") or {})
 
                 # Le résultat mécanique est arrêté : on le montre AVANT la
                 # narration. Le joueur sait ainsi ce qui lui arrive pendant que
@@ -775,6 +810,43 @@ def flux(cid: int, request: Request, jeton: str):
     return StreamingResponse(evenements(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache",
                                       "X-Accel-Buffering": "no"})
+
+
+@router.post("/campagnes/{cid}/lancer/{jeton}")
+async def lancer(cid: int, request: Request, jeton: str):
+    """Le joueur a lu l'annonce et lance : ses choix sont retenus, et le
+    flux reprend au dé sous le même jeton.
+
+    Champs : `technique_<id>` (référence d'une technique proposée) et
+    `forcer_<id>` (« 1 »), par personnage. Tout ce qui n'est pas dans l'annonce
+    est ignoré : on ne paie pas une technique qui n'a pas été proposée.
+    """
+    _purger_jetons()
+    demande = _EN_ATTENTE.get(jeton)
+    if demande is None or demande["cid"] != cid or demande.get("arbitrages") is None:
+        raise HTTPException(404, "Annonce expirée ou déjà jouée")
+    form = await request.form()
+    choix: dict[int, dict] = {}
+    for pid, arb in demande["arbitrages"]:
+        technique = (form.get(f"technique_{pid}") or "").strip()
+        if technique not in {t["ref"] for t in arb.techniques}:
+            technique = ""
+        choix[pid] = {"technique": technique,
+                      "forcer": form.get(f"forcer_{pid}") == "1"}
+    demande["choix"] = choix
+    demande["depuis"] = time.monotonic()
+    demande["delai"] = _DELAI_JETON
+    return JSONResponse({"flux": f"/campagnes/{cid}/flux/{jeton}"})
+
+
+@router.post("/campagnes/{cid}/reformuler/{jeton}", status_code=204)
+def reformuler(cid: int, jeton: str):
+    """Le joueur se ravise avant le dé : l'annonce est oubliée, rien n'a
+    été dépensé ni écrit. Reformuler ne coûte jamais rien."""
+    demande = _EN_ATTENTE.get(jeton)
+    if demande is not None and demande["cid"] == cid:
+        _EN_ATTENTE.pop(jeton, None)
+    return Response(status_code=204)
 
 
 @router.get("/campagnes/{cid}/sceau/{jeton}")

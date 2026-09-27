@@ -3,6 +3,18 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.2.0 — Le maître du jeu annonce, tu lances
+
+Premier chantier de Nindō 2.0 (voir `docs/NINDO-2.md`) : le tour de jeu se joue comme à une vraie table.
+
+- **L'annonce du jet** : avant que le dé roule, le maître du jeu te dit la caractéristique, la difficulté, tes chances de réussite et de « oui, mais », le détail de ton bonus — et **ce que coûte un échec**. Les actions sans enjeu (parler, marcher) s'écrivent directement, sans clic de plus.
+- **Tu lances toi-même** : *Lancer le dé*, ou *Reformuler* si tu te ravises (rien n'est dépensé). Le dé roule à l'écran, avec un son, puis la scène s'écrit.
+- **Engager une technique sur un jet** : celles de ton répertoire qui servent ce jet sont proposées, avec leur bonus de maîtrise et leur coût en chakra.
+- **Forcer** : +3 au dé pour 2 chakra — mais si ça rate quand même, l'échec est critique. Un pari, pas un bonus gratuit.
+- **Lancer tout seul** : une case à cocher près du bouton, pour ceux qui préfèrent la vitesse.
+- **À plusieurs** : une annonce par joueur, un seul « Lancer le dé » pour la table.
+- **Corrigé** : viser un coéquipier (duel amical, entraînement) n'est plus « impossible » et n'ouvre plus un affrontement contre le rival présent. Les blessures pèsent aussi sur les jets hors combat, et c'est annoncé.
+
 ## 1.1.0 — Le vrai jeu commence
 
 - **Tes actions comptent** : le conteur raconte d'abord ce que tu tentes, puis son résultat. Une action démesurée (« je tue Madara ») est jouée comme une tentative, avec un jet de dé légendaire et les conséquences qui vont avec, au lieu d'être ignorée.

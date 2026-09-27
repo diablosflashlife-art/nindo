@@ -610,3 +610,59 @@ a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:non
 
 /* Le sceau d'une équipe : plusieurs archétypes et présages à la suite */
 .archetype-nom,.archetype-accroche,.archetype-fiche,.presage{white-space:pre-line}
+
+/* ==========================================================================
+   L'ANNONCE DU JET ET LE DÉ — chantier A de Nindō 2.0 (docs/NINDO-2.md)
+   ========================================================================== */
+.bloc-arbitrage{display:grid;gap:12px;margin:0 0 16px;padding:14px 16px;border-radius:14px;
+  border:1px solid rgba(201,162,39,.45);background:linear-gradient(180deg,rgba(201,162,39,.10),rgba(255,255,255,.02));
+  box-shadow:0 0 0 1px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.35)}
+.bloc-arbitrage.jouee{border-color:var(--liseré);background:rgba(255,255,255,.025);box-shadow:none;opacity:.8}
+.arbitrage{display:grid;gap:8px}
+.arbitrage + .arbitrage{padding-top:10px;border-top:1px dashed var(--liseré)}
+.arb-tete{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.arb-jet{font-family:var(--display);font-size:19px;color:var(--texte)}
+.arb-dc{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--or)}
+.arb-chances{display:grid;gap:5px}
+.jauge-chances{display:flex;height:8px;border-radius:999px;overflow:hidden;background:rgba(217,69,47,.35)}
+.jauge-chances i{display:block;height:100%}
+.jauge-chances .ok{background:linear-gradient(90deg,#2f9a7c,#56d3a9)}
+.jauge-chances .mi{background:linear-gradient(90deg,#b88a1c,#f2cf5c)}
+.arb-pct{font-family:var(--mono);font-size:11.5px;color:var(--texte-3)}
+.arb-pct b{color:var(--texte);font-weight:500}
+.arb-bonus{display:flex;flex-wrap:wrap;gap:6px}
+.arb-mod{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:6px;
+  border:1px solid var(--liseré-fort);background:rgba(0,0,0,.25);color:var(--texte-2)}
+.arb-mod.neg{color:var(--vermillon-vif);border-color:rgba(217,69,47,.4)}
+.arb-enjeu{margin:0;font-size:14px;line-height:1.5;color:var(--texte-2)}
+.arb-enjeu span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--vermillon-vif);margin-right:8px}
+.arb-techniques{display:flex;flex-wrap:wrap;gap:8px}
+.arb-technique{display:grid;gap:2px;padding:8px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--liseré);background:rgba(255,255,255,.03);transition:border-color .2s,background .2s}
+.arb-technique input{position:absolute;opacity:0;pointer-events:none}
+.arb-technique b{font-size:13.5px;font-weight:600;color:var(--texte)}
+.arb-technique small{font-family:var(--mono);font-size:10.5px;color:var(--texte-3)}
+.arb-technique.choisie{border-color:var(--or);background:var(--or-voile)}
+.arb-technique.indispo{opacity:.45;cursor:not-allowed}
+.arb-forcer{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.45;color:var(--texte-2);cursor:pointer}
+.arb-forcer input{margin-top:3px}
+.arb-forcer b{color:var(--vermillon-vif)}
+.arb-boutons{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+.reglage-de{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--texte-3);cursor:pointer;white-space:nowrap}
+
+/* Le dé : une face qui roule, puis se pose */
+.bloc-jet{align-items:center}
+.jet-corps{display:grid;gap:2px}
+.de{flex:0 0 auto;width:40px;height:40px;display:grid;place-items:center;
+  font-family:var(--display);font-size:19px;font-weight:700;color:var(--texte);
+  border-radius:10px;border:1px solid var(--liseré-fort);
+  background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.03));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 4px 12px rgba(0,0,0,.45)}
+.bloc-jet.ok .de{border-color:rgba(63,174,143,.6)} .bloc-jet.ko .de{border-color:rgba(217,69,47,.6)}
+.bloc-jet.mi .de{border-color:rgba(201,162,39,.6)}
+.bloc-jet.roule .de{animation:de-roule .12s linear infinite;color:var(--or)}
+.bloc-jet.pose .de{animation:de-pose .6s var(--ease)}
+@keyframes de-roule{0%{transform:rotate(-8deg) translateY(-1px)}50%{transform:rotate(6deg) translateY(1px)}100%{transform:rotate(-8deg) translateY(-1px)}}
+@keyframes de-pose{0%{transform:scale(1.35)}60%{transform:scale(.94)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.bloc-jet.roule .de,.bloc-jet.pose .de{animation:none}}

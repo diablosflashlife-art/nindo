@@ -336,7 +336,8 @@ class MockProvider:
         if "action_type" in props:
             return {"action_type": "autre", "resume": "action du joueur",
                     "requiert_jet": True, "stat": "taijutsu", "difficulte": "normal",
-                    "cible": "", "justification": "mock"}
+                    "cible": "", "justification": "mock", "faisable": "oui",
+                    "enjeu_echec": "[mock] quelqu'un remarque ta maladresse"}
         if "faits" in props:
             return {"faits": [{"texte": "[mock] Le joueur a agi de façon notable.",
                                "importance": 2}],

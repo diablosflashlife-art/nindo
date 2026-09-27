@@ -160,24 +160,66 @@ class Ruleset:
             {"roll": de, "stat_value": valeur, "bonus": bonus, "dc": dc},
         ))
         marge = total - dc
-
-        naturel = des[0] if des else de
-        if naturel <= cfg.get("crit_fail_on", 1):
-            issue = "echec_critique"
-        elif naturel >= cfg.get("crit_success_on", 20):
-            issue = "reussite_critique"
-        elif marge >= 0:
-            issue = "reussite"
-        elif marge >= -cfg.get("partial_margin", 3):
-            issue = "reussite_partielle"
-        else:
-            issue = "echec"
+        issue = self._issue(des[0] if des else de, marge)
 
         return CheckResult(
             stat=stat, difficulte=dc, de=de, des=des, stat_valeur=valeur, bonus=bonus,
             total=total, marge=marge, issue=issue,
             reussi=issue in ("reussite", "reussite_critique", "reussite_partielle"),
         )
+
+    def _issue(self, naturel: int, marge: int) -> str:
+        """L'issue d'un jet, d'après le dé naturel et la marge. Une seule
+        lecture des critiques et du « oui, mais », partagée par le jet réel et
+        par le calcul des chances : les deux ne peuvent pas diverger."""
+        cfg = self.data.get("check", {})
+        if naturel <= int(cfg.get("crit_fail_on", 1)):
+            return "echec_critique"
+        if naturel >= int(cfg.get("crit_success_on", 20)):
+            return "reussite_critique"
+        if marge >= 0:
+            return "reussite"
+        if marge >= -int(cfg.get("partial_margin", 3)):
+            return "reussite_partielle"
+        return "echec"
+
+    def chances(self, stats: dict, stat: str, difficulte: str | int = "normal",
+                bonus: int = 0) -> dict:
+        """Les chances AVANT de lancer, en pour cent : {reussite, partielle, echec}.
+
+        C'est ce qu'un maître du jeu dit à sa table (« c'est jouable », « ça va
+        être dur ») et que le moteur gardait pour lui. Calculées en énumérant
+        les faces, avec la même formule et la même lecture d'issue que le jet
+        réel — jamais une approximation qui mentirait au joueur.
+        """
+        cfg = self.data.get("check", {})
+        dc = self.valeur_difficulte(difficulte)
+        valeur = int(stats.get(stat, self.stats.get(stat, {}).get("default", 10)))
+        m = DICE_RE.match(cfg.get("dice", "1d20").strip())
+        count, faces = (int(m.group(1) or 1), int(m.group(2))) if m else (1, 20)
+        formule = cfg.get("formula", "roll + (stat_value - 10) // 2 + bonus")
+
+        # Un seul dé : toutes les faces. Plusieurs : un échantillon fixe, qui
+        # suffit à une annonce en pour cent.
+        if count == 1:
+            tirages = [(f, [f]) for f in range(1, faces + 1)]
+        else:
+            echantillon = random.Random(20260927)
+            tirages = [roll_dice(cfg.get("dice"), echantillon) for _ in range(2000)]
+
+        compte = {"reussite": 0, "partielle": 0, "echec": 0}
+        for de, des in tirages:
+            total = int(self._eval(formule, {"roll": de, "stat_value": valeur,
+                                             "bonus": bonus, "dc": dc}))
+            issue = self._issue(des[0], total - dc)
+            if issue in ("reussite", "reussite_critique"):
+                compte["reussite"] += 1
+            elif issue == "reussite_partielle":
+                compte["partielle"] += 1
+            else:
+                compte["echec"] += 1
+        n = len(tirages) or 1
+        return {k: int(round(v * 100 / n)) for k, v in compte.items()}
 
     # ------------------------------------------------------------ puissance
     def puissance(self, stats: dict, techniques: list[dict], niveau: int,

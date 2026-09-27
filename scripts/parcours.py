@@ -283,10 +283,25 @@ def main() -> int:
     url_flux = r.text[debut:r.text.find('"', debut)] if debut > 20 else ""
     ok(bool(url_flux), "la coquille du tour porte l'adresse du flux")
 
+    # LE JEU S'ARRÊTE SUR L'ANNONCE (Nindō 2.0, pilier 1) : l'arbitre dit le
+    # jet, ses chances et le prix de l'échec, puis attend que le joueur lance.
     corps = c.get(url_flux).text if url_flux else ""
-    evenements = [b.split("\n", 1)[0].removeprefix("event: ")
-                  for b in corps.split("\n\n") if b.startswith("event: ")]
+    evenements = evenements_de(corps)
+    ok(evenements == ["etape", "arbitrage"],
+       "le flux s'arrête sur l'annonce du jet et rend la main", str(evenements))
+    ok("Jet de" in corps and "de réussite" in corps and "Si ça rate" in corps,
+       "l'annonce dit la caractéristique, les chances et le prix de l'échec")
+    debut = corps.find('data-lancer="') + len('data-lancer="')
+    url_lancer = corps[debut:corps.find('"', debut)] if debut > 20 else ""
+    ok(bool(url_lancer), "l'annonce porte l'adresse où lancer")
+    r = c.post(url_lancer, data={f"forcer_{pj_id}": "1"})
+    ok(r.status_code == 200 and r.json().get("flux") == url_flux,
+       "lancer reprend le flux sous le même jeton", r.text[:200])
+
+    corps = c.get(url_flux).text
+    evenements = evenements_de(corps)
     ok("jet" in evenements, "le résultat mécanique est envoyé AVANT la narration")
+    ok("forcé" in corps, "le pari du joueur (forcer) est appliqué et visible")
     ok(evenements.index("jet") < evenements.index("mot")
        if "mot" in evenements else False,
        "le dé précède réellement le récit dans le flux")

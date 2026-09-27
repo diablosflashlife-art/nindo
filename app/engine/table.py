@@ -7,11 +7,12 @@ personnages en présence. Autour d'une vraie table, ça ne se passe pas comme
 ça : chacun dit ce que fait son personnage, puis le maître du jeu raconte ce
 qui arrive À TOUS.
 
-COMMENT. Chaque joueur passe par le MÊME chemin qu'en solo (`turn.preparer`) :
-son action est lue par l'arbitre, son jet est lancé, sa séance d'entraînement
-avance. Les préparations sont ensuite fusionnées en une seule, que le narrateur
-raconte en une scène, et `conclure` écrit un seul tour. Rien n'est dupliqué :
-le tour de table n'est qu'une façon de rassembler des tours solo.
+COMMENT. Chaque joueur passe par le MÊME chemin qu'en solo (`turn.arbitrer`
+puis `turn.resoudre`) : son action est lue par l'arbitre, son jet est annoncé
+puis lancé, sa séance d'entraînement avance. Les préparations sont ensuite
+fusionnées en une seule, que le narrateur raconte en une scène, et `conclure`
+écrit un seul tour. Rien n'est dupliqué : le tour de table n'est qu'une façon
+de rassembler des tours solo.
 
 LE GROUPE, C'EST LE LIEU. Deux personnages au même endroit partagent la scène ;
 s'ils se séparent, chacun retrouve la sienne.
@@ -51,7 +52,8 @@ def fusionner(preps: list[tuple[Character, moteur.Preparation]]) -> moteur.Prepa
     resolution["joueurs"] = [
         {"id": pj.id, "nom": pj.nom, "joueur": pj.joueur or "", "action": p.action,
          "resolution": {k: v for k, v in p.resolution.items()
-                        if k in ("check", "combat", "impossible", "entrainement")}}
+                        if k in ("check", "combat", "impossible", "entrainement",
+                                 "arbitrage")}}
         for pj, p in preps]
     from app.memory.context import AVERTISSEMENT_AUTRES_PJ, AVERTISSEMENT_TOUR_DE_TABLE
     return moteur.Preparation(
@@ -77,17 +79,46 @@ def fusionner(preps: list[tuple[Character, moteur.Preparation]]) -> moteur.Prepa
     )
 
 
-def preparer(session: Session, camp: Campaign, entrees: list[dict], rs: Ruleset,
-             pack: LorePack) -> tuple[Character, moteur.Preparation]:
-    """`entrees` : [{"pj": Character, "action", "posture", "levier",
-    "entrainement"}]. Rend (le personnage qui mène, la préparation fusionnée)."""
-    preps = []
+def arbitrer(session: Session, camp: Campaign, entrees: list[dict], rs: Ruleset,
+             pack: LorePack) -> list[tuple[int, moteur.Arbitrage]]:
+    """L'annonce de chaque joueur, dans l'ordre des déclarations.
+
+    `entrees` : [{"pj": Character, "action", "posture", "levier",
+    "entrainement"}]. Rend des identifiants de personnage, pas des objets :
+    l'annonce attend un clic entre deux requêtes."""
+    out = []
     for e in entrees:
         pj = e["pj"]
-        preps.append((pj, moteur.preparer(
+        out.append((pj.id, moteur.arbitrer(
             session, camp, pj, e["action"], rs, pack,
             posture=e.get("posture", ""), levier=e.get("levier", ""),
             entrainement=e.get("entrainement", ""))))
+    return out
+
+
+def resoudre(session: Session, camp: Campaign,
+             arbitrages: list[tuple[int, moteur.Arbitrage]], rs: Ruleset,
+             pack: LorePack,
+             choix: dict[int, dict] | None = None) -> tuple[Character, moteur.Preparation]:
+    """Les dés de tous, puis une seule préparation. Rend (le personnage qui
+    mène, la préparation fusionnée). `choix` : {id du personnage: {"technique",
+    "forcer"}}, ce que chacun a décidé sur son annonce."""
+    choix = choix or {}
+    preps = []
+    for pid, arb in arbitrages:
+        pj = session.get(Character, pid)
+        if pj is None:
+            continue
+        c = choix.get(pid) or {}
+        preps.append((pj, moteur.resoudre(
+            session, camp, pj, arb, rs, pack,
+            technique=c.get("technique", ""), forcer=bool(c.get("forcer")))))
     if len(preps) == 1:
         return preps[0]
     return preps[0][0], fusionner(preps)
+
+
+def preparer(session: Session, camp: Campaign, entrees: list[dict], rs: Ruleset,
+             pack: LorePack) -> tuple[Character, moteur.Preparation]:
+    """Annonce et dés d'un trait — le chemin « lancer tout seul »."""
+    return resoudre(session, camp, arbitrer(session, camp, entrees, rs, pack), rs, pack)

@@ -223,6 +223,11 @@ def _malus_blessures(session: Session, rs: Ruleset, perso: Character) -> int:
     return rs.malus_etats(codes)
 
 
+# Lu aussi par le tour ordinaire : un personnage chancelant lance ses jets
+# hors combat avec le même handicap qu'en combat, et le joueur le voit annoncé.
+malus_blessures = _malus_blessures
+
+
 def _lire_note(pnj: Character, cle: str) -> str:
     """Les consignes de conduite d'un adversaire, rangées dans ses notes.
 

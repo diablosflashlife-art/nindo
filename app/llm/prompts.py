@@ -21,6 +21,10 @@ Règles :
   duel, qui vole, qui ressuscite un mort) ; « improbable » si elle est possible
   mais démesurée ; « oui » sinon. `obstacle` dit en une phrase ce qui l'empêche
   (« Madara n'est pas ici », « aucun genin ne peut rivaliser avec un Kage »).
+- `enjeu_echec` : ce qui arrive CONCRÈTEMENT si le jet rate, d'après la scène,
+  en une phrase de quinze mots au plus (« la patrouille te repère avant que tu
+  l'aies vue », « le marchand se ferme et appelle la garde »). C'est ce qu'un
+  maître du jeu annonce avant de faire lancer le dé. Vide si aucun jet.
 Réponds uniquement avec l'objet JSON demandé."""
 
 

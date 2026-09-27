@@ -39,6 +39,12 @@ check:
   crit_fail_on: 1
   crit_success_on: 20
   partial_margin: 3        # échec de 1 à 3 => « oui, mais… »
+  # FORCER — « pousser » son action, comme à une vraie table : un bonus au dé
+  # contre un prix. Le chakra se paie tout de suite ; et si le jet rate malgré
+  # tout, l'échec devient critique. C'est le pari, et il doit rester un pari.
+  forcer:
+    bonus: 3
+    chakra: 2
 
 difficulties:
   triviale: 5

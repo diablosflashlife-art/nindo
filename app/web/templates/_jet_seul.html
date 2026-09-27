@@ -1,5 +1,6 @@
 {# Le résultat d'UN joueur : son jet, ou son échange. Voir _jet.html. #}
 {% set c = resolution.get('check') %}
+{% set a = resolution.get('arbitrage') %}
 {% if resolution.get('impossible') %}
 <div class="bloc-jet ko">
   <span class="jet-issue">impossible</span>
@@ -9,9 +10,20 @@
 {% if c %}
   {% set cls = 'ok' if c.issue in ('reussite','reussite_critique')
                else ('mi' if c.issue == 'reussite_partielle' else 'ko') %}
-<div class="bloc-jet {{ cls }}">
-  <span class="jet-issue">{{ c.issue|replace('_', ' ') }}</span>
-  <span class="jet-detail">dé {{ c.des|join(', ') }} · {{ c.total }} contre {{ c.difficulte }}</span>
+{# Le dé lui-même, à part : c'est lui que l'animation fait rouler quand le
+   tour est en cours d'écriture (voir de.js). Dans l'historique, il est déjà
+   posé. #}
+<div class="bloc-jet {{ cls }}" data-de="{{ c.des[0] if c.des else c.de }}">
+  <span class="de" aria-label="dé {{ c.des[0] if c.des else c.de }}">{{ c.des[0] if c.des else c.de }}</span>
+  <span class="jet-corps">
+    <span class="jet-issue">{{ c.issue|replace('_', ' ') }}</span>
+    <span class="jet-detail">
+      {%- if a %}{{ a.stat_label }} · {{ a.difficulte|lower }} {{ a.dc }} · {% endif -%}
+      total {{ c.total }} contre {{ c.difficulte }}
+      {%- if a %} ({{ '%+d'|format(a.modificateur) }} {{ a.stat_label|lower }}{% for b in a.bonus %}, {{ '%+d'|format(b.valeur) }} {{ b.libelle }}{% endfor %}){% endif -%}
+      {%- if a and a.forcer %} · forcé{% endif -%}
+    </span>
+  </span>
 </div>
 {% endif %}
 

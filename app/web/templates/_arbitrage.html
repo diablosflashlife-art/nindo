@@ -1,0 +1,73 @@
+{# ==========================================================================
+   L'ANNONCE DU JET — ce que le maître du jeu dit AVANT de faire lancer.
+
+   Envoyée dans le flux, elle s'insère dans la coquille du tour et le flux se
+   ferme : le jeu attend le joueur. « Lancer le dé » renvoie ses choix à
+   `lancer/<jeton>` et rouvre le flux ; « Reformuler » oublie tout.
+
+   À plusieurs (tour de table), une annonce par joueur, et un seul bouton :
+   la table partage l'écran, elle lance ensemble.
+   ========================================================================== #}
+<div class="bloc-arbitrage" data-lancer="/campagnes/{{ camp.id }}/lancer/{{ jeton }}"
+     data-reformuler="/campagnes/{{ camp.id }}/reformuler/{{ jeton }}">
+  {% for pj, a in arbitrages %}
+  <div class="arbitrage" data-pj="{{ pj.id }}">
+    {% if arbitrages|length > 1 %}<span class="jet-nom">{{ pj.nom }}</span>{% endif %}
+    {% if a.annonce %}
+    <div class="arb-tete">
+      <span class="arb-jet">Jet de {{ a.stat_label }}</span>
+      <span class="arb-dc">{{ a.difficulte_label }} · {{ a.dc }}</span>
+    </div>
+    <div class="arb-chances" title="Réussite · « oui, mais » · échec">
+      <div class="jauge-chances">
+        <i class="ok" style="width:{{ a.chances.get('reussite', 0) }}%"></i><i class="mi" style="width:{{ a.chances.get('partielle', 0) }}%"></i>
+      </div>
+      <span class="arb-pct"><b>{{ a.chances.get('reussite', 0) }} %</b> de réussite
+        {%- if a.chances.get('partielle') %} · {{ a.chances.get('partielle') }} % de « oui, mais »{% endif %}</span>
+    </div>
+    <div class="arb-bonus">
+      <span class="arb-mod {{ 'neg' if a.modificateur < 0 }}">{{ '%+d'|format(a.modificateur) }} {{ a.stat_label }} {{ a.stat_valeur }}</span>
+      {% for b in a.bonus %}<span class="arb-mod {{ 'neg' if b.valeur < 0 }}">{{ '%+d'|format(b.valeur) }} {{ b.libelle }}</span>{% endfor %}
+    </div>
+    {% if a.enjeu_echec %}<p class="arb-enjeu"><span>Si ça rate</span> {{ a.enjeu_echec }}</p>{% endif %}
+    {% if a.techniques %}
+    <div class="arb-techniques">
+      <label class="arb-technique choisie">
+        <input type="radio" name="technique_{{ pj.id }}" value="" checked>
+        <b>Sans technique</b>
+      </label>
+      {% for t in a.techniques %}
+      <label class="arb-technique {{ 'indispo' if not t.dispo }}"
+             title="{{ t.fr }}{% if not t.dispo %} — pas assez de chakra{% endif %}">
+        <input type="radio" name="technique_{{ pj.id }}" value="{{ t.ref }}"
+               {% if not t.dispo %}disabled{% endif %}>
+        <b>{{ t.nom }}</b>
+        <small>{{ '%+d'|format(t.bonus) }} au dé{% if t.cout %} · {{ t.cout }} chakra{% endif %} · {{ t.palier|lower }}</small>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if a.forcer and a.forcer.dispo %}
+    <label class="arb-forcer">
+      <input type="checkbox" name="forcer_{{ pj.id }}" value="1">
+      <span><b>Forcer</b> — {{ '%+d'|format(a.forcer.bonus) }} au dé pour {{ a.forcer.chakra }} chakra.
+        Si ça rate quand même, l'échec est critique.</span>
+    </label>
+    {% endif %}
+    {% elif a.impossible %}
+    <div class="arb-tete"><span class="arb-jet">Impossible telle quelle</span>
+      <span class="arb-dc">{{ a.impossible }}</span></div>
+    {% elif a.en_combat %}
+    <div class="arb-tete"><span class="arb-jet">Échange</span>
+      <span class="arb-dc">l'affrontement se résout dès que tu lances</span></div>
+    {% else %}
+    <div class="arb-tete"><span class="arb-jet">Pas de jet</span>
+      <span class="arb-dc">aucun enjeu mécanique : la scène s'écrit directement</span></div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <div class="arb-boutons">
+    <button type="button" class="plein arb-lancer">Lancer le dé</button>
+    <button type="button" class="discret arb-reformuler">Reformuler</button>
+  </div>
+</div>
