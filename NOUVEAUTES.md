@@ -3,6 +3,10 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.0.4 — Clans majeurs et mineurs
+
+- **Clan majeur / Clan mineur** : les clans s'affichent désormais ainsi, sur l'accueil comme à la création.
+
 ## 1.0.3 — À plusieurs autour de l'écran
 
 - **Ajouter un joueur** : le bouton *+ joueur* (en haut de la table) ouvre une création complète. Chaque joueur crée SON personnage — nom, maison, voie, destinée — et rejoint la scène de l'équipe.

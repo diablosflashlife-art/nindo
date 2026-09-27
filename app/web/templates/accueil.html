@@ -76,7 +76,7 @@
           {% for c in pack.clans(village=v.id) %}
           <span class="vv-clan" data-cle="{{ c.id }}" title="{{ c.epithete or '' }}">
             {{ embleme(c.id, 58) }}
-            <span>{{ c.nom }}<br><em>{{ 'sang' if c.rang == 'majeur' else 'art' }}</em></span>
+            <span>{{ c.nom }}<br><em>{{ 'Clan majeur' if c.rang == 'majeur' else 'Clan mineur' }}</em></span>
           </span>
           {% endfor %}
         </div>

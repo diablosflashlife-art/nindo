@@ -481,14 +481,14 @@ origines:
   # forgée, pas héritée. Les identifiants restent ceux d'avant : les
   # sauvegardes les connaissent.
   clan_connu:
-    label: "Clan de sang"
+    label: "Clan majeur"
     aide: "Un héritage qui coule dans les veines. Il devient atteignable — il n'est jamais acquis, et il impose ses attentes."
     budget_actif: 3
     budget_latent: 10
     stats_libres: 3
     relations_amorcees: 4
   clan_mineur:
-    label: "Clan d'art"
+    label: "Clan mineur"
     aide: "Une force qui se transmet par l'apprentissage, pas par le sang : une école, un savoir, une discipline de famille."
     budget_actif: 3
     budget_latent: 12

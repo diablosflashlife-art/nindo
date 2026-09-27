@@ -250,11 +250,11 @@
 
     <!-- ---- clans majeurs -->
     <div class="bloc-origine" data-pour="clan_connu" style="display:none">
-      <p class="legende espace">Un clan de sang</p>
+      <p class="legende espace">Un clan majeur</p>
       <p class="petit muted" style="margin:-6px 0 14px">
         Les clans de <strong class="nom-village">ton village</strong>.</p>
       <p class="vide-clans petit muted" data-vide="clan_connu" style="display:none;margin:0 0 10px">
-        Aucun clan de sang dans ce village. Choisis un clan d'art, fonde ta
+        Aucun clan majeur dans ce village. Choisis un clan mineur, fonde ta
         lignée, ou pars sans clan.</p>
       <div class="cartes clans" data-propres="clan_connu">
         {% for c in clans_majeurs %}
@@ -269,7 +269,7 @@
             <span class="embleme">{{ embleme(c.id, 92) }}</span>
             <span>
               <span class="carte-nom">{{ c.nom }}</span>
-              <span class="carte-sous">{{ c.epithete or 'clan de sang' }}</span>
+              <span class="carte-sous">{{ c.epithete or 'Clan majeur' }}</span>
             </span>
           </span>
           {% if c.histoire %}<p class="carte-texte">{{ c.histoire }}</p>{% endif %}
@@ -303,12 +303,12 @@
 
     <!-- ---- clans mineurs -->
     <div class="bloc-origine" data-pour="clan_mineur" style="display:none">
-      <p class="legende espace">Un clan d'art</p>
+      <p class="legende espace">Un clan mineur</p>
       <p class="petit muted" style="margin:-6px 0 14px">
         Les familles de <strong class="nom-village">ton village</strong>.</p>
       <p class="vide-clans petit muted" data-vide="clan_mineur" style="display:none;margin:0 0 10px">
-        Aucun clan d'art dans ce village : ses maisons se transmettent par le
-        sang. Choisis un clan de sang, fonde ta lignée, ou pars sans clan.</p>
+        Aucun clan mineur dans ce village. Choisis un clan majeur, fonde ta
+        lignée, ou pars sans clan.</p>
       <div class="cartes clans" data-propres="clan_mineur">
         {% for c in clans_mineurs %}
         <label class="carte-choix {% if loop.first %}choisie{% endif %}"
@@ -322,7 +322,7 @@
             <span class="embleme">{{ embleme(c.id, 92) }}</span>
             <span>
               <span class="carte-nom">{{ c.nom }}</span>
-              <span class="carte-sous">{{ c.epithete or "clan d'art" }}</span>
+              <span class="carte-sous">{{ c.epithete or "Clan mineur" }}</span>
             </span>
           </span>
           {% if c.histoire %}<p class="carte-texte">{{ c.histoire }}</p>{% endif %}
