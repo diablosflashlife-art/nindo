@@ -3,6 +3,16 @@
 Chaque section devient les notes de la version publiée sur GitHub, et s'affiche
 dans le lanceur. La plus récente en premier ; le titre est `## <version> — <nom>`.
 
+## 1.1.0 — Le vrai jeu commence
+
+- **Tes actions comptent** : le conteur raconte d'abord ce que tu tentes, puis son résultat. Une action démesurée (« je tue Madara ») est jouée comme une tentative, avec un jet de dé légendaire et les conséquences qui vont avec, au lieu d'être ignorée.
+- **Jouer à deux dès le début** : à la création de la partie, choisis le nombre de joueurs. Chacun crée son personnage, et vous commencez dans la même équipe.
+- **Tour de table** : quand vous êtes au même endroit, chacun écrit l'action de son personnage, puis *Jouer le tour*. Une seule scène vous répond à tous, avec un jet de dé par joueur. Si vous vous séparez, chacun retrouve sa scène.
+- **Les entraînements se jouent** : une technique ne s'apprend plus d'un clic. *S'entraîner* (onglet *Techniques*) lance une vraie séance, avec un jet de dé. La progression avance selon le résultat, jusqu'à 100 %, et va plus vite avec un maître.
+- **Les vrais noms des techniques** : Kage Bunshin, Gôkakyû, Chidori, Shishienjin, Kakuremino… chacune avec une courte description en français.
+- **Une voix réaliste** : une voix neuronale française (Piper), gratuite et hors ligne, remplace la voix robotique. À installer une fois depuis le lanceur (≈ 60 Mo), puis active le bouton *voix* en jeu.
+- **Onglets plus clairs** : *Carte*, *Équipe*, *Techniques*. Le guide *Premiers pas* explique l'entraînement et le tour de table.
+
 ## 1.0.5 — Les Fûma, clan majeur
 
 - **Les Fûma deviennent un clan majeur d'Oto**, aux côtés des Raimei et des Kaguya.

@@ -232,9 +232,7 @@ def _s_lieu(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
                   for c in autres_pj]
         parts.append(
             "### AUTRES PERSONNAGES JOUEURS PRÉSENTS\n" + "\n".join(lignes) +
-            "\nCes personnages appartiennent à d'autres joueurs humains. Tu peux "
-            "décrire ce qui leur arrive, jamais ce qu'ils choisissent, disent ou "
-            "tentent.")
+            "\n" + AVERTISSEMENT_AUTRES_PJ)
 
     pnjs = [c for c in presents if not c.is_pc]
     if pnjs:
@@ -260,6 +258,16 @@ def _s_lieu(session: Session, camp: Campaign, pj: Character, rs: Ruleset,
                 lignes.append(f"  Poursuit : {pnj.objectifs[0]}")
         parts.append("### PERSONNAGES PRÉSENTS\n" + "\n".join(lignes))
     return parts
+
+
+# Remplacé en tour de table (voir engine/table.py) : là, les autres joueurs ont
+# DÉCLARÉ leur action, et elle doit être racontée.
+AVERTISSEMENT_AUTRES_PJ = ("Ces personnages appartiennent à d'autres joueurs humains. Tu "
+                           "peux décrire ce qui leur arrive, jamais ce qu'ils "
+                           "choisissent, disent ou tentent.")
+AVERTISSEMENT_TOUR_DE_TABLE = ("Ces personnages appartiennent à d'autres joueurs humains. "
+                               "CE TOUR-CI, chacun a déclaré son action (voir plus bas) : "
+                               "raconte-la avec son résultat, sans rien y ajouter.")
 
 
 # Le rôle d'un PNJ dans la vie du joueur. Mesuré sur une partie de 50 tours :

@@ -241,15 +241,107 @@ def offres(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
             "stat_requise": besoin,
             "manque": manque_prereq,
             "pret": pret,
+            "progression": int((pj.entrainements or {}).get(tid, 0)),
         })
 
     ordre = {"maitre": 0, "parchemin": 1, "travail": 2}
-    return sorted(out, key=lambda o: (not o["pret"], ordre[o["source"]],
+    # Ce qu'on a déjà commencé d'abord : on reprend ce qu'on travaillait.
+    return sorted(out, key=lambda o: (not o["pret"], -o["progression"], ordre[o["source"]],
                                       RANGS.index(o["rang"]), o["nom"]))
 
 
 # --------------------------------------------------------------------------
-# Apprendre
+# S'entraîner : une séance JOUÉE
+# --------------------------------------------------------------------------
+# Retour de partie : « on apprend des techniques comme ça, sans scène, sans
+# dé, sans entraînement ». Un bouton inscrivait la technique d'un coup. Chaque
+# séance est désormais un tour de jeu : un geste raconté, un jet, une
+# progression. Il faut autant de séances réussies que de « tours » du rang.
+DIFFICULTE_PAR_RANG = {"E": "facile", "D": "normal", "C": "difficile",
+                       "B": "ardue", "A": "ardue", "S": "legendaire"}
+FACTEUR_PAR_ISSUE = {"reussite_critique": 1.5, "reussite": 1.0, "reussite_partielle": 0.6,
+                     "echec": 0.35, "echec_critique": 0.0}
+BONUS_DU_MAITRE = 1.5
+
+
+def offre(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
+          pj: Character, tid: str) -> dict | None:
+    return next((o for o in offres(session, camp, pack, rs, pj) if o["id"] == tid), None)
+
+
+def verifier_seance(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
+                    pj: Character, tid: str) -> dict:
+    """L'offre à travailler, ou ApprentissageRefuse avec la raison."""
+    o = offre(session, camp, pack, rs, pj, tid)
+    if o is None:
+        raise ApprentissageRefuse(
+            "Rien ne t'ouvre cette technique pour le moment : il te faut un "
+            "maître présent, un parchemin, ou qu'elle relève de ta spécialité.")
+    if o["manque"]:
+        raise ApprentissageRefuse("Il te manque d'abord " + fr.enumerer(o["manque"]) + ".")
+    if o["stat_valeur"] < o["stat_requise"]:
+        raise ApprentissageRefuse(
+            f"{o['stat_label']} {o['stat_valeur']} ne suffit pas pour un rang "
+            f"{o['rang']} : il en faut {o['stat_requise']}.")
+    return o
+
+
+def seance(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
+           pj: Character, o: dict, issue: str) -> tuple[str, list[str]]:
+    """Fait avancer l'apprentissage selon l'issue du jet. Rend (bloc pour le
+    narrateur, effets pour le joueur). À 100 %, la technique est acquise."""
+    tours = tours_pour(rs, o["rang"])
+    gain = 100.0 / max(1, tours) * FACTEUR_PAR_ISSUE.get(issue, 0.35)
+    if o["source"] == "maitre":
+        gain *= BONUS_DU_MAITRE
+    avant = int((pj.entrainements or {}).get(o["id"], 0))
+    apres = min(100, int(round(avant + gain)))
+    etat = dict(pj.entrainements or {})
+    effets: list[str] = []
+    if apres >= 100:
+        etat.pop(o["id"], None)
+        pj.entrainements = etat
+        effets += _acquerir(session, camp, rs, pj, o)
+        fin = ("TECHNIQUE ACQUISE : raconte le moment où elle sort enfin, "
+               "entière, pour la première fois.")
+    else:
+        etat[o["id"]] = apres
+        pj.entrainements = etat
+        effets.append(f"Entraînement — {o['nom']} : {avant} % → {apres} %")
+        fin = ("La technique n'est PAS encore acquise : raconte une séance "
+               "de travail, ses gestes, ses ratés, et ce qui a progressé.")
+    session.add(pj)
+    avec = {"maitre": f", sous la conduite de {o['detail']}",
+            "parchemin": ", en suivant un parchemin",
+            "travail": ", seul"}[o["source"]]
+    bloc = (f"SÉANCE D'ENTRAÎNEMENT — {o['nom']}"
+            f"{' (' + o['fr'] + ')' if o.get('fr') else ''}{avec}.\n"
+            f"Progression : {avant} % → {apres} %.\n{fin}")
+    return bloc, effets
+
+
+def _acquerir(session: Session, camp: Campaign, rs: Ruleset, pj: Character,
+              o: dict) -> list[str]:
+    maitrise = int(_cfg(rs).get(
+        "maitrise_du_maitre" if o["source"] == "maitre" else "maitrise_initiale", 40))
+    session.add(CharacterTechnique(
+        campaign_id=camp.id, character_id=pj.id, technique_ref=o["id"],
+        maitrise=maitrise, appris_tour=camp.tour))
+    if o["source"] == "parchemin":
+        pj.inventaire = [x for x in (pj.inventaire or []) if x != o["detail"]]
+    session.add(Event(
+        campaign_id=camp.id, tour=camp.tour, type="apprentissage",
+        resume=f"{pj.nom} maîtrise désormais {o['nom']}.",
+        importance=4, entites=[i for i in (pj.id, o["maitre_id"]) if i]))
+    session.add(MemoryFact(
+        campaign_id=camp.id, tour=camp.tour, nature="fait", importance=4,
+        texte=f"Au tour {camp.tour}, {pj.nom} a appris {o['nom']} à force d'entraînement.",
+        entites=[i for i in (pj.id, o["maitre_id"]) if i]))
+    return [f"Technique apprise : {o['nom']} !"]
+
+
+# --------------------------------------------------------------------------
+# Apprendre d'un coup (ancien chemin, gardé pour l'API)
 # --------------------------------------------------------------------------
 def apprendre(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
               pj: Character, tid: str) -> list[str]:

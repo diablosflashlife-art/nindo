@@ -14,10 +14,19 @@
     <span class="tour-num">tour {{ camp.tour + 1 }}</span>
   </div>
 
+  {% if entrees %}
+  {% for e in entrees %}
+  <div class="bloc-action">
+    <span class="tour-acteur">{{ e.nom }}</span>
+    <p class="tour-action">{{ e.action }}</p>
+  </div>
+  {% endfor %}
+  {% else %}
   <div class="bloc-action">
     <span class="tour-acteur">{{ pj.nom }}</span>
     <p class="tour-action">{{ action }}</p>
   </div>
+  {% endif %}
 
   {# Remplacé par le vrai bloc de jet dès que la résolution est faite. #}
   <div class="bloc-etape" data-role="etape">

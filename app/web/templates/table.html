@@ -120,7 +120,7 @@
     {% else %}
     <div class="panneau">
       {% if pjs|length > 1 %}
-      <p class="legende">Qui agit ce tour-ci</p>
+      <p class="legende">{{ 'Fiche affichée' if equipe_scene|length > 1 else 'Qui agit ce tour-ci' }}</p>
       <div class="onglets">
         {% for p in pjs %}
         <a href="/campagnes/{{ camp.id }}?pj={{ p.id }}"
@@ -149,6 +149,45 @@
         {% endif %}
       </div>
 
+      {% if equipe_scene|length > 1 %}
+      {# LE TOUR DE TABLE. Chaque joueur présent écrit l'action de SON
+         personnage ; un seul envoi, une seule scène qui les résout toutes.
+         Une case laissée vide : ce personnage observe. #}
+      <form class="tour-de-table" hx-post="/campagnes/{{ camp.id }}/jouer/table"
+            hx-target="#recit" hx-swap="beforeend"
+            hx-on::after-request="if(event.detail.successful){
+                                    document.querySelectorAll('.table-action').forEach(function(t){t.value='';});
+                                  }
+                                  window.scrollTo(0, document.body.scrollHeight)">
+        {% for p in equipe_scene %}
+        <div class="declaration {{ 'active' if p.id == pj.id }}">
+          <input type="hidden" name="joueur" value="{{ p.id }}">
+          <label class="declaration-nom" for="action_{{ p.id }}">
+            <span class="pastille">{{ p.nom[0] }}</span>
+            <span>{{ p.nom }}{% if p.joueur %} <small>— {{ p.joueur }}</small>{% endif %}</span>
+          </label>
+          {% if p.id == pj.id %}
+          <input type="hidden" name="entrainement_{{ p.id }}" id="entrainement" value="{{ entrainement_prepare or '' }}">
+          <div class="seance-annonce" id="seance-annonce" {% if not entrainement_prepare %}hidden{% endif %}>
+            Séance d'entraînement — le dé décidera de ta progression.
+            <button type="button" class="discret" id="seance-annuler">annuler</button></div>
+          {% endif %}
+          {% if rencontre and postures %}
+          <select name="posture_{{ p.id }}" class="declaration-posture" aria-label="Posture de {{ p.nom }}">
+            {% for po in postures %}<option value="{{ po.code }}">{{ po.label }}</option>{% endfor %}
+          </select>
+          {% endif %}
+          <textarea class="table-action" name="action_{{ p.id }}" rows="2"
+                    {% if p.id == pj.id %}id="action"{% endif %}
+                    placeholder="{{ p.nom }} — {{ 'comment t’y prends-tu ?' if rencontre else 'que tentes-tu ?' }}">{% if p.id == pj.id %}{{ phrase_prepare or '' }}{% endif %}</textarea>
+        </div>
+        {% endfor %}
+        <div class="rangee espace" style="justify-content:space-between">
+          <span class="petit muted">Chacun écrit l'action de son personnage. Une case vide : il observe.</span>
+          <button type="submit">Jouer le tour</button>
+        </div>
+      </form>
+      {% else %}
       {# En flux, la réponse HTMX n'est plus le tour mais sa COQUILLE : elle
          arrive en quelques millisecondes et se remplit ensuite toute seule.
          L'indicateur d'attente n'a donc plus lieu d'être sur ce chemin. #}
@@ -160,14 +199,20 @@
                                   }
                                   window.scrollTo(0, document.body.scrollHeight)">
         <input type="hidden" name="character_id" value="{{ pj.id }}">
+        {# La séance d'entraînement en cours de préparation, s'il y en a une. #}
+        <input type="hidden" name="entrainement" id="entrainement" value="{{ entrainement_prepare or '' }}">
+        <div class="seance-annonce" id="seance-annonce" {% if not entrainement_prepare %}hidden{% endif %}>
+          Séance d'entraînement — le dé décidera de ta progression.
+          <button type="button" class="discret" id="seance-annuler">annuler</button></div>
         {% include "_postures.html" %}
         <textarea name="action" id="action" rows="3" required
-          placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ?{% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}"></textarea>
+          placeholder="{% if rencontre %}{{ pj.nom }} — comment t'y prends-tu ?{% else %}{{ pj.nom }} — que tentes-tu ?{% endif %}">{{ phrase_prepare or '' }}</textarea>
         <div class="rangee espace" style="justify-content:space-between">
           <span class="petit muted">Écris librement, ou choisis une piste ci-dessus.</span>
           <button type="submit">Agir</button>
         </div>
       </form>
+      {% endif %}
     </div>
     {% endif %}
   </div>
@@ -209,10 +254,10 @@
       <ol class="guide-liste">
         <li><strong>Écris ce que fait ton ninja</strong>, librement — ou clique une piste proposée.</li>
         <li><strong>Le dé tombe avant le récit</strong> : ce qui est joué est joué.</li>
-        <li><strong>Les missions</strong> se prennent dans l'onglet <em>Gens</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
-        <li><strong>La carte</strong> (onglet <em>Lieu</em>) : voyager coûte des tours.</li>
-        <li><strong>L'onglet <em>Voie</em></strong> te dit quand une technique peut s'apprendre.</li>
-        <li><strong>Vous êtes plusieurs ?</strong> <em>+ joueur</em>, en haut : chacun crée son propre personnage, puis vous jouez chacun votre tour.</li>
+        <li><strong>Les missions</strong> se prennent dans l'onglet <em>Équipe</em> : elles donnent sa forme à l'histoire, et rapportent de l'expérience.</li>
+        <li><strong>La carte</strong> (onglet <em>Carte</em>) : voyager coûte des tours.</li>
+        <li><strong>Apprendre une technique</strong> : onglet <em>Techniques</em>, bouton <em>S'entraîner</em>. Chaque séance se joue, avec un jet de dé, jusqu'à 100 %.</li>
+        <li><strong>À plusieurs au même endroit</strong> : chacun écrit l'action de son personnage dans sa case, puis <em>Jouer le tour</em> — une seule scène vous répond à tous.</li>
       </ol>
     </div>
     <script>
@@ -246,14 +291,14 @@
                                        | rejectattr('echeance_tour', 'gt', camp.tour + 2) | list %}
     <nav class="onglets-colonne" data-onglets="{{ camp.id }}" aria-label="Panneaux de jeu">
       <button type="button" class="onglet-col actif" data-cible="lieu">
-        {{ icone('lieu', 13) }}<span>Lieu</span></button>
+        {{ icone('lieu', 13) }}<span>Carte</span></button>
       <button type="button" class="onglet-col" data-cible="gens">
-        {{ icone('relation', 13) }}<span>Gens</span>
+        {{ icone('relation', 13) }}<span>Équipe</span>
         {% set offres = quetes | selectattr('statut', 'equalto', 'proposée') | list %}
         {% if missions_urgentes %}<b class="pastille-urgente">{{ missions_urgentes|length }}</b>
         {% elif offres %}<b class="pastille-jade" title="Une offre de mission attend ta réponse">!</b>{% endif %}</button>
       <button type="button" class="onglet-col" data-cible="voie">
-        {{ icone('technique', 13) }}<span>Voie</span>
+        {{ icone('technique', 13) }}<span>Techniques</span>
         {% set pretes = offres_apprentissage | selectattr('pret') | list %}
         {% if pretes %}<b class="pastille-jade">{{ pretes|length }}</b>{% endif %}</button>
       <button type="button" class="onglet-col" data-cible="journal">
@@ -362,7 +407,7 @@
     </div>
 
     {# Les trois plus accessibles ici ; la liste entière vit sur la fiche. #}
-    {% with limite = 3 %}{% include "_apprentissage.html" %}{% endwith %}
+    {% with limite = 3, pj_table = True %}{% include "_apprentissage.html" %}{% endwith %}
     </div>
 
     <div class="onglet-pan" data-onglet="journal" hidden>
@@ -414,6 +459,31 @@
   var retenu = null;
   try { retenu = localStorage.getItem(CLE); } catch (e) { retenu = null; }
   if (retenu && pans.some(function (p) { return p.dataset.onglet === retenu; })) montrer(retenu);
+})();
+
+/* S'entraîner : le bouton de l'onglet Techniques prépare la séance dans la zone
+   d'action. Le joueur peut la reformuler ; le tour lancera le dé. */
+(function () {
+  var champ = document.getElementById('entrainement');
+  var annonce = document.getElementById('seance-annonce');
+  if (!champ) return;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.entrainer');
+    if (b) {
+      champ.value = b.dataset.tid;
+      annonce.hidden = false;
+      remplir(b.dataset.phrase);
+      window.scrollTo(0, 0);
+    }
+    if (e.target.id === 'seance-annuler') {
+      champ.value = '';
+      annonce.hidden = true;
+    }
+  });
+  document.body.addEventListener('htmx:afterRequest', function () {
+    champ.value = '';
+    annonce.hidden = true;
+  });
 })();
 
 function remplir(texte) {

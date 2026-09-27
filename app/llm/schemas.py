@@ -19,8 +19,13 @@ INTENT = {
             "triviale", "facile", "normal", "difficile", "ardue", "legendaire"]},
         "cible": {"type": "string"},
         "justification": {"type": "string"},
+        # L'action peut-elle seulement avoir lieu ici ? Voir ARBITRE : « je tue
+        # Madara » était passé sous silence, faute de savoir quoi en faire.
+        "faisable": {"type": "string", "enum": ["oui", "improbable", "non"]},
+        "obstacle": {"type": "string"},
     },
-    "required": ["action_type", "resume", "requiert_jet", "stat", "difficulte"],
+    "required": ["action_type", "resume", "requiert_jet", "stat", "difficulte",
+                 "faisable"],
 }
 
 # --- étape 2 pendant un affrontement : la même question, un autre vocabulaire.

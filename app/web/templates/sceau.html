@@ -28,7 +28,7 @@
   <span class="heros-kanji" aria-hidden="true">印</span>
   <div class="heros-contenu">
     <p class="eyebrow">Le sceau</p>
-    <h1>{{ fiche.nom }}</h1>
+    <h1>{{ noms_equipe|join(' · ') if noms_equipe and noms_equipe|length > 1 else fiche.nom }}</h1>
     <p class="chapeau">Ce qui va s'écrire maintenant ne se réécrira plus.</p>
   </div>
 </section>
@@ -99,17 +99,23 @@
     var d; try { d = JSON.parse(e.data); } catch (err) { return; }
     var bloc = zone.querySelector('[data-role="bloc-archetype"]');
     bloc.hidden = false;
-    zone.querySelector('[data-role="archetype-nom"]').textContent = d.nom || '';
-    zone.querySelector('[data-role="archetype-accroche"]').textContent = d.accroche || '';
-    zone.querySelector('[data-role="archetype-fiche"]').textContent =
-      [d.village, d.clan, d.voie].filter(Boolean).join(' · ');
+    /* À plusieurs, chaque joueur a son archétype : on les ajoute l'un sous
+       l'autre au lieu de remplacer le précédent. */
+    var nom = zone.querySelector('[data-role="archetype-nom"]');
+    var acc = zone.querySelector('[data-role="archetype-accroche"]');
+    var fic = zone.querySelector('[data-role="archetype-fiche"]');
+    var sep = nom.textContent ? '\n\n' : '';
+    nom.textContent += sep + (d.nom || '');
+    acc.textContent += sep + (d.accroche || '');
+    fic.textContent += sep + [d.village, d.clan, d.voie].filter(Boolean).join(' · ');
     bloc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
   source.addEventListener('presage', function (e) {
     blocPresage.hidden = false;
     /* Le serveur a échappé les sauts de ligne pour tenir dans un événement. */
-    presage.textContent = e.data.split('\\n').join('\n');
+    var texte = e.data.split('\\n').join('\n');
+    presage.textContent += (presage.textContent ? '\n\n' : '') + texte;
     blocPresage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 

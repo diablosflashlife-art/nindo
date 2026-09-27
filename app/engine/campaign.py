@@ -85,14 +85,25 @@ def amorcer_monde(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
 # 2. La distribution : générée, jamais écrite par le joueur
 # --------------------------------------------------------------------------
 def generer_distribution(session: Session, camp: Campaign, pack: LorePack,
-                         rs: Ruleset, pj: Character) -> list[Character]:
+                         rs: Ruleset, pj: Character,
+                         coequipiers: int = 2) -> list[Character]:
+    """L'entourage. Une équipe genin compte trois élèves : avec deux joueurs,
+    il ne reste qu'une place de coéquipier à remplir ; avec trois, aucune."""
     rng = random.Random(camp.graine + 31)
+    places = max(0, min(2, coequipiers))
+    roles, vus = [], 0
+    for role, desc in ROLES:
+        if role == "coequipier":
+            vus += 1
+            if vus > places:
+                continue
+        roles.append((role, desc))
     village = pack.village(pj.village_ref) or {}
     sel = pack.sel or ["porte un objet sans valeur apparente"]
 
     # Le germe : culture du village, contexte du joueur, un détail distinctif
     # imposé par rôle. Sans ce détail, un modèle produit des figurants lisses.
-    details = rng.sample(sel, min(len(ROLES), len(sel)))
+    details = rng.sample(sel, min(len(roles), len(sel)))
     lignes = [
         f"### VILLAGE\n{village.get('nom_fr', village.get('nom'))}",
         f"Culture : {village.get('culture', '').strip()}",
@@ -101,9 +112,9 @@ def generer_distribution(session: Session, camp: Campaign, pack: LorePack,
         f"clan {pj.clan}, grade {pj.grade}.",
         f"Apparence : {pj.apparence or 'non précisée'}",
         f"\n### ÉPOQUE\n{camp.epoque} — ton de campagne : {camp.ton}",
-        "\n### PERSONNAGES À CRÉER (dans cet ordre, exactement 4)",
+        f"\n### PERSONNAGES À CRÉER (dans cet ordre, exactement {len(roles)})",
     ]
-    for i, (role, desc) in enumerate(ROLES):
+    for i, (role, desc) in enumerate(roles):
         lignes.append(f"{i+1}. [{role}] {desc}")
         lignes.append(f"   Détail distinctif imposé : {details[i]}")
 
@@ -111,8 +122,8 @@ def generer_distribution(session: Session, camp: Campaign, pack: LorePack,
 
     lieu = session.get(Location, pj.location_id) if pj.location_id else None
     crees: list[Character] = []
-    for i, (role, _) in enumerate(ROLES):
-        data = (brut.get("personnages") or [{}] * len(ROLES))[i] if i < len(
+    for i, (role, _) in enumerate(roles):
+        data = (brut.get("personnages") or [{}] * len(roles))[i] if i < len(
             brut.get("personnages") or []) else {}
         nom = nettoyer_nom(data.get("nom") or "") or f"Inconnu {i+1}"
         if nom_canon(nom):
@@ -203,7 +214,8 @@ def generer_distribution(session: Session, camp: Campaign, pack: LorePack,
 # 3. La première mission et la scène d'ouverture
 # --------------------------------------------------------------------------
 def amorcer_recit(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
-                  pj: Character, distribution: list[Character]) -> Turn:
+                  pj: Character, distribution: list[Character],
+                  autres: list[Character] | None = None) -> Turn:
     sensei = next((c for c in distribution if c.role_campagne == "sensei"), None)
     lieu = session.get(Location, pj.location_id) if pj.location_id else None
 
@@ -225,6 +237,11 @@ def amorcer_recit(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
 
     lignes = [
         f"### LIEU\n{lieu.nom if lieu else 'le village'} — {lieu.description if lieu else ''}",
+        ("\n### PERSONNAGES JOUEURS (chacun joué par une personne réelle)\n"
+         + "\n".join(f"- {p.nom}, {p.age} ans, {p.clan}, {p.grade}"
+                     + (f" — joué par {p.joueur}" if p.joueur else "")
+                     for p in [pj] + list(autres or [])))
+        if autres else
         f"\n### PERSONNAGE JOUEUR\n{pj.nom}, {pj.age} ans, {pj.clan}, {pj.grade}.",
         "\n### PERSONNAGES PRÉSENTS",
     ]
@@ -249,9 +266,10 @@ def amorcer_recit(session: Session, camp: Campaign, pack: LorePack, rs: Ruleset,
                       importance=4, entites=[pj.id]))
     session.add(MemoryFact(
         campaign_id=camp.id, tour=1, importance=4,
-        texte=f"{pj.nom} a rejoint l'équipe de "
+        texte=f"{', '.join(p.nom for p in [pj] + list(autres or []))} "
+              f"{'ont' if autres else 'a'} rejoint l'équipe de "
               f"{sensei.nom if sensei else 'son instructeur'} au premier jour.",
-        entites=[pj.id] + [c.id for c in distribution]))
+        entites=[pj.id] + [p.id for p in (autres or [])] + [c.id for c in distribution]))
     session.add(camp)
     session.commit()
     session.refresh(tour)

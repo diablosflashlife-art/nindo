@@ -584,3 +584,29 @@ html{overflow-x:clip}
 /* Ajouter un joueur, au bout du sélecteur « Qui agit » */
 .onglet-ajout{opacity:.7;border-style:dashed}
 .onglet-ajout:hover{opacity:1}
+
+/* L'entraînement joué */
+.appr-effet{margin:2px 0 6px;font-size:12.5px;line-height:1.4;color:var(--texte-3)}
+.appr-progression{display:flex;align-items:center;gap:8px;margin:4px 0 8px}
+.appr-progression .jauge{flex:1}
+.seance-annonce{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 8px;padding:7px 12px;border-radius:10px;font-size:13px;
+  border:1px solid rgba(201,162,39,.4);background:var(--or-voile);color:var(--texte)}
+.seance-annonce[hidden]{display:none}
+.seance-annonce .discret{padding:2px 10px;font-size:12px}
+a.bouton.gain{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+
+/* Le tour de table */
+.tour-de-table{display:grid;gap:10px}
+.declaration{display:grid;gap:6px;padding:10px 12px;border-radius:12px;
+  border:1px solid var(--trait);background:rgba(0,0,0,.18)}
+.declaration.active{border-color:rgba(201,162,39,.45)}
+.declaration-nom{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.declaration-nom small{font-weight:400;color:var(--texte-3)}
+.declaration-posture{max-width:260px}
+.jet-joueur{display:grid;gap:4px;margin:6px 0}
+.jet-nom{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--texte-3)}
+
+/* Le sceau d'une équipe : plusieurs archétypes et présages à la suite */
+.archetype-nom,.archetype-accroche,.archetype-fiche,.presage{white-space:pre-line}

@@ -193,11 +193,13 @@ def supprimer_campagne(cid: int, session: Session = Depends(get_session)):
 @router.post("/campagnes")
 def creer_campagne(nom: str = Form(...), epoque: str = Form("naruto_p1"),
                    ton: str = Form(""), allure: str = Form("court"),
+                   nb_joueurs: int = Form(1),
                    session: Session = Depends(get_session)):
     rs = charger_ruleset("naruto")
     camp = Campaign(
         nom=nom.strip() or "Nouvelle campagne", epoque=epoque,
         allure=allure if allure in ("court", "normal", "long") else "court",
+        nb_joueurs=max(1, min(4, nb_joueurs)),
         ton=ton.strip() or "shonen sombre, tension montante, conséquences durables",
         graine=random.randrange(1, 10**9), ruleset=rs.data, phase="creation")
     session.add(camp)
@@ -216,11 +218,22 @@ def _ctx_creation(request: Request, camp: Campaign, rs: Ruleset, erreur: str = "
     with Session(engine) as s:
         equipe = [p for p in s.exec(select(Character).where(
             Character.campaign_id == camp.id, Character.is_pc == True)).all()]  # noqa: E712
+    attente = _EQUIPE_A_SCELLER.get(camp.id, [])
+    # Même équipe, même village : celui du premier joueur inscrit.
+    village_equipe = (equipe[0].village_ref if equipe
+                      else attente[0][0].village_id if attente else "")
+    villages = [v for v in pack.villages(annee) if v.get("rang") == "majeur"]
+    if village_equipe:
+        villages = [v for v in villages if v["id"] == village_equipe] or villages
     return {
         "request": request, "camp": camp, "rs": rs, "pack": pack,
         # Les joueurs déjà dans la partie : un nouveau venu les rejoint.
         "equipe": [{"nom": p.nom, "joueur": p.joueur, "id": p.id} for p in equipe],
-        "villages": [v for v in pack.villages(annee) if v.get("rang") == "majeur"],
+        "attente": [{"nom": f.nom, "joueur": f.joueur} for f, _ in attente],
+        "numero_joueur": len(attente) + 1,
+        "nb_joueurs": max(1, camp.nb_joueurs or 1),
+        "village_equipe": village_equipe,
+        "villages": villages,
         "clans_majeurs": pack.clans(rang="majeur", annee=annee),
         "clans_mineurs": pack.clans(rang="mineur", annee=annee),
         "lignees": {l["id"]: l for l in pack.liste("lignees")},
@@ -279,9 +292,11 @@ async def soumettre_creation(cid: int, request: Request,
     if form.get("chemin") == "remets":
         from app.engine.creation import tirer_fiche
         deja = _pjs(session, camp.id)
+        attente = _EQUIPE_A_SCELLER.get(camp.id, [])
         fiche = tirer_fiche(pack, rs, fiche, annee,
                             graine=camp.graine + len(fiche.nom),
-                            village_impose=deja[0].village_ref if deja else "")
+                            village_impose=(deja[0].village_ref if deja else
+                                            attente[0][0].village_id if attente else ""))
 
     try:
         from app.engine.creation import valider
@@ -379,19 +394,49 @@ def _finaliser(request: Request, session: Session, camp: Campaign, pack,
         return RedirectResponse(f"/campagnes/{camp.id}?pj={pj.id}",
                                 status_code=303)
 
+    # PLUSIEURS JOUEURS DÈS LE DÉPART : chacun crée SON personnage, et l'équipe
+    # n'est scellée qu'une fois tout le monde inscrit — un seul sceau, une
+    # seule scène d'ouverture où ils sont ensemble.
+    equipe = _EQUIPE_A_SCELLER.setdefault(camp.id, [])
+    equipe.append((fiche, destinee))
+    if len(equipe) < max(1, camp.nb_joueurs or 1):
+        return RedirectResponse(f"/campagnes/{camp.id}/creation", status_code=303)
+    _EQUIPE_A_SCELLER.pop(camp.id, None)
+
     _purger_jetons()
     jeton = secrets.token_urlsafe(12)
-    _EN_ATTENTE[jeton] = {"cid": camp.id, "sceau": True, "fiche": fiche,
-                          "destinee": destinee, "depuis": time.monotonic()}
+    _EN_ATTENTE[jeton] = {"cid": camp.id, "sceau": True, "fiche": equipe[0][0],
+                          "destinee": equipe[0][1], "equipe": equipe,
+                          "depuis": time.monotonic()}
     return templates.TemplateResponse("sceau.html", {
-        "request": request, "camp": camp, "fiche": fiche, "jeton": jeton})
+        "request": request, "camp": camp, "fiche": equipe[0][0], "jeton": jeton,
+        "noms_equipe": [f.nom for f, _ in equipe]})
+
+
+# Les fiches déjà remplies d'une équipe qui n'est pas encore au complet. En
+# mémoire : c'est l'état d'un écran de création, pas une sauvegarde.
+_EQUIPE_A_SCELLER: dict[int, list] = {}
 
 
 # --------------------------------------------------------------------------
 # Table de jeu
 # --------------------------------------------------------------------------
+def _seance_preparee(session: Session, camp: Campaign, pack, rs: Ruleset,
+                     pj: Character, tid: str) -> tuple[str, str]:
+    """Depuis la fiche, « S'entraîner » ramène à la table avec la séance
+    prête dans la zone d'action."""
+    if not tid:
+        return "", ""
+    o = apprentissage.offre(session, camp, pack, rs, pj, tid)
+    if o is None or not o["pret"]:
+        return "", ""
+    avec = f" avec {o['detail']}" if o["source"] == "maitre" else ""
+    return tid, f"Je m'entraîne au {o['nom']}{avec}."
+
+
 @router.get("/campagnes/{cid}", response_class=HTMLResponse)
 def table(cid: int, request: Request, pj: int | None = None,
+          entrainement: str = "",
           session: Session = Depends(get_session)):
     camp = _camp(session, cid)
     pjs = _pjs(session, cid)
@@ -401,8 +446,14 @@ def table(cid: int, request: Request, pj: int | None = None,
     rs = _regles(camp)
     pack = charger_pack(camp.lore_pack)
 
-    tours = session.exec(select(Turn).where(
+    from app.engine import table as tour_de_table
+    # LE GROUPE, C'EST LE LIEU : les joueurs au même endroit partagent la
+    # scène et déclarent ensemble ; séparés, chacun retrouve la sienne.
+    equipe_scene = tour_de_table.groupe(session, camp, actif)
+    ids_scene = {p.id for p in equipe_scene}
+    tours = [t for t in session.exec(select(Turn).where(
         Turn.campaign_id == cid).order_by(Turn.index)).all()
+        if tour_de_table.dans_la_scene(t, ids_scene)]
     noms = {c.id: c.nom for c in session.exec(select(Character).where(
         Character.campaign_id == cid)).all()}
 
@@ -418,7 +469,7 @@ def table(cid: int, request: Request, pj: int | None = None,
 
     return templates.TemplateResponse("table.html", {
         "request": request, "camp": camp, "pj": actif, "pjs": pjs, "noms": noms,
-        "tours": tours, "rs": rs, "pack": pack,
+        "tours": tours, "rs": rs, "pack": pack, "equipe_scene": equipe_scene,
         "stats_cfg": rs.stats, "res_cfg": rs.data.get("resources", {}),
         "titre_grade": rs.titre_grade(actif.grade),
         "tier_label": rs.tier_label(actif.tier),
@@ -436,6 +487,8 @@ def table(cid: int, request: Request, pj: int | None = None,
         "flux": settings.narration_en_flux,
         "offres_progression": progression.offres(rs, actif),
         "offres_apprentissage": apprentissage.offres(session, camp, pack, rs, actif),
+        **dict(zip(("entrainement_prepare", "phrase_prepare"),
+                   _seance_preparee(session, camp, pack, rs, actif, entrainement))),
         # Ce que le joueur cherche à savoir, et ce qu'il a appris : c'est la
         # preuve, sous ses yeux, que le récit lui répond.
         "fils_ouverts": fils_du_recit.ouverts(session, camp),
@@ -494,6 +547,7 @@ def _ctx_rencontre(session: Session, camp: Campaign, rs: Ruleset,
 def action(cid: int, request: Request, action: str = Form(...),
            character_id: int | None = Form(None),
            posture: str = Form(""), levier: str = Form(""),
+           entrainement: str = Form(""),
            session: Session = Depends(get_session)):
     camp = _camp(session, cid)
     _exige_en_cours(camp)
@@ -510,7 +564,7 @@ def action(cid: int, request: Request, action: str = Form(...),
         # incrémentaient toutes les deux `camp.tour` sur la même valeur lue.
         with tour_exclusif(cid):
             tour = jouer(session, camp, pj, texte, rs, pack,
-                         posture=posture, levier=levier)
+                         posture=posture, levier=levier, entrainement=entrainement)
     except CampagneOccupee as exc:
         return templates.TemplateResponse("_erreur.html", {
             "request": request, "message": str(exc)}, status_code=409)
@@ -565,6 +619,7 @@ def _sse(evenement: str, donnees: str) -> str:
 def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
                   character_id: int | None = Form(None),
                   posture: str = Form(""), levier: str = Form(""),
+                  entrainement: str = Form(""),
                   session: Session = Depends(get_session)):
     """Accuse réception de l'action et rend la coquille du tour.
 
@@ -585,10 +640,47 @@ def jouer_en_flux(cid: int, request: Request, action: str = Form(...),
     jeton = secrets.token_urlsafe(12)
     _EN_ATTENTE[jeton] = {"cid": cid, "pj": pj.id, "action": texte,
                           "posture": posture, "levier": levier,
+                          "entrainement": entrainement,
                           "depuis": time.monotonic()}
     return templates.TemplateResponse("_flux.html", {
         "request": request, "camp": camp, "pj": pj, "action": texte,
         "jeton": jeton})
+
+
+@router.post("/campagnes/{cid}/jouer/table", response_class=HTMLResponse)
+async def jouer_table(cid: int, request: Request, session: Session = Depends(get_session)):
+    """Le tour de table : chaque joueur présent a écrit l'action de SON
+    personnage, une seule scène les résoudra toutes. Rend la coquille du tour,
+    comme `jouer_en_flux`."""
+    camp = _camp(session, cid)
+    _exige_en_cours(camp)
+    form = await request.form()
+    entrees = []
+    for brut in form.getlist("joueur"):
+        try:
+            pid = int(brut)
+        except ValueError:
+            continue
+        perso = session.get(Character, pid)
+        texte = (form.get(f"action_{pid}") or "").strip()
+        if perso is None or perso.campaign_id != cid or not perso.is_pc:
+            continue
+        if not texte:
+            texte = "Je reste attentif et j'observe ce qui se passe."
+        entrees.append({"pj": pid, "nom": perso.nom, "action": texte,
+                        "posture": form.get(f"posture_{pid}") or "",
+                        "levier": form.get(f"levier_{pid}") or "",
+                        "entrainement": form.get(f"entrainement_{pid}") or ""})
+    if not entrees or all(e["action"].startswith("Je reste attentif") for e in entrees):
+        raise HTTPException(400, "Aucune action déclarée")
+    _purger_jetons()
+    jeton = secrets.token_urlsafe(12)
+    _EN_ATTENTE[jeton] = {"cid": cid, "pj": entrees[0]["pj"], "entrees": entrees,
+                          "action": entrees[0]["action"], "posture": "", "levier": "",
+                          "depuis": time.monotonic()}
+    return templates.TemplateResponse("_flux.html", {
+        "request": request, "camp": camp, "pj": session.get(Character, entrees[0]["pj"]),
+        "action": entrees[0]["action"], "entrees": entrees, "jeton": jeton})
 
 
 @router.get("/campagnes/{cid}/flux/{jeton}")
@@ -628,10 +720,18 @@ def flux(cid: int, request: Request, jeton: str):
                 yield _sse("echec", str(exc))
                 return
             try:
-                yield _sse("etape", "L'arbitre lit ton action…")
-                prep = preparer(session, camp, pj, demande["action"], rs, pack,
-                                posture=demande["posture"],
-                                levier=demande["levier"])
+                if demande.get("entrees"):
+                    from app.engine import table as tour_de_table
+                    yield _sse("etape", "L'arbitre lit vos actions…")
+                    entrees = [{**e, "pj": session.get(Character, e["pj"])}
+                               for e in demande["entrees"]]
+                    pj, prep = tour_de_table.preparer(session, camp, entrees, rs, pack)
+                else:
+                    yield _sse("etape", "L'arbitre lit ton action…")
+                    prep = preparer(session, camp, pj, demande["action"], rs, pack,
+                                    posture=demande["posture"],
+                                    levier=demande["levier"],
+                                    entrainement=demande.get("entrainement", ""))
 
                 # Le résultat mécanique est arrêté : on le montre AVANT la
                 # narration. Le joueur sait ainsi ce qui lui arrive pendant que
@@ -707,41 +807,59 @@ def flux_sceau(cid: int, request: Request, jeton: str):
                                     "sièges de grade…")
                 amorce.amorcer_monde(session, camp, pack, rs, fiche.village_id)
 
-                yield _sse("etape", "Ton nom est inscrit au registre du village…")
-                pj = creer_personnage(session, camp, pack, rs, fiche, destinee)
+                equipe = demande.get("equipe") or [(fiche, destinee)]
+                yield _sse("etape", "Ton nom est inscrit au registre du village…"
+                           if len(equipe) == 1 else
+                           "Vos noms sont inscrits au registre du village…")
+                inscrits = [creer_personnage(session, camp, pack, rs, f, d)
+                            for f, d in equipe]
+                pj, autres = inscrits[0], inscrits[1:]
                 camp.phase = "amorce"
                 session.add(camp)
                 session.commit()
 
-                # Le destin a tranché : on le dit avant le présage. C'est le
-                # seul moment où le joueur apprend QUEL genre de shinobi le
-                # sort a fait de lui — le nom et l'accroche, rien de plus.
-                destin = session.exec(select(Destiny).where(
-                    Destiny.character_id == pj.id)).first()
-                if destin is not None and destin.archetype_nom:
-                    yield _sse("archetype", json.dumps({
-                        "nom": destin.archetype_nom,
-                        "accroche": destin.archetype_accroche,
-                        "village": pj.village, "clan": pj.clan,
-                        "voie": rs.specialisations.get(
-                            pj.specialisation, {}).get("label", pj.specialisation),
-                    }, ensure_ascii=False))
-
-                presage = _presage(session, pj)
-                if presage:
-                    yield _sse("presage", presage.replace("\n", "\\n"))
+                # Le destin a tranché, et le présage tombe — pour CHAQUE joueur.
+                for inscrit in inscrits:
+                    prefixe = f"{inscrit.nom} — " if autres else ""
+                    destin = session.exec(select(Destiny).where(
+                        Destiny.character_id == inscrit.id)).first()
+                    if destin is not None and destin.archetype_nom:
+                        yield _sse("archetype", json.dumps({
+                            "nom": prefixe + destin.archetype_nom,
+                            "accroche": destin.archetype_accroche,
+                            "village": inscrit.village, "clan": inscrit.clan,
+                            "voie": rs.specialisations.get(
+                                inscrit.specialisation, {}).get("label", inscrit.specialisation),
+                        }, ensure_ascii=False))
+                    presage = _presage(session, inscrit)
+                    if presage:
+                        texte = (f"— {inscrit.nom} —\n{presage}" if autres else presage)
+                        yield _sse("presage", texte.replace("\n", "\\n"))
 
                 yield _sse("etape", "On te donne une équipe. Elle ne te "
                                     "ressemblera pas.")
                 distribution = amorce.generer_distribution(
-                    session, camp, pack, rs, pj)
+                    session, camp, pack, rs, pj, coequipiers=2 - len(autres))
+                # Les autres joueurs connaissent le même entourage que le premier.
+                if autres:
+                    for c in distribution:
+                        rel = session.exec(select(Relation).where(
+                            Relation.campaign_id == camp.id, Relation.source_id == c.id,
+                            Relation.cible_id == pj.id)).first()
+                        for a in autres:
+                            session.add(Relation(
+                                campaign_id=camp.id, source_id=c.id, cible_id=a.id,
+                                nature=rel.nature if rel else c.role_campagne,
+                                valeur=rel.valeur if rel else 0,
+                                note="Relation initiale."))
+                    session.commit()
                 gabarit = templates.get_template("_equipier.html")
                 for c in distribution:
                     yield _sse("equipier", gabarit.render(
                         request=request, c=c, camp=camp).strip())
 
                 yield _sse("etape", "La première scène s'écrit…")
-                amorce.amorcer_recit(session, camp, pack, rs, pj, distribution)
+                amorce.amorcer_recit(session, camp, pack, rs, pj, distribution, autres)
 
                 yield _sse("fin", f"/campagnes/{cid}?pj={pj.id}")
             except httpx.HTTPError as exc:
@@ -1286,6 +1404,38 @@ def api_jouer(cid: int, payload: dict, session: Session = Depends(get_session)):
     return jouer(session, camp, pj, texte, rs, pack,
                  posture=(payload.get("posture") or ""),
                  levier=(payload.get("levier") or "")).model_dump()
+
+
+@router.get("/voix/etat")
+def voix_etat():
+    """La voix réaliste est-elle installée ? Le lecteur et le lanceur s'y fient."""
+    from app import voix_piper
+    return voix_piper.etat()
+
+
+@router.post("/voix/installer")
+def voix_installer():
+    from app import voix_piper
+    voix_piper.installer()
+    return voix_piper.etat()
+
+
+@router.post("/voix/dire")
+async def voix_dire(request: Request):
+    """Une phrase, en WAV, par Piper. 204 si la voix n'est pas là : le
+    navigateur retombe alors sur sa propre voix."""
+    from fastapi import Response
+
+    from app import voix_piper
+    try:
+        d = await request.json()
+    except ValueError:
+        d = {}
+    audio = voix_piper.dire(d.get("texte", ""), d.get("vitesse", 1.0), d.get("volume", 1.0))
+    if audio is None:
+        return Response(status_code=204)
+    return Response(content=audio, media_type="audio/wav",
+                    headers={"Cache-Control": "no-store"})
 
 
 @router.get("/api/campagnes/{cid}/voix/{tid}")

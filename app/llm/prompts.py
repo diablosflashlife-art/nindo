@@ -15,6 +15,12 @@ Règles :
   observer calmement, ranger ses affaires.
 - La difficulté reflète l'opposition réellement décrite dans le contexte.
 - Tu ne juges JAMAIS du résultat : tu ne sais pas si l'action réussit.
+- `faisable` dit si l'action peut seulement AVOIR LIEU ici et maintenant :
+  « non » si la cible n'est pas dans la scène, ou si l'action dépasse de très
+  loin ce que ce personnage peut faire (un genin qui tue un Kage légendaire en
+  duel, qui vole, qui ressuscite un mort) ; « improbable » si elle est possible
+  mais démesurée ; « oui » sinon. `obstacle` dit en une phrase ce qui l'empêche
+  (« Madara n'est pas ici », « aucun genin ne peut rivaliser avec un Kage »).
 Réponds uniquement avec l'objet JSON demandé."""
 
 
@@ -103,6 +109,21 @@ STYLE
 - Texte simple : aucun astérisque, ni gras ni italique. Les répliques se
   mettent entre guillemets « », rien de plus."""
 
+
+# La scène à plusieurs (tour de table, voir engine/table.py). Même prompt, un
+# seul changement : la personne. « Tu » désigne forcément un seul joueur ; à
+# plusieurs, le narrateur s'adressait au meneur et oubliait les autres.
+STYLE_SOLO = """- La longueur est donnée en fin d'invite. Présent, deuxième personne, adressée
+  au personnage qui agit.
+  Les autres personnages joueurs sont désignés par leur nom, à la troisième personne."""
+STYLE_GROUPE = """- La longueur est donnée en fin d'invite. Présent, TROISIÈME personne : scène à
+  plusieurs, chaque personnage joueur est désigné par son nom, jamais par « tu ».
+  Chacun a sa part de la scène, à égalité."""
+
+
+def pour_le_groupe(prompt: str) -> str:
+    assert STYLE_SOLO in prompt, "le style solo a changé : mettre STYLE_SOLO à jour"
+    return prompt.replace(STYLE_SOLO, STYLE_GROUPE)
 
 # Le combat garde les mêmes interdits — dupliquer le prompt serait le condamner
 # à diverger. On ne lui ajoute que ce qui change quand les coups pleuvent.
@@ -301,6 +322,9 @@ Règles :
 - Chaque personnage de la distribution doit apparaître ou être mentionné, avec un
   geste ou une réplique qui montre sa personnalité. Une ligne chacun suffit.
 - Tu ne révèles aucun secret et tu ne parles à la place d'aucun personnage joueur.
+- S'il y a PLUSIEURS personnages joueurs, ils forment la même équipe : présente
+  chacun par un détail visible, sans rien leur faire dire ni décider, et
+  adresse-toi à eux au pluriel (« vous »).
 - Tu termines sur une situation qui appelle une décision, sans poser de question.
 - 200 à 320 mots. Présent, deuxième personne."""
 

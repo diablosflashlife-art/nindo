@@ -24,6 +24,7 @@
       <span class="tag or">{{ o.rang }}</span>
     </div>
     {% if o.fr %}<p class="appr-fr">{{ o.fr }}</p>{% endif %}
+    {% if o.effet %}<p class="appr-effet">{{ o.effet }}</p>{% endif %}
 
     <p class="appr-voie">
       {% if o.source == 'maitre' %}
@@ -33,19 +34,29 @@
       {% else %}
         Ta spécialité : tu peux la travailler seul.
       {% endif %}
-      <span class="appr-prix">{{ o.tours }} tour{{ 's' if o.tours > 1 }}</span>
+      <span class="appr-prix">≈ {{ o.tours }} séance{{ 's' if o.tours > 1 }} réussie{{ 's' if o.tours > 1 }}</span>
     </p>
+    {% if o.progression %}
+    <div class="appr-progression" title="Progression de l'entraînement">
+      <span class="jauge or"><i style="width:{{ o.progression }}%"></i></span>
+      <span class="petit">{{ o.progression }} %</span>
+    </div>
+    {% endif %}
 
     {% if o.pret %}
-    <form method="post" action="/campagnes/{{ camp.id }}/apprendre">
-      <input type="hidden" name="character_id" value="{{ pj.id }}">
-      <input type="hidden" name="technique" value="{{ o.id }}">
-      <input type="hidden" name="retour" value="{{ request.url.path }}">
-      <button type="submit" class="gain"
-              {% if rencontre %}disabled title="Pas au milieu d'un affrontement."{% endif %}>
-        S'entraîner <span class="fleche">→ {{ o.tours }} tour{{ 's' if o.tours > 1 }}</span>
-      </button>
-    </form>
+    {# L'entraînement se JOUE : le bouton prépare l'action, le joueur la
+       complète s'il veut, et le tour lance le dé. Sur la fiche, il ramène à
+       la table avec l'action prête. #}
+    {% set phrase = "Je m'entraîne au " ~ o.nom ~ (" avec " ~ o.detail if o.source == 'maitre' else "") ~ "." %}
+    {% if pj_table is defined and pj_table %}
+    <button type="button" class="gain entrainer" data-tid="{{ o.id }}" data-phrase="{{ phrase }}"
+            {% if rencontre %}disabled title="Pas au milieu d'un affrontement."{% endif %}>
+      {{ 'Reprendre' if o.progression else "S'entraîner" }} <span class="fleche">→ jouer la séance</span>
+    </button>
+    {% else %}
+    <a class="bouton gain" href="/campagnes/{{ camp.id }}?pj={{ pj.id }}&entrainement={{ o.id }}">
+      S'entraîner <span class="fleche">→ jouer la séance</span></a>
+    {% endif %}
     {% else %}
     <p class="appr-manque">
       {% if o.manque %}Il te faut d'abord {{ o.manque|join(', ') }}.

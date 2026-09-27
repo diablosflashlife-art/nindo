@@ -75,14 +75,43 @@ class Preparation:
     entre_deux: bool = False        # aucune mission, aucun affrontement
     allure: str = rythme.ALLURE_DEFAUT  # court | normal | long, choisi par la table
     autres_pj: list = field(default_factory=list)  # noms des autres joueurs présents
+    groupe: bool = False            # tour de table : plusieurs joueurs ont déclaré
+    facteur_longueur: float = 1.0   # une scène à plusieurs a besoin de plus de place
+    participants: list = field(default_factory=list)  # ids des joueurs du tour
 
     def invite(self) -> str:
         return (f"{self.contexte_narrateur}\n\n### ACTION DU JOUEUR\n{self.action}"
                 f"\n\n### RÉSULTAT MÉCANIQUE (non négociable)\n{self.bloc}"
                 f"\n\n{rythme.consigne(self.registre, self.entre_deux, self.allure)}"
-                f"\n\n{self.rappel_joueurs}"
+                f"\n\n{self.consigne_action}\n\n"
+                f"{self.rappel_joueurs}"
                 f"Raconte la suite : {self.longueur}, jamais plus, en texte "
                 f"simple, sans astérisques ni mise en forme.")
+
+    @property
+    def consigne_action(self) -> str:
+        """Ce que le narrateur doit raconter d'abord. En tour de table, chaque
+        joueur a déclaré l'action de SON personnage : toutes se racontent."""
+        if self.groupe:
+            lignes = self.action.splitlines()
+            numerotees = "\n".join(f"{i}. {l}" for i, l in enumerate(lignes, 1))
+            # Mesuré en partie réelle à deux : le narrateur racontait l'action du
+            # meneur et laissait l'autre joueur en figurant. D'où une structure
+            # IMPOSÉE, action par action, et la réponse de qui est interpellé.
+            return ("### CE QUE LES JOUEURS TENTENT — CHACUNE DE CES ACTIONS SE RACONTE\n"
+                    f"{numerotees}\n"
+                    "Scène à plusieurs, une seule scène où ils sont ensemble. Raconte "
+                    "les actions DANS CET ORDRE, un paragraphe chacune : ce que le "
+                    "personnage fait, puis son résultat. Quand une action s'adresse à "
+                    "quelqu'un (une question, une proposition, un défi), cette personne "
+                    "RÉPOND dans la scène. Aucune action ne peut manquer : un joueur "
+                    "dont l'action n'est pas racontée a été ignoré. Désigne les "
+                    "personnages par leur NOM, à la troisième personne, jamais « tu ». "
+                    "Ne leur fais rien dire ni décider d'autre que ce qu'ils ont déclaré.")
+        return ("### CE QUE LE JOUEUR TENTE — À RACONTER EN PREMIER\n"
+                f"« {self.action} »\nOuvre la scène sur cette tentative et sur son "
+                "résultat. Ne la passe jamais sous silence, ne la remplace pas par "
+                "autre chose.")
 
     @property
     def rappel_joueurs(self) -> str:
@@ -102,7 +131,8 @@ class Preparation:
         """Le plafond de génération suit la longueur demandée : un modèle en
         ligne dépassait la cible « court » d'un tiers. ~1,5 jeton par mot
         français, marge comprise ; `achever` recoud la dernière phrase."""
-        return int(rythme.fourchette(self.registre, self.allure)[1] * 1.55) + 20
+        return int(rythme.fourchette(self.registre, self.allure)[1]
+                   * self.facteur_longueur * 1.55) + 20
 
     @property
     def longueur(self) -> str:
@@ -110,21 +140,22 @@ class Preparation:
         # mots en moyenne mesurés avec un modèle en ligne), et la dernière lue
         # est la mieux suivie. La même fourchette que le registre de la scène.
         bas, haut = rythme.fourchette(self.registre, self.allure)
-        return f"{bas} à {haut} mots"
+        f = self.facteur_longueur
+        return f"{int(bas * f)} à {int(haut * f)} mots"
 
 
 def jouer(session: Session, camp: Campaign, pj: Character, action: str,
           rs: Ruleset, pack: LorePack, posture: str = "",
-          levier: str = "") -> Turn:
+          levier: str = "", entrainement: str = "") -> Turn:
     """Joue un tour d'un bloc. Voir `preparer` / `conclure` pour le détail."""
-    prep = preparer(session, camp, pj, action, rs, pack, posture, levier)
+    prep = preparer(session, camp, pj, action, rs, pack, posture, levier, entrainement)
     narration = get_llm().text(prep.systeme, prep.invite(), max_tokens=prep.max_tokens)
     return conclure(session, camp, pj, prep, narration, rs, pack)
 
 
 def preparer(session: Session, camp: Campaign, pj: Character, action: str,
              rs: Ruleset, pack: LorePack, posture: str = "",
-             levier: str = "") -> Preparation:
+             levier: str = "", entrainement: str = "") -> Preparation:
     """Étapes 1bis à 3 : embuscade, interprétation, résolution déterministe.
 
     `posture` et `levier` sont les choix MÉCANIQUES du joueur. Les laisser
@@ -184,11 +215,51 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
         bloc = "Aucun jet : l'action n'a pas d'enjeu mécanique."
         effets_combat, systeme, en_combat = [], NARRATEUR, False
 
+        # Une cible nommée qui n'est pas dans la scène rend l'attaque
+        # impossible, quoi qu'en ait dit l'arbitre.
+        if intent.get("action_type") == "combat" and (intent.get("cible") or "").strip() \
+                and not combat.adversaires_designes(session, camp, pj, intent["cible"]):
+            intent["faisable"] = "non"
+            intent["obstacle"] = (intent.get("obstacle")
+                                  or f"{intent['cible']} n'est pas ici.")
+
         # La technique employée est identifiée AVANT le jet pour en tirer le
         # bonus, mais sa maîtrise n'est créditée qu'APRÈS, selon le résultat.
         bonus, liens_techniques = _technique_utilisee(session, pj, intent, rs, pack)
 
-        if intent.get("requiert_jet"):
+        # UNE SÉANCE D'ENTRAÎNEMENT. Le joueur a cliqué « S'entraîner » : le
+        # tour est une séance, avec son jet et sa progression.
+        seance_offre = None
+        if entrainement:
+            from app.engine import apprentissage
+            try:
+                seance_offre = apprentissage.verifier_seance(
+                    session, camp, pack, rs, pj, entrainement)
+                intent.update({
+                    "action_type": "technique", "requiert_jet": True,
+                    "faisable": "oui",
+                    "stat": seance_offre["stat"] if seance_offre["stat"] in rs.stats
+                    else intent.get("stat"),
+                    "difficulte": apprentissage.DIFFICULTE_PAR_RANG.get(
+                        seance_offre["rang"], "normal")})
+            except apprentissage.ApprentissageRefuse as exc:
+                intent["faisable"] = "non"
+                intent["obstacle"] = str(exc)
+
+        if intent.get("faisable") == "non":
+            # PAS DE SILENCE. Mesuré en partie réelle : « je tue Madara en 1v1 »
+            # et le récit continuait comme si de rien n'était. Une action
+            # impossible se raconte : la tentative, puis ce qui l'arrête.
+            obstacle = (intent.get("obstacle") or "").strip() or \
+                "cette action n'est pas possible ici et maintenant"
+            bloc = (f"ACTION IMPOSSIBLE TELLE QUELLE : {obstacle}\n"
+                    f"Raconte la tentative de {pj.nom} — ce qu'il fait, dit ou ose — "
+                    f"puis ce qui l'arrête, et comment les autres réagissent. Le "
+                    f"joueur doit voir que sa décision a été entendue.")
+            resolution["impossible"] = obstacle
+        elif intent.get("requiert_jet"):
+            if intent.get("faisable") == "improbable":
+                intent["difficulte"] = "legendaire"
             stat = intent.get("stat") if intent.get("stat") in rs.stats \
                 else next(iter(rs.stats))
             check = rs.check(pj.stats, stat, intent.get("difficulte", "normal"), bonus)
@@ -199,6 +270,13 @@ def preparer(session: Session, camp: Campaign, pj: Character, action: str,
                     f"RÉSULTAT IMPOSÉ : {check.issue.replace('_', ' ').upper()}.")
             if bonus:
                 bloc += f"\n(bonus de maîtrise appliqué : {bonus:+d})"
+            if seance_offre is not None:
+                from app.engine import apprentissage
+                suite, effets_seance = apprentissage.seance(
+                    session, camp, pack, rs, pj, seance_offre, check.issue)
+                bloc += "\n" + suite
+                effets_combat = effets_combat + effets_seance
+                resolution["entrainement"] = seance_offre["id"]
 
         # Hors combat, le corps se répare. Le goutte-à-goutte referme les
         # écorchures d'un trajet ; un repos déclaré remet vraiment debout, et
@@ -306,6 +384,14 @@ def conclure(session: Session, camp: Campaign, pj: Character,
                                         liens_techniques)
     from app.engine import fils
     effets += fils.appliquer(session, camp, net)
+    # Tour de table : l'expérience de la scène revient à chaque joueur.
+    if net["xp"] and len(prep.participants) > 1:
+        from app.engine import progression
+        for pid in prep.participants:
+            autre = session.get(Character, pid)
+            if autre is not None and autre.id != pj.id:
+                effets.append(f"{autre.nom} — "
+                              f"{progression.gagner_xp(session, camp, rs, autre, net['xp'])}")
 
     # L'horloge vient d'avancer : les délais promis se vérifient ici, et les
     # blessures qui devaient se refermer se referment. Sans ce point de

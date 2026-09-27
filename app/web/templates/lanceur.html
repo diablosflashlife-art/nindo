@@ -59,6 +59,16 @@
       </div>
 
       <div class="panneau">
+        <p class="legende">La voix</p>
+        <div class="etat-ligne"><span class="point" id="pt-voix"></span>
+          <span><strong>Voix réaliste</strong> <span class="petit muted" id="etat-voix">vérification…</span></span></div>
+        <p class="petit muted" style="margin:8px 0 10px">Une voix neuronale française
+          (Piper), gratuite, qui tourne sur ton PC. Active-la en jeu avec le bouton
+          <strong>voix</strong>.</p>
+        <button type="button" class="discret" id="voix-installer" hidden>Installer la voix réaliste (≈ 60 Mo)</button>
+      </div>
+
+      <div class="panneau">
         <p class="legende">Ta clé Mistral</p>
         <p class="petit muted" style="margin:0 0 10px">Gratuite sur
           <strong>console.mistral.ai</strong> (offre « Experiment »). Elle reste sur
@@ -141,6 +151,30 @@
       : okO ? 'Ollama racontera. Ajoute ta clé Mistral pour un meilleur récit.'
       : 'Aucun conteur prêt : ajoute ta clé Mistral, ou installe Ollama (ollama.com).';
   }).catch(function () {});
+
+  /* La voix réaliste */
+  function majVoix() {
+    fetch('/voix/etat').then(function (r) { return r.json(); }).then(function (v) {
+      var b = el('voix-installer');
+      el('pt-voix').className = 'point ' + (v.piper ? 'ok' : 'ko');
+      if (v.piper) {
+        el('etat-voix').textContent = '— installée';
+        b.hidden = true;
+      } else if (v.etat === 'en_cours') {
+        el('etat-voix').textContent = '— téléchargement en cours…';
+        b.hidden = true;
+        setTimeout(majVoix, 2000);
+      } else {
+        el('etat-voix').textContent = v.etat === 'echec'
+          ? '— échec du téléchargement (' + (v.erreur || 'réseau') + ')' : '— pas encore installée';
+        b.hidden = false;
+      }
+    }).catch(function () {});
+  }
+  el('voix-installer').addEventListener('click', function () {
+    fetch('/voix/installer', { method: 'POST' }).then(function () { setTimeout(majVoix, 500); });
+  });
+  majVoix();
 
   /* La clé Mistral */
   el('form-cle').addEventListener('submit', function (ev) {

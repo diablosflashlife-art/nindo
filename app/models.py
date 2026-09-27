@@ -62,6 +62,8 @@ class Campaign(SQLModel, table=True):
     ton: str = "shonen sombre, tension montante, conséquences durables"
     difficulte: str = "normal"        # indulgent | normal | impitoyable
     allure: str = "court"             # court | normal | long — longueur des récits
+    # Combien de joueurs créent un personnage AVANT que l'équipe soit scellée.
+    nb_joueurs: int = 1
 
     graine: int = 0
     tour: int = 0                      # horloge de la campagne
@@ -152,6 +154,9 @@ class Character(SQLModel, table=True):
     # Points de caractéristique gagnés en montant de niveau et pas encore
     # placés. Ils s'accumulent : on ne dépense jamais à la place du joueur.
     points_libres: int = 0
+    # Les techniques en cours d'apprentissage : {technique: pourcentage}. Chaque
+    # séance d'entraînement JOUÉE (un tour, un jet) les fait avancer.
+    entrainements: dict = Field(default_factory=dict, sa_column=Column(JSON))
     stats: dict = Field(default_factory=dict, sa_column=Column(JSON))
     ressources: dict = Field(default_factory=dict, sa_column=Column(JSON))
     inventaire: list = Field(default_factory=list, sa_column=Column(JSON))

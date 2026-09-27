@@ -321,3 +321,42 @@ def test_le_tirage_est_deterministe(rs, pack, partie):
     pj.inventaire = []
     b = appr.tirer_parchemin(session, camp, pack, rs, pj, graine=3)
     assert a == b, "recharger une sauvegarde ne doit pas rejouer les dés"
+
+
+# ==========================================================================
+# LES SÉANCES JOUÉES — retour de partie : « on apprend sans scène, sans dé »
+# ==========================================================================
+def test_une_seance_reussie_fait_avancer_sans_tout_donner(rs, pack, partie):
+    session, camp, pj, _ = partie
+    o = _offre(session, camp, pack, rs, pj, "shunshin")      # rang D : 2 séances
+    bloc, effets = appr.seance(session, camp, pack, rs, pj, o, "reussite")
+    assert "SÉANCE D'ENTRAÎNEMENT" in bloc and "pas encore acquise" in bloc.lower()
+    assert pj.entrainements["shunshin"] == 50
+    assert "shunshin" not in appr.connues(session, pj)
+
+
+def test_un_echec_apprend_un_peu(rs, pack, partie):
+    session, camp, pj, _ = partie
+    o = _offre(session, camp, pack, rs, pj, "shunshin")
+    appr.seance(session, camp, pack, rs, pj, o, "echec")
+    assert 0 < pj.entrainements["shunshin"] < 50
+
+
+def test_a_cent_pour_cent_la_technique_est_acquise(rs, pack, partie):
+    session, camp, pj, _ = partie
+    o = _offre(session, camp, pack, rs, pj, "shunshin")
+    appr.seance(session, camp, pack, rs, pj, o, "reussite")
+    o = _offre(session, camp, pack, rs, pj, "shunshin")
+    assert o["progression"] == 50
+    bloc, effets = appr.seance(session, camp, pack, rs, pj, o, "reussite")
+    session.commit()
+    assert "TECHNIQUE ACQUISE" in bloc
+    assert any("Technique apprise" in e for e in effets)
+    assert "shunshin" in appr.connues(session, pj)
+    assert "shunshin" not in (pj.entrainements or {})
+
+
+def test_une_seance_impossible_dit_pourquoi(rs, pack, partie):
+    session, camp, pj, _ = partie
+    with pytest.raises(appr.ApprentissageRefuse):
+        appr.verifier_seance(session, camp, pack, rs, pj, "amaterasu")

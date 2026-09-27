@@ -21,7 +21,14 @@
     </button>
   </div>
 
-  {% if tour.action and not tour.action.startswith('[') %}
+  {% if tour.resolution.get('joueurs') %}
+  {% for j in tour.resolution.get('joueurs') %}
+  <div class="bloc-action">
+    <span class="tour-acteur">{{ j.nom }}</span>
+    <p class="tour-action">{{ j.action }}</p>
+  </div>
+  {% endfor %}
+  {% elif tour.action and not tour.action.startswith('[') %}
   <div class="bloc-action">
     <span class="tour-acteur">{{ noms.get(tour.character_id, 'Le joueur') }}</span>
     <p class="tour-action">{{ tour.action }}</p>

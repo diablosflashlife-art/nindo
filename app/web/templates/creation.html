@@ -29,7 +29,18 @@
   <div class="heros-voile"></div>
   <span class="heros-kanji" aria-hidden="true" id="kanji-creation">{{ kanji(premier_village) }}</span>
   <div class="heros-contenu">
-    {% if equipe %}
+    {% if nb_joueurs > 1 and not equipe %}
+    {# Une partie à plusieurs, avant le sceau : chaque joueur crée son
+       personnage à son tour, et l'équipe est scellée quand tous sont inscrits. #}
+    <p class="eyebrow">Joueur {{ numero_joueur }} sur {{ nb_joueurs }}</p>
+    <h1>Deviens un shinobi</h1>
+    <p class="chapeau">
+      {% if attente %}Tu rejoins {% for p in attente %}<strong>{{ p.nom }}</strong>{% if p.joueur %} ({{ p.joueur }}){% endif %}{{ ', ' if not loop.last }}{% endfor %} :
+      même village, même équipe. Ton nom, ta maison, ta voie et ta destinée
+      restent les tiens.
+      {% else %}Chacun crée son personnage à son tour. Vous serez dans la même
+      équipe, du même village.{% endif %}</p>
+    {% elif equipe %}
     {# Chaque joueur a SA création : son village, sa maison, sa destinée. Il
        rejoint la scène où se trouve l'équipe. #}
     <p class="eyebrow">Un nouveau joueur rejoint la partie</p>
@@ -172,7 +183,7 @@
       moment du sceau.</p>
 
     <div class="champ" id="bloc-village">
-      <label>Village de départ</label>
+      <label>Village de départ{% if village_equipe %} — celui de ton équipe{% endif %}</label>
       <div class="cartes">
         {% for v in villages %}
         <label class="carte-choix {% if loop.first %}choisie{% endif %}"

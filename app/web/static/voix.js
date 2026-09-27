@@ -1,79 +1,102 @@
 /* ==========================================================================
    LA LECTURE À VOIX HAUTE
 
-   Le navigateur embarque un synthétiseur branché sur les voix du système :
-   hors ligne, sans rien à installer, sans dépendance Python ni modèle vocal
-   à télécharger. Le serveur produit un PLAN — quoi dire, avec quelle hauteur,
-   à quelle vitesse — et ce fichier le joue.
+   DEUX VOIX, UNE SEULE LOGIQUE. Le serveur produit un PLAN — quoi dire, à
+   quelle vitesse, à quel volume — et ce fichier le joue :
+   - avec PIPER quand la voix réaliste est installée (le serveur fabrique
+     l'audio de chaque phrase, voir app/voix_piper.py) ;
+   - sinon avec la voix du navigateur, robotique mais toujours là.
 
    TROIS PRINCIPES.
-
-   1. LE JEU NE DÉPEND PAS DE LA VOIX. Si `speechSynthesis` manque, le bouton
-      ne s'affiche pas et rien d'autre ne change. C'est un agrément.
-
-   2. ON PARLE UNE CHOSE À LA FOIS. Un nouveau tour coupe le précédent :
-      entendre deux scènes se chevaucher est pire que le silence.
-
-   3. LE CHOIX DU JOUEUR SE GARDE. Il est dans `localStorage` — et son absence
-      (navigation privée, données effacées) se lit simplement comme « éteint ».
+   1. LE JEU NE DÉPEND PAS DE LA VOIX. Rien ne casse si elle manque.
+   2. ON PARLE UNE CHOSE À LA FOIS. Un nouveau tour coupe le précédent.
+   3. LE CHOIX DU JOUEUR SE GARDE, dans `localStorage`.
    ========================================================================== */
 (function () {
   var synth = window.speechSynthesis;
-  if (!synth) return;
+  var bouton = document.getElementById('voix');
+  if (!bouton) return;
 
   var CLE = 'chroniques.voix';
   var actif = false;
   try { actif = localStorage.getItem(CLE) === '1'; } catch (e) { actif = false; }
 
-  var bouton = document.getElementById('voix');
-  if (!bouton) return;
-  bouton.hidden = false;
+  var piper = false;          // la voix réaliste répond-elle ?
+  var lecture = 0;            // numéro de la lecture en cours : en changer l'arrête
+  var audio = null;           // l'élément audio qui parle
 
-  /* La meilleure voix française disponible. Les voix se chargent de façon
-     asynchrone sur certains navigateurs, d'où la relecture à chaque usage
-     plutôt qu'une capture au démarrage. */
+  fetch('/voix/etat').then(function (r) { return r.json(); })
+    .then(function (e) { piper = !!e.piper; montrer(); })
+    .catch(montrer);
+
+  function montrer() {
+    if (!piper && !synth) return;          // aucune voix : pas de bouton
+    bouton.hidden = false;
+    accorder();
+  }
+
   function voixFr() {
-    var toutes = synth.getVoices() || [];
+    var toutes = synth ? (synth.getVoices() || []) : [];
     return toutes.find(function (v) { return /^fr(-|_|$)/i.test(v.lang); })
         || toutes.find(function (v) { return /fran/i.test(v.name); })
         || null;
   }
 
   function taire() {
-    try { synth.cancel(); } catch (e) { /* rien à faire */ }
+    lecture += 1;
+    if (audio) { try { audio.pause(); } catch (e) { /* rien */ } audio = null; }
+    if (synth) { try { synth.cancel(); } catch (e) { /* rien */ } }
   }
 
-  /* Le silence entre deux segments. `speechSynthesis` n'a pas de pause : on
-     la fabrique avec une phrase vide, ce que tous les moteurs acceptent et
-     tiennent à peu près. Un murmure appelle un blanc, un cri n'en veut pas —
-     c'est le champ `pause` du plan de lecture qui le dit. */
-  function silence(facteur) {
-    var u = new SpeechSynthesisUtterance(' ');
-    u.volume = 0;
-    u.rate = Math.max(0.5, Math.min(2, 1 / Math.max(0.4, facteur)));
-    return u;
+  /* ---- Piper : on prépare la phrase suivante pendant que la courante parle,
+     pour qu'il n'y ait pas de blanc entre deux phrases. */
+  function fabriquer(s) {
+    return fetch('/voix/dire', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texte: s.texte, vitesse: s.vitesse || 1, volume: s.volume === undefined ? 1 : s.volume })
+    }).then(function (r) { return r.status === 200 ? r.blob() : null; });
+  }
+
+  function direPiper(segments) {
+    var ma = lecture;
+    var utiles = segments.filter(function (s) { return s.texte; });
+    var prochain = utiles.length ? fabriquer(utiles[0]) : null;
+    (function suivant(i) {
+      if (ma !== lecture || i >= utiles.length) return;
+      var courant = prochain;
+      prochain = i + 1 < utiles.length ? fabriquer(utiles[i + 1]) : null;
+      courant.then(function (blob) {
+        if (ma !== lecture) return;
+        if (!blob) { direNavigateur(utiles.slice(i)); return; }
+        audio = new Audio(URL.createObjectURL(blob));
+        audio.onended = function () {
+          var pause = utiles[i].pause && utiles[i].pause > 1.05 ? (utiles[i].pause - 1) * 600 : 120;
+          setTimeout(function () { suivant(i + 1); }, pause);
+        };
+        audio.play().catch(function () { /* lecture refusée par le navigateur */ });
+      }).catch(function () { direNavigateur(utiles.slice(i)); });
+    })(0);
+  }
+
+  /* ---- La voix du navigateur, en secours. */
+  function direNavigateur(segments) {
+    if (!synth) return;
+    var voix = voixFr();
+    segments.forEach(function (s) {
+      if (!s.texte) return;
+      var u = new SpeechSynthesisUtterance(s.texte);
+      if (voix) { u.voice = voix; u.lang = voix.lang; } else { u.lang = 'fr-FR'; }
+      u.pitch = Math.max(0.1, Math.min(2, s.pitch || 1));
+      u.rate = Math.max(0.5, Math.min(2, s.vitesse || 1));
+      u.volume = Math.max(0, Math.min(1, s.volume === undefined ? 1 : s.volume));
+      synth.speak(u);
+    });
   }
 
   function dire(segments) {
     taire();
     if (!segments || !segments.length) return;
-    var voix = voixFr();
-    segments.forEach(function (s, i) {
-      if (!s.texte) return;
-      var u = new SpeechSynthesisUtterance(s.texte);
-      if (voix) { u.voice = voix; u.lang = voix.lang; } else { u.lang = 'fr-FR'; }
-      /* Les bornes sont celles de l'API : au-delà, la voix casse. */
-      u.pitch = Math.max(0.1, Math.min(2, s.pitch || 1));
-      u.rate = Math.max(0.5, Math.min(2, s.vitesse || 1));
-      /* Le TON. Une réplique criée et une réplique murmurée se lisaient
-         exactement pareil : le volume est ce qui les sépare le plus
-         nettement, bien avant la hauteur. Voir app/engine/voix.py. */
-      u.volume = Math.max(0, Math.min(1, s.volume === undefined ? 1 : s.volume));
-      synth.speak(u);
-      if (s.pause && s.pause > 1.05 && i < segments.length - 1) {
-        synth.speak(silence(s.pause));
-      }
-    });
+    if (piper) direPiper(segments); else direNavigateur(segments);
   }
 
   function lireTour(campagne, tourId) {
@@ -87,8 +110,8 @@
   function accorder() {
     bouton.classList.toggle('actif', actif);
     bouton.setAttribute('aria-pressed', actif ? 'true' : 'false');
-    bouton.title = actif ? 'Couper la lecture à voix haute'
-                         : 'Lire les scènes à voix haute';
+    bouton.title = (actif ? 'Couper la lecture à voix haute' : 'Lire les scènes à voix haute')
+      + (piper ? ' (voix réaliste)' : ' (voix du navigateur — installe la voix réaliste depuis le lanceur)');
   }
 
   bouton.addEventListener('click', function () {
@@ -96,14 +119,10 @@
     try { localStorage.setItem(CLE, actif ? '1' : '0'); } catch (e) { /* tant pis */ }
     accorder();
     if (!actif) { taire(); return; }
-    /* On lit tout de suite la scène en cours : l'effet du bouton doit
-       s'entendre, sinon on ne sait pas s'il a marché. */
     var dernier = document.querySelector('#recit .tour[data-id]');
     if (dernier) lireTour(dernier.dataset.campagne, dernier.dataset.id);
   });
-  accorder();
 
-  /* Un tour vient d'arriver — par htmx ou par le flux — on le lit. */
   function surNouveauTour() {
     var tours = document.querySelectorAll('#recit .tour[data-id]');
     var dernier = tours[tours.length - 1];
@@ -114,7 +133,6 @@
   });
   document.addEventListener('chroniques:tour', surNouveauTour);
 
-  /* Chaque tour du récit peut être relu seul. */
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('.tour-lire') : null;
     if (!b) return;
@@ -123,6 +141,5 @@
     if (tour) lireTour(tour.dataset.campagne, tour.dataset.id);
   });
 
-  /* Quitter la page en pleine lecture laisserait la voix courir. */
   addEventListener('pagehide', taire);
 })();

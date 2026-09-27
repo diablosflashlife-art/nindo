@@ -16,3 +16,8 @@ notes.md
 
 # Réglages locaux de l'éditeur.
 .claude/
+
+# La voix Piper (≈ 60 Mo) et son cache : téléchargés, jamais versionnés.
+voix/
+*.onnx
+*.onnx.json
